@@ -89,6 +89,3 @@ src/
 
 ---
 
-## ☕ Support
-
-If you find this project helpful, please consider buying the author a coffee! Your support is the motivation for my continuous maintenance and updates.
