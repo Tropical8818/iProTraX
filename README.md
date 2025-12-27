@@ -92,6 +92,3 @@ src/
 ## ☕ Support
 
 If you find this project helpful, please consider buying the author a coffee! Your support is the motivation for my continuous maintenance and updates.
-
-### PayPal
-![PayPal QR Code](https://album.whatifthenhow.com/i/2025/12/27/694fbcadaf646.png)
