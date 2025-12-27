@@ -93,8 +93,3 @@ src/
 
 如果您觉得这个项目对您有帮助，欢迎请作者喝一杯咖啡！您的支持是我持续维护和更新的动力。
 
-### Buy Me a Coffee
-<a href="https://www.buymeacoffee.com/YOUR_USERNAME" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/v2/default-yellow.png" alt="Buy Me A Coffee" style="height: 60px !important;width: 217px !important;" ></a>
-
-### PayPal
-![PayPal QR Code](YOUR_PAYPAL_QR_CODE_IMAGE_URL)
