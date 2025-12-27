@@ -322,11 +322,13 @@ function OperationContent() {
                                             <button
                                                 onClick={() => handleAction(step, 'Reset')}
                                                 disabled={updating || isLocked}
-                                                className={`col-span-3 flex items-center justify-center gap-2 p-2 rounded-lg text-xs font-medium transition-all active:scale-95 ${isLocked ? 'text-slate-300 bg-slate-100' : 'text-slate-400 bg-slate-100 hover:bg-slate-200 active:bg-slate-300'}`}
+                                                className={`flex flex-col items-center justify-center p-3 rounded-lg text-xs font-medium transition-all active:scale-95 ${isLocked ? 'text-slate-300 bg-slate-100' : 'text-slate-400 bg-slate-100 hover:bg-slate-200 active:bg-slate-300'}`}
                                             >
-                                                <RotateCcw className="w-4 h-4" />
+                                                <RotateCcw className="w-6 h-6 mb-1" />
                                                 Reset
                                             </button>
+                                            {/* Empty space to complete the grid */}
+                                            <div className="hidden sm:block"></div>
                                         </div>
 
                                         {isLocked && (
