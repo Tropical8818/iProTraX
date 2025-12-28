@@ -2,7 +2,7 @@
 
 [🇺🇸 English](README.md) | [🇨🇳 简体中文](README_ZH.md)
 
-> 🤖 **V5 New Features**: Integrated OpenAI GPT intelligent assistant, providing natural language queries, anomaly detection, intelligent analysis, and other AI capabilities.
+> 🤖 **V6.0.0 New Features**: Floating AI Assistant, Smart Navigation, Role-Based Security, and Advanced Log Management.
 
 ## 🚀 Quick Start
 
@@ -26,66 +26,44 @@ Visit http://localhost:3000
 
 ---
 
-## ✨ AI Features
+## ✨ AI Features (v6.0.0)
 
-### 💬 AI Chat Assistant
-Click the chat button in the bottom right corner to converse with the AI assistant:
+### 💬 Floating AI Assistant
+A specialized production assistant that helps you:
+- **Analyze Risks**: "Which orders are likely to be delayed?"
+- **Generate Morning Reports**: "Prepare a summary for the morning meeting."
+- **Smart Navigation**: "Show me WO-1234" -> *Auto-opens order details*.
 
-- **Query Orders**: "What is the status of WO-123?"
-- **Statistical Analysis**: "How many orders were completed today?"
-- **Anomaly Detection**: "Which orders might be delayed?"
-- **Production Insights**: "What is the current production status?"
-
-### 🔮 Future Features (Planned)
-- Intelligent ECD Prediction
-- Automatic Anomaly Alerts
-- Intelligent Excel Import Column Recognition
-- Automatic Production Report Generation
+### 🛡️ AI Guardrails
+The AI is strictly scoped to production topics. It will refuse non-work-related queries (e.g., jokes, weather) to ensure professional use.
 
 ---
 
-## 📁 Project Structure
+## 🔒 Security & Management
 
-```
-src/
-├── app/
-│   ├── api/
-│   │   └── ai/
-│   │       └── chat/route.ts   # AI Chat API
-│   └── dashboard/
-│       └── page.tsx            # Integrated AI Chat Panel
-├── components/
-│   └── AIChatPanel.tsx         # AI Chat Interface Component
-└── lib/
-    └── ai/
-        ├── client.ts           # OpenAI Client
-        ├── context.ts          # Production Data Context Builder
-        └── prompts.ts          # AI System Prompts
-```
+### Role-Based Access
+- **Admin**: Full access + AI Risk Analysis + Log Clearing.
+- **Supervisor**: Management + AI Reports.
+- **User**: Operation View + Basic Chat.
 
----
-
-## 🔒 Security Notes
-
-- Do not commit your API Key to the codebase.
-- It is recommended to use environment variables or secret management services in production environments.
-- AI features are only available to logged-in users.
+### 📊 Log Management
+- **CSV Export**: Download comprehensive operation logs.
+- **Clear Logs**: Admin-only function to reset history.
 
 ---
 
 ## 📝 Changelog
 
-### V5.0.0
-- ✨ Added AI Chat Assistant
-- ✨ Integrated OpenAI GPT-4o-mini
-- ✨ Intelligent Production Data Analysis
-- 🔧 Based on all V4 features
+### V6.0.0
+- ✨ **Floating AI Assistant**: New UI with persistent chat.
+- 🧭 **Smart Navigation**: Navigate to orders via chat commands.
+- 🛡️ **Role-Based AI**: Restricted advanced tools to Admin/Supervisor.
+- 📊 **Log Management**: CSV Export and Clear Logs features.
+- 🔒 **AI Guardrails**: Strict scope enforcement.
 
-### V4.0.0
-- Multi-product line support
-- Permission management system
-- Batch operations
-- Operation logs
+### V5.0.0
+- Added initial AI Chat functionality.
+- Integrated OpenAI GPT-4o-mini.
 
 ---
 
