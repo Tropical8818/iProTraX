@@ -1,16 +1,17 @@
-# Production Deployment Guide (V6.1.0)
+# Production Deployment Guide (V6.1.3)
 
-This guide covers two methods to deploy **ProTracker V6.1.0**:
+This guide covers two methods to deploy **ProTracker V6.1.3**:
 1. **Standard Node.js Deployment** (Recommended for Mac Mini servers or simple VPS).
 2. **Docker Deployment** (Recommended for Linux servers or trial runs).
 
 ---
 
-## What's New in V6.1.0
+## What's New in V6.1.3
+- **Super Admin Hierarchy**: Only Super Admin can create/promote other admins.
+- **Employee ID Privacy**: AI uses anonymous employee IDs to protect employee privacy.
+- **Enhanced User Management**: Special gold badge for Super Admin display.
 - **Professional Kiosk Mode**: Specialized monitor view with auto-scroll.
 - **Enhanced Security**: Role-based access control and password-protected Kiosk unlock.
-- **30-Day Sessions**: Extended persistence for Kiosk terminals.
-- **Display Density**: Compact/Comfortable view toggle.
 
 ---
 

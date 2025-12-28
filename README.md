@@ -2,7 +2,7 @@
 
 [🇺🇸 English](README.md) | [🇨🇳 简体中文](README_ZH.md)
 
-> 🤖 **V6.1.0 New Features**: Professional Kiosk Mode, Density Control, Extended Sessions, and Enhanced Security.
+> 🤖 **V6.1.3 New Features**: Super Admin Role Hierarchy, Employee ID Privacy Protection, and Enhanced User Management.
 
 ## 🚀 Quick Start
 
@@ -64,6 +64,11 @@ Specialized shop floor monitor view:
 ---
 
 ## 📝 Changelog
+
+### V6.1.3
+- 👑 **Super Admin Hierarchy**: Only Super Admin can create/promote other admins.
+- 🛡️ **Employee ID Privacy**: AI uses anonymous employee IDs instead of real names.
+- 🎨 **Enhanced UI**: Super Admin displays with special gold badge in user management.
 
 ### V6.1.0
 - 🖥️ **Professional Kiosk Mode**: New Shop Floor Monitor with auto-scroll and 60s refresh.
