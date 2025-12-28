@@ -31,6 +31,7 @@ async function main() {
             data: {
                 username: 'admin',
                 passwordHash: hash,
+                employeeId: 'admin',
                 role: 'admin',
                 status: 'approved'
             }

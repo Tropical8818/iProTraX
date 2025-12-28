@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Lock, User, Loader2, UserPlus, ArrowLeft, Eye, EyeOff, CheckCircle } from 'lucide-react';
+import { Lock, User, Loader2, UserPlus, ArrowLeft, Eye, EyeOff, CheckCircle, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
     const [username, setUsername] = useState('');
+    const [employeeId, setEmployeeId] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [passVisible, setPassVisible] = useState(false);
@@ -37,7 +38,7 @@ export default function RegisterPage() {
             const res = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ username, password, employeeId })
             });
 
             const data = await res.json();
@@ -100,6 +101,17 @@ export default function RegisterPage() {
                                 required
                             />
                             <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                        </div>
+
+                        <div className="relative">
+                            <input
+                                type="text"
+                                value={employeeId}
+                                onChange={(e) => setEmployeeId(e.target.value)}
+                                className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white pl-12 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all placeholder-slate-500"
+                                placeholder="Employee ID (e.g. EMP001)"
+                            />
+                            <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                         </div>
 
                         <div className="relative">

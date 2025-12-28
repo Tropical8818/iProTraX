@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
     try {
-        const { username, password } = await request.json();
+        const { username, password, employeeId } = await request.json();
 
         if (!username || !password) {
             return NextResponse.json(
@@ -25,6 +25,19 @@ export async function POST(request: Request) {
             );
         }
 
+        // Check if Employee ID exists
+        if (employeeId) {
+            const existingEmp = await prisma.user.findUnique({
+                where: { employeeId }
+            });
+            if (existingEmp) {
+                return NextResponse.json(
+                    { success: false, error: 'Employee ID already exists' },
+                    { status: 409 }
+                );
+            }
+        }
+
         // Create new user (pending approval)
         const passwordHash = await bcrypt.hash(password, 10);
 
@@ -32,6 +45,7 @@ export async function POST(request: Request) {
             data: {
                 username,
                 passwordHash,
+                employeeId: employeeId || null,
                 role: 'user', // Default role
                 status: 'pending' // Requires approval
             }

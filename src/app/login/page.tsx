@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Lock, LogIn, Loader2, Eye, EyeOff, User } from 'lucide-react';
+import { Lock, LogIn, Loader2, Eye, EyeOff, CreditCard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-    const [username, setUsername] = useState('');
+    const [employeeId, setEmployeeId] = useState('');
     const [password, setPassword] = useState('');
     const [visible, setVisible] = useState(false);
     const [error, setError] = useState('');
@@ -21,7 +21,7 @@ export default function LoginPage() {
             const res = await fetch('/api/auth', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ username, password })
+                body: JSON.stringify({ employeeId, password })
             });
 
             const data = await res.json();
@@ -55,13 +55,13 @@ export default function LoginPage() {
                         <div className="relative">
                             <input
                                 type="text"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                value={employeeId}
+                                onChange={(e) => setEmployeeId(e.target.value)}
                                 className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white pl-12 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder-slate-500"
-                                placeholder="Username"
+                                placeholder="Employee ID"
                                 autoFocus
                             />
-                            <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
+                            <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                         </div>
 
                         <div className="relative">
@@ -90,7 +90,7 @@ export default function LoginPage() {
 
                         <button
                             type="submit"
-                            disabled={loading || !username || !password}
+                            disabled={loading || !employeeId || !password}
                             className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:bg-indigo-600/50 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all mt-4"
                         >
                             {loading ? (

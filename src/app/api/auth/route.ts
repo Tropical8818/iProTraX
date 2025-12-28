@@ -6,22 +6,21 @@ import bcrypt from 'bcryptjs';
 // POST /api/auth - Login
 export async function POST(request: Request) {
     try {
-        const { username, password } = await request.json();
-        console.log('Login attempt:', username);
+        const { employeeId, password } = await request.json();
+        console.log('Login attempt ID:', employeeId);
         console.log('CWD:', process.cwd());
-        console.log('PASS:', password);
         // @ts-ignore
         console.log('DB URL:', process.env.DATABASE_URL);
 
-        if (!username || !password) {
+        if (!employeeId || !password) {
             return NextResponse.json(
-                { success: false, error: 'Username and password required' },
+                { success: false, error: 'Employee ID and password required' },
                 { status: 400 }
             );
         }
 
         const user = await prisma.user.findUnique({
-            where: { username }
+            where: { employeeId }
         });
 
         console.log('User found:', user);
