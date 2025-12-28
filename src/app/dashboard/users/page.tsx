@@ -29,9 +29,10 @@ export default function UserManagementPage() {
     const [newUserPassword, setNewUserPassword] = useState('');
     const [newUserRole, setNewUserRole] = useState('user');
 
-    // Edit User (Employee ID only for now)
+    // Edit User (Employee ID and Role)
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editEmployeeId, setEditEmployeeId] = useState('');
+    const [editRole, setEditRole] = useState('user');
 
     // Password Reset Form
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -132,7 +133,7 @@ export default function UserManagementPage() {
         }
     };
 
-    const handleUpdateEmployeeId = async (e: React.FormEvent) => {
+    const handleUpdateUserInfo = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedUser) return;
 
@@ -141,20 +142,23 @@ export default function UserManagementPage() {
             const res = await fetch(`/api/users/${selectedUser.id}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ employeeId: editEmployeeId })
+                body: JSON.stringify({
+                    employeeId: editEmployeeId,
+                    role: editRole
+                })
             });
 
             if (res.ok) {
-                setUsers(users.map(u => u.id === selectedUser.id ? { ...u, employeeId: editEmployeeId } : u));
+                setUsers(users.map(u => u.id === selectedUser.id ? { ...u, employeeId: editEmployeeId, role: editRole as any } : u));
                 setIsEditModalOpen(false);
                 setEditEmployeeId('');
-                setMsg({ type: 'success', text: 'Employee ID updated successfully' });
+                setMsg({ type: 'success', text: 'User info updated successfully' });
             } else {
                 const data = await res.json();
-                alert(data.error || 'Failed to update employee ID');
+                alert(data.error || 'Failed to update user info');
             }
         } catch {
-            alert('Error updating employee ID');
+            alert('Error updating user info');
         } finally {
             setActionLoading(false);
         }
@@ -292,9 +296,14 @@ export default function UserManagementPage() {
                                         )}
 
                                         <button
-                                            onClick={() => { setSelectedUser(user); setEditEmployeeId(user.employeeId || ''); setIsEditModalOpen(true); }}
+                                            onClick={() => {
+                                                setSelectedUser(user);
+                                                setEditEmployeeId(user.employeeId || '');
+                                                setEditRole(user.role);
+                                                setIsEditModalOpen(true);
+                                            }}
                                             className="text-slate-400 hover:text-purple-600 p-1"
-                                            title="Edit Employee ID"
+                                            title="Edit User Info"
                                         >
                                             <UserCog className="w-4 h-4" />
                                         </button>
@@ -409,7 +418,7 @@ export default function UserManagementPage() {
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
                         <h2 className="text-xl font-bold mb-4">Edit User Info</h2>
                         <p className="text-slate-500 mb-4">Updating <b>{selectedUser.username}</b></p>
-                        <form onSubmit={handleUpdateEmployeeId} className="space-y-4">
+                        <form onSubmit={handleUpdateUserInfo} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">Employee ID</label>
                                 <input
@@ -420,6 +429,19 @@ export default function UserManagementPage() {
                                     placeholder="e.g. EMP001"
                                 />
                                 <p className="text-[10px] text-slate-400 mt-1">This ID will be used by AI to protect privacy.</p>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                                <select
+                                    value={editRole}
+                                    onChange={e => setEditRole(e.target.value)}
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-black font-medium"
+                                >
+                                    <option value="user">User</option>
+                                    <option value="kiosk">Kiosk</option>
+                                    {currentUserRole === 'admin' && <option value="supervisor">Supervisor</option>}
+                                    {currentUserRole === 'admin' && <option value="admin">Admin</option>}
+                                </select>
                             </div>
                             <div className="flex justify-end gap-2 mt-6">
                                 <button
