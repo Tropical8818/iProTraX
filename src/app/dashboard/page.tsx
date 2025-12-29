@@ -652,6 +652,20 @@ export default function DashboardPage() {
             return !hasDate;
         });
 
+
+    // Calculate highlighted WOs based on search query (for Barcode Scanner)
+    const highlightedWos = useMemo(() => {
+        if (!searchQuery) return [];
+        const lowerQuery = searchQuery.toLowerCase();
+        return displayedOrders
+            .filter(o => {
+                const woId = o['WO ID']?.toString().toLowerCase() || '';
+                const pn = o['PN']?.toString().toLowerCase() || '';
+                return woId.includes(lowerQuery) || pn.includes(lowerQuery);
+            })
+            .map(o => o['WO ID']);
+    }, [displayedOrders, searchQuery]);
+
     return (
         <div className="min-h-screen bg-slate-100">
             {/* Header */}
@@ -1260,18 +1274,7 @@ export default function DashboardPage() {
                                 );
                             }
 
-                            // Calculate highlighted WOs based on search query (for Barcode Scanner)
-                            const highlightedWos = useMemo(() => {
-                                if (!searchQuery) return [];
-                                const lowerQuery = searchQuery.toLowerCase();
-                                return displayedOrders
-                                    .filter(o => {
-                                        const woId = o['WO ID']?.toString().toLowerCase() || '';
-                                        const pn = o['PN']?.toString().toLowerCase() || '';
-                                        return woId.includes(lowerQuery) || pn.includes(lowerQuery);
-                                    })
-                                    .map(o => o['WO ID']);
-                            }, [displayedOrders, searchQuery]);
+
 
                             const ordersToRender = displayedOrders.map(o => ({
                                 ...o,
