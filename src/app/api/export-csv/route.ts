@@ -20,7 +20,8 @@ export async function GET(request: Request) {
 
         const orders = await prisma.order.findMany({
             where,
-            orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: 'desc' },
+            include: { product: true }
         });
 
         // Generate CSV
@@ -56,7 +57,7 @@ export async function GET(request: Request) {
 
             return {
                 'WO ID': order.woId,
-                'Product Line': order.productId,
+                'Product Line': order.product.name,
                 'Created At': format(new Date(order.createdAt), 'yyyy-MM-dd HH:mm:ss'),
                 ...data
             };

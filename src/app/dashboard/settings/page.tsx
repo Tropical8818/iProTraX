@@ -773,7 +773,7 @@ export default function SettingsPage() {
                                                             updateProduct(updated);
                                                         }}
                                                         placeholder="e.g. 'This line produces stators. The key bottleneck is usually Winding. If QN is High, check the copper wire quality.'"
-                                                        className="w-full px-4 py-2.5 border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm font-medium bg-white shadow-sm min-h-[100px]"
+                                                        className="w-full px-4 py-2.5 border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm font-medium bg-white shadow-sm min-h-[100px] text-slate-900"
                                                     />
                                                     <p className="text-xs text-slate-500 mt-2">
                                                         Teach the AI about this product line. Add specific context, jargon, or rules you want it to know.
@@ -1065,11 +1065,11 @@ export default function SettingsPage() {
 
                                         <div className="border-t border-slate-100 pt-4">
                                             <p className="text-xs text-slate-500 mb-2">
-                                                Retention Policy: Keep 2 years of data.
+                                                Retention Policy: Keep 6 months of data.
                                             </p>
                                             <button
                                                 onClick={async () => {
-                                                    if (!confirm('WARNING: This will PERMANENTLY DELETE all data older than 2 years.\n\nAre you sure you want to proceed?')) return;
+                                                    if (!confirm('WARNING: This will PERMANENTLY DELETE all data older than 6 months.\n\nAre you sure you want to proceed?')) return;
 
                                                     try {
                                                         const res = await fetch('/api/cleanup', { method: 'POST' });
@@ -1305,7 +1305,7 @@ export default function SettingsPage() {
                                                 value={config.systemPrompt || ''}
                                                 onChange={(e) => setConfig({ ...config, systemPrompt: e.target.value })}
                                                 placeholder="Default system prompt..."
-                                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200 font-mono text-sm h-32"
+                                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200 font-mono text-sm h-32 text-slate-900"
                                             />
                                         </div>
 
@@ -1333,7 +1333,7 @@ export default function SettingsPage() {
                                                             setConfig({ ...config, rolePrompts: newRolePrompts });
                                                         }}
                                                         placeholder={`Default ${role} instructions...`}
-                                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200 font-mono text-xs h-32"
+                                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200 font-mono text-xs h-32 text-slate-900"
                                                     />
                                                 </div>
                                             ))}

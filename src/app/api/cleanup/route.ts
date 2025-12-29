@@ -10,14 +10,14 @@ export async function POST() {
     }
 
     try {
-        // Calculate date 2 years ago
-        const twoYearsAgo = new Date();
-        twoYearsAgo.setFullYear(twoYearsAgo.getFullYear() - 2);
+        // Calculate date 6 months ago
+        const cutOffDate = new Date();
+        cutOffDate.setMonth(cutOffDate.getMonth() - 6);
 
         const result = await prisma.order.deleteMany({
             where: {
                 createdAt: {
-                    lt: twoYearsAgo
+                    lt: cutOffDate
                 }
             }
         });
