@@ -338,11 +338,11 @@ export default function PlannerTable({
             else if (index === 3) {
                 widths[col] = woIdWidthStr;
             }
-            // 2nd Column (PN - Index 1)
+            // 2nd Column (PN - Index 1) - Must be visible
             else if (index === 1) {
-                // PN: Dynamic, min 25px, max 120px
+                // PN: Dynamic, min 60px (was 25), max 120px
                 const dynamicWidth = calculateColumnWidth(col, processedOrders, false);
-                const widthValue = Math.min(120, Math.max(25, parseInt(dynamicWidth)));
+                const widthValue = Math.min(120, Math.max(60, parseInt(dynamicWidth)));
                 widths[col] = `${widthValue}px`;
             }
             // All other columns (5, 6... - Index 4+)
@@ -390,11 +390,8 @@ export default function PlannerTable({
                         {effectiveDetailColumns.slice(1).map((col, i) => (
                             <td
                                 key={`sum-${col}`}
-                                style={{
-                                    width: columnWidths[col],
-                                    ...(i === 0 ? { position: 'sticky', left: columnWidths[effectiveDetailColumns[0]], zIndex: 30 } : {})
-                                }}
-                                className={`px-2 py-1 text-right font-medium text-slate-500 bg-slate-50 border-r border-slate-100 ${i === 0 ? 'border-r-2 border-r-slate-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]' : ''}`}
+                                style={{ width: columnWidths[col] }}
+                                className="px-2 py-1 text-right font-medium text-slate-500 bg-slate-50 border-r border-slate-100"
                             >
                                 {/* Only show P+WIP label in the last detail column to save space */}
                                 {i === effectiveDetailColumns.length - 2 ? 'P+WIP:' : ''}
@@ -422,11 +419,10 @@ export default function PlannerTable({
                                 key={col}
                                 style={{
                                     width: columnWidths[col],
-                                    maxWidth: columnWidths[col], // Force max width
-                                    ...(i === 1 ? { position: 'sticky', left: columnWidths[effectiveDetailColumns[0]], zIndex: 30 } : {})
+                                    maxWidth: columnWidths[col] // Force max width
                                 }}
                                 className={`px-0.5 py-1 font-semibold text-slate-700 cursor-pointer hover:bg-slate-200 border-r border-slate-200 bg-slate-100 ${i === 0 ? 'sticky left-0 z-30' : ''
-                                    } ${i === 1 ? 'border-r-2 border-r-slate-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]' : ''} ${i >= 5 ? 'text-center text-[9px]' : 'text-left text-[10px]'}`}
+                                    } ${i >= 5 ? 'text-center text-[9px]' : 'text-left text-[10px]'}`}
                                 onClick={() => handleSort(col)}
                                 title={col}
                             >
@@ -572,11 +568,8 @@ export default function PlannerTable({
                                 return (
                                     <td
                                         key={col}
-                                        style={{
-                                            width: columnWidths[col],
-                                            ...(colIdx === 1 ? { position: 'sticky', left: columnWidths[effectiveDetailColumns[0]], zIndex: 10 } : {})
-                                        }}
-                                        className={`px-1 py-0.5 text-slate-700 text-[9px] border-r border-slate-200 ${colIdx === 0 ? 'sticky left-0 bg-inherit z-10' : 'truncate'} ${colIdx === 1 ? 'bg-inherit border-r-2 border-r-slate-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]' : ''}`}
+                                        style={{ width: columnWidths[col] }}
+                                        className={`px-1 py-0.5 text-slate-700 text-[9px] border-r border-slate-200 ${colIdx === 0 ? 'sticky left-0 bg-inherit z-10' : 'truncate'}`}
                                         title={value}
                                     >
                                         {value}
