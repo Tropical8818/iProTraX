@@ -105,6 +105,30 @@ docker run -d \
 
 *Note: The `-v $(pwd)/prisma:/app/prisma` flag mounts your local `prisma` directory (containing `dev.db`) into the container.*
 
+### 3. Push to Docker Hub (Optional)
+If you want to deploy this image to a remote server, you need to push it to a container registry (like Docker Hub).
+
+1.  **Tag the image**:
+    Replace `yourusername` with your Docker Hub username.
+    ```bash
+    # Tang with version number (Recommended)
+    docker tag protracker yourusername/protracker:v6.3.0
+
+    # Tag as latest
+    docker tag protracker yourusername/protracker:latest
+    ```
+
+2.  **Login to Docker Hub**:
+    ```bash
+    docker login
+    ```
+
+3.  **Push the images**:
+    ```bash
+    docker push yourusername/protracker:v6.3.0
+    docker push yourusername/protracker:latest
+    ```
+
 ---
 
 ## Method 3: Docker Compose (Recommended for Trial & Production)
