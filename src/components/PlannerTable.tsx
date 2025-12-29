@@ -312,7 +312,14 @@ export default function PlannerTable({
 
         // Calculate widths for detail columns (each can have different width)
         effectiveDetailColumns.forEach(col => {
-            widths[col] = calculateColumnWidth(col, processedOrders, false);
+            const normalWidth = calculateColumnWidth(col, processedOrders, false);
+            // Remarks column should be half the normal width
+            if (col.toLowerCase().includes('remark')) {
+                const widthValue = parseInt(normalWidth);
+                widths[col] = `${Math.floor(widthValue / 2)}px`;
+            } else {
+                widths[col] = normalWidth;
+            }
         });
 
         // Calculate uniform width for ALL step columns
