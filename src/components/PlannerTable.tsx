@@ -369,14 +369,24 @@ export default function PlannerTable({
         });
 
         // Step columns: 'auto' so they share remaining space
-        // This guarantees NO SCROLLING (user requirement: "see last col without sliding")
-        // Dates might be tight, but layout is prioritized.
         orderedSteps.forEach(step => {
-            widths[step] = 'auto';
+            // If manual sync width is set, used THAT. Otherwise use auto.
+            if (manualStepWidth !== null) {
+                widths[step] = `${manualStepWidth}px`;
+            } else {
+                widths[step] = 'auto';
+            }
+        });
+
+        // Apply Manual Detail Overrides (User Dragged)
+        Object.keys(detailWidths).forEach(key => {
+            if (widths[key]) {
+                widths[key] = `${detailWidths[key]}px`;
+            }
         });
 
         return widths;
-    }, [effectiveDetailColumns, orderedSteps, processedOrders]);
+    }, [effectiveDetailColumns, orderedSteps, processedOrders, detailWidths, manualStepWidth]);
 
     return (
         <div className="overflow-auto bg-white rounded-xl shadow-sm border border-slate-200 max-h-[calc(100vh-200px)]">
@@ -448,6 +458,10 @@ export default function PlannerTable({
                                         <ArrowUpDown className="w-2 h-2 opacity-30 shrink-0" />
                                     )}
                                 </div>
+                                <div
+                                    className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-indigo-400/50 z-50 group-hover:bg-slate-300"
+                                    onMouseDown={(e) => handleResizeStart(e, col, false, columnWidths[col])}
+                                />
                             </th>
                         ))}
 
