@@ -351,11 +351,10 @@ export default function PlannerTable({
             }
         });
 
-        // FIXED width for ALL step columns - 35px each
-        // Step columns: 'auto' to absorb remaining space from w-full
-        // This ensures they expand to fit dates while details stay tight
+        // FIXED width for ALL step columns - 55px each
+        // 55px fits "30-Dec-24" well. w-auto ensures strict sizing.
         orderedSteps.forEach(step => {
-            widths[step] = 'auto';
+            widths[step] = '55px';
         });
 
         return widths;
@@ -363,7 +362,7 @@ export default function PlannerTable({
 
     return (
         <div className="overflow-auto bg-white rounded-xl shadow-sm border border-slate-200 max-h-[calc(100vh-200px)]">
-            <table className="text-xs border-collapse w-full table-fixed">
+            <table className="text-xs border-collapse w-auto table-fixed">
                 <colgroup>
                     {/* Detail Columns */}
                     {effectiveDetailColumns.map((col) => (
