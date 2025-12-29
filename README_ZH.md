@@ -83,8 +83,7 @@ src/
 
 ### 演示
 https://protracker.puppy101.dpdns.org/
-操作员用户名和密码: test/test-123
-主管用户名和密码: test1/test1-123
+咨询作者提供演示密码
 
 ---
 
