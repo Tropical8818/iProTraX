@@ -30,7 +30,10 @@
             }
         }
     ],
-    "activeProductId": "default",
+    "activeProductId": "product_1767004171711",
+    "USER_PASSWORD": "123456",
+    "SUPERVISOR_PASSWORD": "dhe-supervisor",
+    "ADMIN_PASSWORD": "dhe-admin",
     "includeSaturday": false,
     "includeSunday": false,
     "aiProvider": "openai",
