@@ -140,7 +140,7 @@ export default function PlannerTable({
         if (!val) return '';
         try {
             const date = new Date(val);
-            if (isValid(date)) return format(date, 'dd-MMM-yy');
+            if (isValid(date)) return format(date, 'dd-MMM');
         } catch { }
         return val.split('T')[0] || val;
     };
