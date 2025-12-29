@@ -98,6 +98,59 @@ export default function PlannerTable({
 }: Props) {
     const [sortKey, setSortKey] = useState<string | null>(null);
     const [sortDir, setSortDir] = useState<SortDir>(null);
+
+    // --- MANUAL RESIZING LOGIC ---
+    const [detailWidths, setDetailWidths] = useState<Record<string, number>>({});
+    const [manualStepWidth, setManualStepWidth] = useState<number | null>(null);
+    const [resizing, setResizing] = useState<{
+        colKey: string;
+        startX: number;
+        startWidth: number;
+        isStep: boolean;
+    } | null>(null);
+
+    useEffect(() => {
+        if (!resizing) return;
+
+        const handleMouseMove = (e: MouseEvent) => {
+            const diff = e.clientX - resizing.startX;
+            const newWidth = Math.max(20, resizing.startWidth + diff); // Min 20px
+
+            if (resizing.isStep) {
+                setManualStepWidth(newWidth); // Synchronized!
+            } else {
+                setDetailWidths(prev => ({ ...prev, [resizing.colKey]: newWidth }));
+            }
+        };
+
+        const handleMouseUp = () => {
+            setResizing(null);
+            document.body.style.cursor = 'default';
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+        document.body.style.cursor = 'col-resize';
+
+        return () => {
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+            document.body.style.cursor = 'default';
+        };
+    }, [resizing]);
+
+    const handleResizeStart = (e: React.MouseEvent, colKey: string, isStep: boolean, currentWidthStr: string) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const startWidth = parseInt(currentWidthStr) || (isStep ? 50 : 70);
+        setResizing({
+            colKey,
+            startX: e.clientX,
+            startWidth,
+            isStep
+        });
+    };
+    // -----------------------------
     const [filters, setFilters] = useState<Record<string, string>>({});
 
     // Calculate optimal column width based on content length
@@ -517,6 +570,10 @@ export default function PlannerTable({
                                             <span className="text-amber-600" title="Empty or status">{pendingCount}</span>
                                         </div>
                                     </div>
+                                    <div
+                                        className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-indigo-400/50 z-50 group-hover:bg-slate-300 pointer-events-auto"
+                                        onMouseDown={(e) => handleResizeStart(e, step, true, columnWidths[step])}
+                                    />
                                 </th>
                             );
                         })}
