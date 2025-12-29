@@ -2,7 +2,7 @@
 
 [🇺🇸 English](README.md) | [🇨🇳 简体中文](README_ZH.md)
 
-> 🤖 **V6.1.3 New Features**: Employee ID Login, Super Admin Role Hierarchy, Employee ID Privacy Protection, and Enhanced User Management.
+> 🤖 **V6.3.0 New Features**: **Super Edit Mode** for Admins/Supervisors, Enhanced Completion Logic (N/A = Done), and Manual Column Resizing.
 
 ## 🚀 Quick Start
 
@@ -70,6 +70,11 @@ mailto: jkdb0g@whatifthenhow.com
 ---
 ## 📝 Changelog
 
+### V6.3.0
+- ✏️ **Super Edit Mode**: Admins/Supervisors can now directly edit Detail Columns (WO ID, PN, etc.) inline.
+- ✅ **Enhanced Completion**: Marking the final step as "N/A" now correctly treats the order as completed.
+- 📐 **Manual Column Resizing**: Users can drag column headers to adjust width, with auto-save preference.
+- 🛡️ **ECD Protection**: Estimated Completion Date column remains locked in Super Edit mode to preserve calculation integrity.
 ### V6.1.3
 - 🔑 **Employee ID Login**: Unified login system using Employee IDs instead of usernames.
 - 👑 **Super Admin Hierarchy**: Only Super Admin can create/promote other admins.
