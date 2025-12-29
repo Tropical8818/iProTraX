@@ -1353,7 +1353,33 @@ export default function DashboardPage() {
                                             } : undefined}
                                             eraseMode={eraseMode}
                                             onErase={handleErase}
-                                            highlightedWos={[]}
+                                            highlightedWos={highlightedWos} // Pass highlighted WOs
+                                            role={role}
+                                            onUpdateDetail={async (woId, field, value) => {
+                                                try {
+                                                    const res = await fetch('/api/orders/update-detail', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ woId, field, value, productId: selectedProductId })
+                                                    });
+
+                                                    if (res.ok) {
+                                                        // Optimistic update
+                                                        setOrders(prev => prev.map(o => {
+                                                            if (o['WO ID'] === woId) {
+                                                                return { ...o, [field]: value };
+                                                            }
+                                                            return o;
+                                                        }));
+                                                    } else {
+                                                        alert('Failed to update detail');
+                                                        fetchOrders();
+                                                    }
+                                                } catch (e) {
+                                                    console.error(e);
+                                                    alert('Error updating detail');
+                                                }
+                                            }}
                                         />
                                     </div>
                                 </>
