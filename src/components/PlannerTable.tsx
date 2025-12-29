@@ -642,7 +642,23 @@ export default function PlannerTable({
                                             className="px-1 py-0.5 whitespace-nowrap text-[9px] border-r border-slate-200 text-center"
                                             style={{ ...style, width: columnWidths[col] }}
                                         >
-                                            {formatDate(value)}
+                                            {isSuperEditing && onUpdateDetail ? (
+                                                <input
+                                                    type="text"
+                                                    defaultValue={value}
+                                                    className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                    onBlur={(e) => {
+                                                        const newVal = e.target.value.trim();
+                                                        if (newVal !== value) {
+                                                            onUpdateDetail(order['WO ID'], col, newVal);
+                                                        }
+                                                    }}
+                                                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                            ) : (
+                                                formatDate(value)
+                                            )}
                                         </td>
                                     );
                                 }
@@ -651,7 +667,23 @@ export default function PlannerTable({
                                 if (colUpper.includes('PRIORITY')) {
                                     return (
                                         <td key={col} className="px-1 py-0.5 text-center text-[9px] border-r border-slate-200" style={{ ...getPriorityStyle(value), width: columnWidths[col] }}>
-                                            {value}
+                                            {isSuperEditing && onUpdateDetail ? (
+                                                <input
+                                                    type="text"
+                                                    defaultValue={value}
+                                                    className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                    onBlur={(e) => {
+                                                        const newVal = e.target.value.trim();
+                                                        if (newVal !== value) {
+                                                            onUpdateDetail(order['WO ID'], col, newVal);
+                                                        }
+                                                    }}
+                                                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                            ) : (
+                                                value
+                                            )}
                                         </td>
                                     );
                                 }
@@ -660,7 +692,23 @@ export default function PlannerTable({
                                 if (col === 'Description') {
                                     return (
                                         <td key={col} style={{ width: columnWidths[col] }} className="px-1 py-0.5 truncate text-slate-700 text-[9px] border-r border-slate-200" title={value}>
-                                            {value}
+                                            {isSuperEditing && onUpdateDetail ? (
+                                                <input
+                                                    type="text"
+                                                    defaultValue={value}
+                                                    className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                    onBlur={(e) => {
+                                                        const newVal = e.target.value.trim();
+                                                        if (newVal !== value) {
+                                                            onUpdateDetail(order['WO ID'], col, newVal);
+                                                        }
+                                                    }}
+                                                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                            ) : (
+                                                value
+                                            )}
                                         </td>
                                     );
                                 }
