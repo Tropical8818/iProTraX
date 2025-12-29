@@ -390,8 +390,11 @@ export default function PlannerTable({
                         {effectiveDetailColumns.slice(1).map((col, i) => (
                             <td
                                 key={`sum-${col}`}
-                                style={{ width: columnWidths[col] }}
-                                className="px-2 py-1 text-right font-medium text-slate-500 bg-slate-50 border-r border-slate-100"
+                                style={{
+                                    width: columnWidths[col],
+                                    ...(i === 0 ? { position: 'sticky', left: columnWidths[effectiveDetailColumns[0]], zIndex: 30 } : {})
+                                }}
+                                className={`px-2 py-1 text-right font-medium text-slate-500 bg-slate-50 border-r border-slate-100 ${i === 0 ? 'border-r-2 border-r-slate-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]' : ''}`}
                             >
                                 {/* Only show P+WIP label in the last detail column to save space */}
                                 {i === effectiveDetailColumns.length - 2 ? 'P+WIP:' : ''}
@@ -419,10 +422,11 @@ export default function PlannerTable({
                                 key={col}
                                 style={{
                                     width: columnWidths[col],
-                                    maxWidth: columnWidths[col] // Force max width
+                                    maxWidth: columnWidths[col], // Force max width
+                                    ...(i === 1 ? { position: 'sticky', left: columnWidths[effectiveDetailColumns[0]], zIndex: 30 } : {})
                                 }}
                                 className={`px-0.5 py-1 font-semibold text-slate-700 cursor-pointer hover:bg-slate-200 border-r border-slate-200 bg-slate-100 ${i === 0 ? 'sticky left-0 z-30' : ''
-                                    } ${i >= 5 ? 'text-center text-[9px]' : 'text-left text-[10px]'}`}
+                                    } ${i === 1 ? 'border-r-2 border-r-slate-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]' : ''} ${i >= 5 ? 'text-center text-[9px]' : 'text-left text-[10px]'}`}
                                 onClick={() => handleSort(col)}
                                 title={col}
                             >
@@ -568,8 +572,11 @@ export default function PlannerTable({
                                 return (
                                     <td
                                         key={col}
-                                        style={{ width: columnWidths[col] }}
-                                        className={`px-1 py-0.5 text-slate-700 text-[9px] border-r border-slate-200 ${colIdx === 0 ? 'sticky left-0 bg-inherit z-10' : 'truncate'}`}
+                                        style={{
+                                            width: columnWidths[col],
+                                            ...(colIdx === 1 ? { position: 'sticky', left: columnWidths[effectiveDetailColumns[0]], zIndex: 10 } : {})
+                                        }}
+                                        className={`px-1 py-0.5 text-slate-700 text-[9px] border-r border-slate-200 ${colIdx === 0 ? 'sticky left-0 bg-inherit z-10' : 'truncate'} ${colIdx === 1 ? 'bg-inherit border-r-2 border-r-slate-300 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]' : ''}`}
                                         title={value}
                                     >
                                         {value}
