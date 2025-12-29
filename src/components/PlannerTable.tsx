@@ -307,53 +307,33 @@ export default function PlannerTable({
     const columns = [...effectiveDetailColumns, ...orderedSteps];
 
     // Memoize column widths for performance
+    // AGGRESSIVE FIXED WIDTHS - ensure all steps visible without scrolling
     const columnWidths = useMemo(() => {
         const widths: Record<string, string> = {};
 
-        // Calculate widths for detail columns
-        // WO ID and PN: must show full content
-        // Description and Remarks: 2x the width of WO ID/PN
-        // Other columns: minimal width
-
-        // First pass: calculate WO ID width (will be used as base)
-        const woIdWidth = calculateColumnWidth('WO ID', processedOrders, false);
-        const baseWidth = parseInt(woIdWidth);
-
-        effectiveDetailColumns.forEach((col, index) => {
+        // FIXED widths for detail columns - minimal to maximize step space
+        effectiveDetailColumns.forEach((col) => {
             if (col === 'WO ID') {
-                // WO ID - dynamic, must see full content
-                widths[col] = woIdWidth;
+                widths[col] = '70px';  // Must see full WO ID
             } else if (col === 'PN') {
-                // PN - dynamic, must see full content
-                widths[col] = calculateColumnWidth(col, processedOrders, false);
-            } else if (col === 'Description' || col === 'Remarks') {
-                // Description and Remarks: fixed 100px (2x base ~50px)
-                widths[col] = '100px';
+                widths[col] = '50px';  // Compact PN
+            } else if (col === 'Description') {
+                widths[col] = '60px';  // Truncated description
+            } else if (col === 'Remarks') {
+                widths[col] = '60px';  // Truncated remarks
             } else {
-                // All other detail columns - minimal width
-                widths[col] = '25px';
+                widths[col] = '20px';  // All other columns minimal
             }
         });
 
-        // Calculate uniform width for ALL step columns
-        // Find the maximum required width across all steps
-        let maxStepWidth = 30; // Reduced minimum width
+        // FIXED width for ALL step columns - 35px each
+        // 23 steps × 35px = 805px + ~260px details = ~1065px (fits in 1366px screen)
         orderedSteps.forEach(step => {
-            const sampleOrders = processedOrders.slice(0, Math.min(20, processedOrders.length));
-            const contents = sampleOrders.map(o => String(o[step] || '')).filter(c => c);
-            const maxLength = Math.max(step.length, ...contents.map(c => c.length));
-            const requiredWidth = Math.max(30, Math.min(40, maxLength * 5)); // Max 40px, min 30px
-            maxStepWidth = Math.max(maxStepWidth, requiredWidth);
-        });
-
-        // Apply the same uniform width to all step columns
-        const uniformStepWidth = `${maxStepWidth}px`;
-        orderedSteps.forEach(step => {
-            widths[step] = uniformStepWidth;
+            widths[step] = '35px';
         });
 
         return widths;
-    }, [effectiveDetailColumns, orderedSteps, processedOrders]);
+    }, [effectiveDetailColumns, orderedSteps]);
 
     return (
         <div className="overflow-auto bg-white rounded-xl shadow-sm border border-slate-200 max-h-[calc(100vh-200px)]">
