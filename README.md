@@ -1,4 +1,4 @@
-# ProTracker - The Agile Manufacturing Middleware
+# ProTracker - The Agile Manufacturing Collaboration Platform
 > Bridging the gap between rigid ERP systems and the dynamic shop floor.
 
 [🇺🇸 English](README.md) | [🇨🇳 简体中文](README_ZH.md)
@@ -19,7 +19,7 @@ In modern high-mix manufacturing, relying solely on heavy ERP systems like **SAP
 ---
 
 ## 💡 The Solution: ProTracker
-ProTracker is not a replacement for SAP. It is the **Agile Middleware Layer** that sits between your heavy ERP and your agile teams.
+ProTracker is not a replacement for SAP. It is the **Agile Collaboration Layer** that sits between your heavy ERP and your agile teams.
 
 It provides a lightweight, real-time visual interface that:
 *   **Visualizes the Invisible**: Tracks the micro-steps and real-time status that SAP misses.
