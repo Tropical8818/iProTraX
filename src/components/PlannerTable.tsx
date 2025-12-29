@@ -673,7 +673,7 @@ export default function PlannerTable({
                                         className={`px-1 py-0.5 text-slate-700 text-[9px] border-r border-slate-200 ${colIdx === 0 ? 'sticky left-0 bg-inherit z-10' : 'truncate'}`}
                                         title={value}
                                     >
-                                        {isSuperEditing && onUpdateDetail ? (
+                                        {isSuperEditing && onUpdateDetail && col !== 'ECD' ? (
                                             <input
                                                 type="text"
                                                 defaultValue={value}
