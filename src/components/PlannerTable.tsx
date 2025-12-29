@@ -362,7 +362,7 @@ export default function PlannerTable({
 
     return (
         <div className="overflow-auto bg-white rounded-xl shadow-sm border border-slate-200 max-h-[calc(100vh-200px)]">
-            <table className="text-xs border-collapse w-full table-fixed">
+            <table className="text-xs border-collapse w-auto table-fixed">
                 <colgroup>
                     {/* Detail Columns */}
                     {effectiveDetailColumns.map((col) => (
