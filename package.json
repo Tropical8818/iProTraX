@@ -5,8 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "watch": "ts-node scripts/watch-imports.ts",
-    "dev:watch": "concurrently \"npm run dev\" \"npm run watch\"",
+    "watcher": "npx tsx scripts/watcher.ts",
+    "dev:watch": "concurrently \"npm run dev\" \"npm run watcher\"",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
