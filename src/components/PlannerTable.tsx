@@ -100,6 +100,30 @@ export default function PlannerTable({
     const [sortDir, setSortDir] = useState<SortDir>(null);
     const [filters, setFilters] = useState<Record<string, string>>({});
 
+    // Calculate optimal column width based on content length
+    const calculateColumnWidth = (col: string, orders: Order[], isStep: boolean): string => {
+        // Sample content from first 20 orders for performance
+        const sampleOrders = orders.slice(0, Math.min(20, orders.length));
+        const contents = sampleOrders.map(o => String(o[col] || '')).filter(c => c);
+
+        // Get max content length (including header)
+        const maxLength = Math.max(
+            col.length,
+            ...contents.map(c => c.length)
+        );
+
+        // Different sizing strategies for steps vs detail columns
+        if (isStep) {
+            // Step columns: compact sizing (36-80px)
+            const baseWidth = Math.max(36, Math.min(80, maxLength * 8));
+            return `${baseWidth}px`;
+        } else {
+            // Detail columns: more spacious (70-200px)
+            const baseWidth = Math.max(70, Math.min(200, maxLength * 10));
+            return `${baseWidth}px`;
+        }
+    };
+
     const handleSort = (key: string) => {
         if (sortKey === key) {
             if (sortDir === 'asc') setSortDir('desc');
@@ -282,6 +306,35 @@ export default function PlannerTable({
 
     const columns = [...effectiveDetailColumns, ...orderedSteps];
 
+    // Memoize column widths for performance
+    const columnWidths = useMemo(() => {
+        const widths: Record<string, string> = {};
+
+        // Calculate widths for detail columns (each can have different width)
+        effectiveDetailColumns.forEach(col => {
+            widths[col] = calculateColumnWidth(col, processedOrders, false);
+        });
+
+        // Calculate uniform width for ALL step columns
+        // Find the maximum required width across all steps
+        let maxStepWidth = 36; // Minimum width
+        orderedSteps.forEach(step => {
+            const sampleOrders = processedOrders.slice(0, Math.min(20, processedOrders.length));
+            const contents = sampleOrders.map(o => String(o[step] || '')).filter(c => c);
+            const maxLength = Math.max(step.length, ...contents.map(c => c.length));
+            const requiredWidth = Math.max(36, Math.min(80, maxLength * 8));
+            maxStepWidth = Math.max(maxStepWidth, requiredWidth);
+        });
+
+        // Apply the same uniform width to all step columns
+        const uniformStepWidth = `${maxStepWidth}px`;
+        orderedSteps.forEach(step => {
+            widths[step] = uniformStepWidth;
+        });
+
+        return widths;
+    }, [effectiveDetailColumns, orderedSteps, processedOrders]);
+
     return (
         <div className="overflow-auto bg-white rounded-xl shadow-sm border border-slate-200 max-h-[calc(100vh-200px)]">
             <table className="text-xs border-collapse w-full">
@@ -314,7 +367,11 @@ export default function PlannerTable({
                         {effectiveDetailColumns.map((col, i) => (
                             <th
                                 key={col}
-                                className={`px-0.5 py-1 font-semibold text-slate-700 cursor-pointer hover:bg-slate-200 whitespace-nowrap border-r border-slate-200 bg-slate-100 ${i === 0 ? 'sticky left-0 z-30 min-w-[70px]' : ''
+                                style={{
+                                    width: columnWidths[col],
+                                    minWidth: i === 0 ? '70px' : undefined
+                                }}
+                                className={`px-0.5 py-1 font-semibold text-slate-700 cursor-pointer hover:bg-slate-200 whitespace-nowrap border-r border-slate-200 bg-slate-100 ${i === 0 ? 'sticky left-0 z-30' : ''
                                     } ${i >= 5 ? 'text-center text-[9px]' : 'text-left text-[10px]'}`}
                                 onClick={() => handleSort(col)}
                                 title={col}
@@ -349,7 +406,8 @@ export default function PlannerTable({
                             return (
                                 <th
                                     key={step}
-                                    className={`px-0.5 py-1 text-[10px] font-semibold text-slate-600 bg-slate-50 border-r border-slate-200 min-w-[36px] max-w-[50px]
+                                    style={{ width: columnWidths[step] }}
+                                    className={`px-0.5 py-1 text-[10px] font-semibold text-slate-600 bg-slate-50 border-r border-slate-200
                                         ${isBulkP ? 'cursor-pointer hover:bg-blue-100 ring-inset hover:ring-2 hover:ring-blue-300' : ''}
                                         ${isBulkNA ? 'cursor-pointer hover:bg-slate-200 ring-inset hover:ring-2 hover:ring-slate-400' : ''}
                                         ${isBulkHold ? 'cursor-pointer hover:bg-orange-100 ring-inset hover:ring-2 hover:ring-orange-300' : ''}
@@ -415,7 +473,8 @@ export default function PlannerTable({
                                     return (
                                         <td
                                             key={col}
-                                            className="px-1 py-0.5 sticky left-0 bg-inherit z-10 cursor-pointer text-indigo-600 hover:underline font-medium text-[10px] min-w-[70px] border-r border-slate-200"
+                                            style={{ width: columnWidths[col], minWidth: '70px' }}
+                                            className="px-1 py-0.5 sticky left-0 bg-inherit z-10 cursor-pointer text-indigo-600 hover:underline font-medium text-[10px] border-r border-slate-200"
                                             onClick={() => onNavigate(value)}
                                         >
                                             {value}
@@ -449,7 +508,7 @@ export default function PlannerTable({
                                 // Description - With tooltip
                                 if (col === 'Description') {
                                     return (
-                                        <td key={col} className="px-1 py-0.5 truncate max-w-[100px] text-slate-700 text-[9px] border-r border-slate-200" title={value}>
+                                        <td key={col} style={{ width: columnWidths[col] }} className="px-1 py-0.5 truncate text-slate-700 text-[9px] border-r border-slate-200" title={value}>
                                             {value}
                                         </td>
                                     );
@@ -459,7 +518,8 @@ export default function PlannerTable({
                                 return (
                                     <td
                                         key={col}
-                                        className={`px-1 py-0.5 text-slate-700 text-[9px] border-r border-slate-200 ${colIdx === 0 ? 'sticky left-0 bg-inherit z-10 min-w-[70px]' : 'truncate max-w-[80px]'}`}
+                                        style={{ width: columnWidths[col] }}
+                                        className={`px-1 py-0.5 text-slate-700 text-[9px] border-r border-slate-200 ${colIdx === 0 ? 'sticky left-0 bg-inherit z-10' : 'truncate'}`}
                                         title={value}
                                     >
                                         {value}
@@ -524,7 +584,7 @@ export default function PlannerTable({
                                                                         ? 'cursor-pointer hover:bg-green-100 hover:ring-2 hover:ring-green-300'
                                                                         : ''
                                             }`}
-                                        style={getCellStyle(cellValue)}
+                                        style={{ width: columnWidths[step], ...getCellStyle(cellValue) }}
                                         onClick={() => {
                                             if (isEraseClickable && onErase) {
                                                 onErase(order['WO ID'], step);
