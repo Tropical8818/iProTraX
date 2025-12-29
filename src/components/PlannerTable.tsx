@@ -361,6 +361,16 @@ export default function PlannerTable({
     return (
         <div className="overflow-auto bg-white rounded-xl shadow-sm border border-slate-200 max-h-[calc(100vh-200px)]">
             <table className="text-xs border-collapse w-full table-fixed">
+                <colgroup>
+                    {/* Detail Columns */}
+                    {effectiveDetailColumns.map((col) => (
+                        <col key={col} style={{ width: columnWidths[col] }} />
+                    ))}
+                    {/* Step Columns */}
+                    {orderedSteps.map((step) => (
+                        <col key={step} style={{ width: columnWidths[step] }} />
+                    ))}
+                </colgroup>
                 <thead className="sticky top-0 z-20 bg-white">
                     {/* Summary Row */}
                     <tr className="bg-slate-50 border-b border-slate-200">
