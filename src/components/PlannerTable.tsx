@@ -311,21 +311,17 @@ export default function PlannerTable({
         const widths: Record<string, string> = {};
 
         // Calculate widths for detail columns
-        // Priority: Keep first 2 columns (WO ID, PN) dynamic, rest use small fixed widths
+        // EXTREME COMPRESSION: Minimize detail columns to maximize step visibility
         effectiveDetailColumns.forEach((col, index) => {
             if (index === 0) {
-                // First column (WO ID) - dynamic, minimum 70px, max 80px
-                const dynamicWidth = calculateColumnWidth(col, processedOrders, false);
-                const widthValue = Math.min(80, Math.max(70, parseInt(dynamicWidth)));
-                widths[col] = `${widthValue}px`;
+                // First column (WO ID) - fixed 70px
+                widths[col] = '70px';
             } else if (index === 1) {
-                // Second column (PN) - dynamic, max 80px
-                const dynamicWidth = calculateColumnWidth(col, processedOrders, false);
-                const widthValue = Math.min(80, parseInt(dynamicWidth));
-                widths[col] = `${widthValue}px`;
+                // Second column (PN) - fixed 70px
+                widths[col] = '70px';
             } else {
-                // All other detail columns - use very compact width to maximize space for steps
-                widths[col] = '30px';  // Further reduced from 40px to 30px
+                // All other detail columns - minimal width
+                widths[col] = '25px';  // Extreme compression from 30px to 25px
             }
         });
 
