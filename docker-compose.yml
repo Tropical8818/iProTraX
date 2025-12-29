@@ -18,6 +18,7 @@ services:
       - ./prisma:/app/prisma
       # Optional: Persist uploaded files if you implement local file storage later
       # - ./uploads:/app/uploads
+      - ./data:/app/data
     networks:
       - tracker-network
 

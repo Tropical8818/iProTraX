@@ -54,6 +54,12 @@ interface Product {
 
 
 export default function DashboardPage() {
+    const [currentDate, setCurrentDate] = useState('');
+
+    useEffect(() => {
+        setCurrentDate(new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }));
+    }, []);
+
     const [orders, setOrders] = useState<Order[]>([]);
     const [steps, setSteps] = useState<string[]>([]);
     const [detailColumns, setDetailColumns] = useState<string[]>([]);
@@ -658,7 +664,7 @@ export default function DashboardPage() {
                         </div>
                         <h1 className="text-lg font-bold text-slate-900">ProTracker <span className="text-indigo-600 text-xs ml-1">V6.1.4</span></h1>
                         <div className="hidden sm:block text-sm text-slate-500 border-l border-slate-200 pl-3">
-                            {new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                            {currentDate}
                         </div>
                     </div>
 

@@ -12,9 +12,12 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
 
+    const [successMsg, setSuccessMsg] = useState('');
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
+        setSuccessMsg('');
         setLoading(true);
 
         try {
@@ -27,14 +30,17 @@ export default function LoginPage() {
             const data = await res.json();
 
             if (data.success) {
-                // Use window.location for full page reload to ensure server components read the new cookie
-                window.location.href = '/dashboard';
+                setSuccessMsg('Login successful! Redirecting...');
+                // Delay to let user see the outcome
+                setTimeout(() => {
+                    window.location.href = '/dashboard';
+                }, 1000);
             } else {
                 setError(data.error || 'Invalid credentials');
+                setLoading(false);
             }
         } catch {
             setError('Login failed. Please try again.');
-        } finally {
             setLoading(false);
         }
     };
@@ -54,6 +60,8 @@ export default function LoginPage() {
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="relative">
                             <input
+                                id="employeeId"
+                                name="employeeId"
                                 type="text"
                                 value={employeeId}
                                 onChange={(e) => setEmployeeId(e.target.value)}
@@ -66,6 +74,8 @@ export default function LoginPage() {
 
                         <div className="relative">
                             <input
+                                id="password"
+                                name="password"
                                 type={visible ? 'text' : 'password'}
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -85,6 +95,12 @@ export default function LoginPage() {
                         {error && (
                             <div className="p-3 bg-red-500/20 border border-red-500/30 rounded-xl text-red-300 text-sm text-center">
                                 {error}
+                            </div>
+                        )}
+
+                        {successMsg && (
+                            <div className="p-3 bg-green-500/20 border border-green-500/30 rounded-xl text-green-300 text-sm text-center">
+                                {successMsg}
                             </div>
                         )}
 

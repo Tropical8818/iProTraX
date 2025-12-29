@@ -57,5 +57,9 @@ echo "✅ Database ready!"
 echo "🌐 Starting ProTracker..."
 echo ""
 
+# Start the file watcher in the background
+echo "👀 Starting file watcher..."
+npm run watcher &
+
 # Start the Next.js server
 exec node server.js

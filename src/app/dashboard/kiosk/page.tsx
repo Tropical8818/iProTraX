@@ -629,8 +629,7 @@ export default function KioskPage() {
                             <button
                                 onClick={async () => {
                                     await fetch('/api/auth', { method: 'DELETE' });
-                                    router.push('/login');
-                                    router.refresh();
+                                    window.location.href = '/login';
                                 }}
                                 className="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 py-4 rounded-2xl text-lg font-bold uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-3"
                             >

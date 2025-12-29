@@ -19,6 +19,7 @@ export async function GET() {
             return {
                 id: p.id,
                 name: p.name,
+                watchFolder: p.watchFolder, // Include the column value
                 ...config
             };
         });
@@ -90,7 +91,7 @@ export async function POST(request: Request) {
 
             // 2. Upsert incoming products
             for (const p of body.products) {
-                const { id, name, ...config } = p;
+                const { id, name, watchFolder, ...config } = p;
 
                 // Helper to generate slug
                 const baseSlug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
@@ -102,12 +103,14 @@ export async function POST(request: Request) {
                         where: { id },
                         update: {
                             name,
+                            watchFolder, // Update the column
                             config: JSON.stringify(config)
                         },
                         create: {
                             id,
                             name,
                             slug, // Ensure slug is unique
+                            watchFolder, // Set the column
                             config: JSON.stringify(config),
                             isActive: false // Default, active state handled below
                         }

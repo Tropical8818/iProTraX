@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-    const sessionCookie = request.cookies.get('pt_session');
+    const sessionCookie = request.cookies.get('protracker_sess');
 
     if (!sessionCookie) {
         return NextResponse.next();

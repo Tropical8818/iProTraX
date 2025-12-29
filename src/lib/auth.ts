@@ -2,7 +2,7 @@ import { cookies } from 'next/headers';
 import { prisma } from './prisma';
 import bcrypt from 'bcryptjs';
 
-const SESSION_COOKIE = 'pt_session';
+const SESSION_COOKIE = 'protracker_sess';
 const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 const KIOSK_SESSION_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days
 
@@ -25,9 +25,10 @@ export async function createSession(userId: string, username: string, role: stri
     };
 
     const cookieStore = await cookies();
+
     cookieStore.set(SESSION_COOKIE, JSON.stringify(session), {
         httpOnly: true,
-        secure: false, // Allow HTTP for reverse proxy compatibility
+        secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: duration / 1000,
         path: '/'

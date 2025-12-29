@@ -58,7 +58,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modul
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/bcryptjs ./node_modules/bcryptjs
 
 # Copy bootstrap script
-COPY --chown=nextjs:nodejs scripts/docker-bootstrap.sh ./scripts/docker-bootstrap.sh
+# Copy scripts directory
+COPY --chown=nextjs:nodejs scripts ./scripts
 USER root
 RUN chmod +x ./scripts/docker-bootstrap.sh
 USER nextjs
