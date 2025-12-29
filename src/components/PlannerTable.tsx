@@ -515,7 +515,7 @@ export default function PlannerTable({
                                         <td
                                             key={col}
                                             className="px-1 py-0.5 whitespace-nowrap text-[9px] border-r border-slate-200 text-center"
-                                            style={style}
+                                            style={{ ...style, width: columnWidths[col] }}
                                         >
                                             {formatDate(value)}
                                         </td>
@@ -525,7 +525,8 @@ export default function PlannerTable({
                                 // Priority - Fuzzy match "PRIORITY"
                                 if (colUpper.includes('PRIORITY')) {
                                     return (
-                                        <td key={col} className="px-1 py-0.5 text-center text-[9px] border-r border-slate-200" style={getPriorityStyle(value)}>
+                                    return (
+                                        <td key={col} className="px-1 py-0.5 text-center text-[9px] border-r border-slate-200" style={{ ...getPriorityStyle(value), width: columnWidths[col] }}>
                                             {value}
                                         </td>
                                     );
