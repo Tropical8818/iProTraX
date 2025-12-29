@@ -311,29 +311,37 @@ export default function PlannerTable({
     const columnWidths = useMemo(() => {
         const widths: Record<string, string> = {};
 
+        // Calculate base WO ID width first as it's the reference for others
+        const woIdRawWidth = parseInt(calculateColumnWidth('WO ID', processedOrders, false));
+        // WO ID: Dynamic, min 60px, max 150px (increased from 120px) to see full content
+        const woIdWidthVal = Math.min(150, Math.max(60, woIdRawWidth));
+        const woIdWidthStr = `${woIdWidthVal}px`;
+
         // FIXED widths for detail columns - minimal to maximize step space
         effectiveDetailColumns.forEach((col) => {
             if (col === 'WO ID') {
-                // WO ID: Dynamic, min 80px, max 120px - ensure full visibility
-                const dynamicWidth = calculateColumnWidth(col, processedOrders, false);
-                const widthValue = Math.min(120, Math.max(80, parseInt(dynamicWidth)));
-                widths[col] = `${widthValue}px`;
+                widths[col] = woIdWidthStr;
             } else if (col === 'PN') {
-                // PN: Dynamic, min 60px, max 120px - ensure full visibility
+                // PN: Dynamic, min 60px, max 120px
                 const dynamicWidth = calculateColumnWidth(col, processedOrders, false);
                 const widthValue = Math.min(120, Math.max(60, parseInt(dynamicWidth)));
                 widths[col] = `${widthValue}px`;
-            } else if (col === 'Description') {
-                widths[col] = '40px';  // Truncated description
-            } else if (col === 'Remarks') {
-                widths[col] = '40px';  // Truncated remarks
+            } else if (col === 'Description' || col === 'Remarks') {
+                // Description and Remarks: 1.5x of WO ID width
+                // Ex: if WO ID is 80px, these will be 120px
+                const widthVal = Math.floor(woIdWidthVal * 1.5);
+                widths[col] = `${widthVal}px`;
             } else {
-                widths[col] = '20px';  // All other columns minimal
+                // Other columns (5, 6, 7...) - Compact dynamic
+                // Min 30px, Max 60px - just enough to see content
+                const dynamicWidth = calculateColumnWidth(col, processedOrders, false);
+                const widthValue = Math.min(60, Math.max(30, parseInt(dynamicWidth)));
+                widths[col] = `${widthValue}px`;
             }
         });
 
         // FIXED width for ALL step columns - 35px each
-        // 23 steps × 35px = 805px + ~260px details = ~1065px (fits in 1366px screen)
+        // 23 steps × 35px = 805px + ~400px details = ~1200px (fits in 1366px screen)
         orderedSteps.forEach(step => {
             widths[step] = '35px';
         });
