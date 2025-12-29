@@ -27,8 +27,8 @@ export default function LoginPage() {
             const data = await res.json();
 
             if (data.success) {
-                router.push('/dashboard');
-                router.refresh();
+                // Use window.location for full page reload to ensure server components read the new cookie
+                window.location.href = '/dashboard';
             } else {
                 setError(data.error || 'Invalid credentials');
             }
