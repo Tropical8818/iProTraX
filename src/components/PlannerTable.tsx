@@ -327,11 +327,16 @@ export default function PlannerTable({
             if (index === 0) {
                 widths[col] = woIdWidthStr;
             }
-            // 3rd & 4th Columns (Description/Remarks) - Index 2 & 3
-            // User Request: "3 and 4 cols are 1.5x of 1st"
-            else if (index === 2 || index === 3) {
+            // 3rd Column (Description) - Index 2
+            // User Request: "3 col is 1.5x of 1st" (4th col removed from this rule per user)
+            else if (index === 2) {
                 const widthVal = Math.floor(woIdWidthVal * 1.5);
                 widths[col] = `${widthVal}px`;
+            }
+            // 4th Column - Index 3
+            // User Request: "Lock dead to equal 1st column width"
+            else if (index === 3) {
+                widths[col] = woIdWidthStr;
             }
             // 2nd Column (PN - Index 1)
             else if (index === 1) {
