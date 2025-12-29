@@ -337,7 +337,7 @@ export default function PlannerTable({
 
     return (
         <div className="overflow-auto bg-white rounded-xl shadow-sm border border-slate-200 max-h-[calc(100vh-200px)]">
-            <table className="text-xs border-collapse w-full">
+            <table className="text-xs border-collapse w-full table-fixed">
                 <thead className="sticky top-0 z-20 bg-white">
                     {/* Summary Row */}
                     <tr className="bg-slate-50 border-b border-slate-200">
@@ -369,19 +369,20 @@ export default function PlannerTable({
                                 key={col}
                                 style={{
                                     width: columnWidths[col],
-                                    minWidth: i === 0 ? '70px' : undefined
+                                    minWidth: i === 0 ? '70px' : undefined,
+                                    maxWidth: columnWidths[col] // Force max width
                                 }}
-                                className={`px-0.5 py-1 font-semibold text-slate-700 cursor-pointer hover:bg-slate-200 whitespace-nowrap border-r border-slate-200 bg-slate-100 ${i === 0 ? 'sticky left-0 z-30' : ''
+                                className={`px-0.5 py-1 font-semibold text-slate-700 cursor-pointer hover:bg-slate-200 border-r border-slate-200 bg-slate-100 ${i === 0 ? 'sticky left-0 z-30' : ''
                                     } ${i >= 5 ? 'text-center text-[9px]' : 'text-left text-[10px]'}`}
                                 onClick={() => handleSort(col)}
                                 title={col}
                             >
-                                <div className="flex items-center gap-0.5 justify-center">
-                                    <span>{i >= 5 ? getStepAbbrev(col) : col}</span>
+                                <div className="flex items-center gap-0.5 justify-center overflow-hidden">
+                                    <span className="truncate">{i >= 5 ? getStepAbbrev(col) : col}</span>
                                     {sortKey === col ? (
-                                        sortDir === 'asc' ? <ArrowUp className="w-2 h-2" /> : <ArrowDown className="w-2 h-2" />
+                                        sortDir === 'asc' ? <ArrowUp className="w-2 h-2 shrink-0" /> : <ArrowDown className="w-2 h-2 shrink-0" />
                                     ) : (
-                                        <ArrowUpDown className="w-2 h-2 opacity-30" />
+                                        <ArrowUpDown className="w-2 h-2 opacity-30 shrink-0" />
                                     )}
                                 </div>
                             </th>
