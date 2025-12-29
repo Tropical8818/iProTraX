@@ -321,30 +321,19 @@ export default function PlannerTable({
         // FIXED widths for detail columns - minimal to maximize step space
         effectiveDetailColumns.forEach((col) => {
             if (col === 'WO ID') {
-                widths[col] = woIdWidthStr;
+                widths[col] = '300px'; // MASSIVE TEST WIDTH
             } else if (col === 'PN') {
-                // PN: Dynamic, min 60px, max 120px
-                const dynamicWidth = calculateColumnWidth(col, processedOrders, false);
-                const widthValue = Math.min(120, Math.max(60, parseInt(dynamicWidth)));
-                widths[col] = `${widthValue}px`;
+                widths[col] = '150px'; // Fixed large
             } else if (col === 'Description' || col === 'Remarks') {
-                // Description and Remarks: 1.5x of WO ID width
-                // Ex: if WO ID is 80px, these will be 120px
-                const widthVal = Math.floor(woIdWidthVal * 1.5);
-                widths[col] = `${widthVal}px`;
+                widths[col] = '200px'; // Fixed large
             } else {
-                // Other columns (5, 6, 7...) - Compact dynamic
-                // Min 30px, Max 60px - just enough to see content
-                const dynamicWidth = calculateColumnWidth(col, processedOrders, false);
-                const widthValue = Math.min(60, Math.max(30, parseInt(dynamicWidth)));
-                widths[col] = `${widthValue}px`;
+                widths[col] = '80px';
             }
         });
 
-        // FIXED width for ALL step columns - 35px each
-        // 23 steps × 35px = 805px + ~400px details = ~1200px (fits in 1366px screen)
+        // FIXED width for ALL step columns - 60px each (MASSIVE)
         orderedSteps.forEach(step => {
-            widths[step] = '35px';
+            widths[step] = '60px';
         });
 
         return widths;
