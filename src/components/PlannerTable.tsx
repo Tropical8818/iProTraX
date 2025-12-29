@@ -329,8 +329,8 @@ export default function PlannerTable({
                 const widthValue = Math.min(120, Math.max(60, parseInt(dynamicWidth)));
                 widths[col] = `${widthValue}px`;
             } else if (col === 'Description' || col === 'Remarks') {
-                // Description and Remarks: 1.2x of WO ID width (reduced from 1.5x)
-                const widthVal = Math.floor(woIdWidthVal * 1.2);
+                // Description and Remarks: 1.5x of WO ID width (Requested: "3rd & 4th cols are 1.5x of 1st")
+                const widthVal = Math.floor(woIdWidthVal * 1.5);
                 widths[col] = `${widthVal}px`;
             } else {
                 // Other columns (5, 6, 7...) - Compact dynamic
