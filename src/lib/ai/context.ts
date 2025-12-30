@@ -19,6 +19,7 @@ export interface ProductionStats {
     totalPending: number;
     totalHold: number;
     completionRate: number;
+    totalOrders: number; // Real DB count
 }
 
 export interface AIContext {
@@ -247,22 +248,23 @@ export async function buildAIContext(productId?: string, queriedWoId?: string): 
         };
     });
 
-    // Calculate stats
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    // Fetch REAL total count for the product line (not just the truncated list)
+    const totalRealCount = await prisma.order.count({ where: { productId } });
 
+    // Calculate stats based on SAMPLE (Top 60)
+    // NOTE: These are distribution ratios based on recent activity, not absolute totals
     const completedToday = orderSummaries.filter(o => o.status === 'Completed').length;
     const activeOrders = orderSummaries.filter(o => ['Active', 'P', 'WIP'].includes(o.status));
     const holdOrders = orderSummaries.filter(o => ['Hold', 'QN'].includes(o.status));
     const pendingOrders = orderSummaries.filter(o => o.status === 'Pending');
 
     const stats: ProductionStats = {
+        totalOrders: totalRealCount, // REAL TOTAL
         todayCompleted: completedToday,
-        weeklyCompleted: completedToday * 7, // Simplified
-        totalActive: activeOrders.length,
-        totalPending: pendingOrders.length,
-        totalHold: holdOrders.length,
+        weeklyCompleted: completedToday * 7, // Simplified estimation
+        totalActive: activeOrders.length, // Sample active
+        totalPending: pendingOrders.length, // Sample pending
+        totalHold: holdOrders.length, // Sample hold
         completionRate: orders.length > 0 ? Math.round((completedToday / orders.length) * 100) : 0
     };
 
@@ -318,7 +320,8 @@ export function formatContextForAI(context: AIContext, activeProductId?: string)
     lines.push('');
 
     lines.push('## Production Statistics');
-    lines.push(`- Total Orders: ${context.orders.length}`);
+    lines.push('## Production Statistics');
+    lines.push(`- Total Orders: ${context.stats.totalOrders} (Analysis based on recent ${context.orders.length} active orders)`);
     lines.push(`- Completed Today: ${context.stats.todayCompleted} orders`);
     lines.push(`- Active Orders: ${context.stats.totalActive}`);
     lines.push(`- Pending: ${context.stats.totalPending}`);
