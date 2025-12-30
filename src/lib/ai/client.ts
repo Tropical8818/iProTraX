@@ -49,14 +49,50 @@ export async function chat(
         model = config.ollamaModel || 'llama3.1';
     }
 
-    const response = await openai.chat.completions.create({
-        model,
-        messages,
-        temperature: options?.temperature ?? 0.7,
-        max_tokens: options?.maxTokens || 1000,
-    });
+    // OPTIMIZATION: Different token limits for different providers
+    // Ollama local models need more tokens for comprehensive responses
+    const maxTokens = options?.maxTokens || (
+        (options?.provider === 'ollama' || config.aiProvider === 'ollama') ? 4000 : 1000
+    );
 
-    return response.choices[0]?.message?.content || '';
+    // Debug logging for Ollama
+    if (options?.provider === 'ollama' || config.aiProvider === 'ollama') {
+        console.log('[Ollama] Using model:', model);
+        console.log('[Ollama] Context size:', JSON.stringify(messages).length, 'chars');
+        console.log('[Ollama] Max tokens:', maxTokens);
+    }
+
+    // Add timeout to prevent hanging requests (especially for Ollama)
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000); // 60 second timeout
+
+    try {
+        const response = await openai.chat.completions.create({
+            model,
+            messages,
+            temperature: options?.temperature ?? 0.7,
+            max_tokens: maxTokens,
+        });
+
+        clearTimeout(timeout);
+        return response.choices[0]?.message?.content || '';
+    } catch (error: any) {
+        clearTimeout(timeout);
+
+        // Better error messages for common Ollama issues
+        if (error.name === 'AbortError') {
+            throw new Error('AI request timed out after 60 seconds. Local model may be slow or unresponsive. Try a smaller model or reduce context size.');
+        }
+        if (error.message?.includes('connect') || error.message?.includes('ECONNREFUSED')) {
+            throw new Error('Cannot connect to Ollama. Please ensure Ollama is running on http://localhost:11434');
+        }
+        if (error.message?.includes('model') && error.message?.includes('not found')) {
+            throw new Error(`Model "${model}" not found. Please pull it with: ollama pull ${model}`);
+        }
+
+        console.error('[AI Client] Error:', error);
+        throw error;
+    }
 }
 
 // Stream chat for real-time responses
@@ -76,17 +112,32 @@ export async function* streamChat(
         model = config.ollamaModel || 'llama3.1';
     }
 
-    const stream = await openai.chat.completions.create({
-        model,
-        messages,
-        temperature: options?.temperature ?? 0.7,
-        stream: true,
-    });
+    // Debug logging for Ollama
+    if (config.aiProvider === 'ollama') {
+        console.log('[Ollama Stream] Using model:', model);
+    }
 
-    for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content;
-        if (content) {
-            yield content;
+    try {
+        const stream = await openai.chat.completions.create({
+            model,
+            messages,
+            temperature: options?.temperature ?? 0.7,
+            stream: true,
+        });
+
+        for await (const chunk of stream) {
+            const content = chunk.choices[0]?.delta?.content;
+            if (content) {
+                yield content;
+            }
+        }
+    } catch (error: any) {
+        console.error('[AI Stream] Error:', error);
+        // Yield error message to user
+        if (error.message?.includes('connect') || error.message?.includes('ECONNREFUSED')) {
+            yield 'Error: Cannot connect to Ollama. Please ensure Ollama is running.';
+        } else {
+            yield `Error: ${error.message || 'Stream failed'}`;
         }
     }
 }
