@@ -18,7 +18,17 @@ In modern high-mix manufacturing, relying solely on heavy ERP systems like **SAP
 
 ---
 
-## 💡 The Solution: ProTracker
+## 🔐 Default Credentials
+After the initial deployment, use the following credentials to access the **SuperAdmin** account:
+
+*   **Employee ID (UserID)**: `SUPER001`
+*   **Default Password**: `superadmin123`
+
+> [!IMPORTANT]
+> For security, it is highly recommended to change this password immediately after your first login via the User Management settings.
+
+---
+
 ProTracker is not a replacement for SAP. It is the **Agile Collaboration Layer** that sits between your heavy ERP and your agile teams.
 
 It provides a lightweight, real-time visual interface that:
