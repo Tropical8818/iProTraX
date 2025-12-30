@@ -17,6 +17,10 @@ fi
 # The mounted volume will use existing database if present, or the pre-created one
 echo "📦 Database schema ready (pre-synced during build)"
 
+# Ensure migrations are applied to the mounted database
+echo "🗄️  Running database migrations..."
+npx prisma migrate deploy
+
 # Check if we need to seed the default admin
 echo "🔍 Checking for default admin user..."
 node -e "
