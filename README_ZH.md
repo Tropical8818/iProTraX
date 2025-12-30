@@ -27,6 +27,8 @@ ProTracker 不是要取代 SAP。它是连接重型 ERP 与敏捷团队之间的
 *   **电子看板 (Kiosk)**：用大屏幕、自动刷新的车间显示器取代"微信询问"。
 *   **AI 驱动洞察**：内置 AI 助手分析风险并生成日报，取代人工数据整理。
 
+![ProTracker Architecture](public/system_architecture.png)
+
 ---
 
 ## 🚀 快速开始

@@ -27,6 +27,8 @@ It provides a lightweight, real-time visual interface that:
 *   **Kiosk Mode**: Replaces "asking via WeChat" with large, auto-updating shop floor monitors.
 *   **AI-Driven Insights**: A built-in AI assistant that analyzes risk and generates reports, replacing manual data crunching.
 
+![ProTracker Architecture](public/system_architecture.png)
+
 ---
 
 ## 🚀 Quick Start
