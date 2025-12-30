@@ -315,11 +315,15 @@ export function formatContextForAI(context: AIContext, activeProductId?: string)
     }
 
     // LAYERED DISPLAY: Show all orders with basic info first
-    lines.push('## All Orders (Basic Info)');
-    lines.push(`Total: ${context.orders.length} orders`);
+    lines.push('## Recent Orders (Basic Info)');
+    lines.push(`Total: ${context.orders.length} orders in this product line`);
+    lines.push('**Note**: Showing the most recent 50 orders. If you need to check an order not listed here, simply ask about its WO ID.');
     lines.push('');
     lines.push('**Order List** (WO ID | Status | Current Step):');
+    let basicCount = 0;
     for (const order of context.orders) {
+        if (basicCount >= 50) break; // Limit to 50 basic items to save tokens
+        basicCount++;
         const statusIcon = order.status === 'Completed' ? '✅' :
             order.status === 'Hold' ? '🔴' :
                 order.status === 'QN' ? '⚠️' : '🔵';
