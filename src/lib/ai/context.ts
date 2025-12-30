@@ -94,7 +94,9 @@ export async function buildAIContext(productId?: string, queriedWoId?: string): 
                 select: { name: true, config: true }
             }
         },
-        // REMOVED: take: 500 - now fetches ALL orders
+        // Limit default context to recent orders for performance
+        // Deep history is accessed via Intelligent Query (recursion)
+        take: 60,
         orderBy: { updatedAt: 'desc' } // Sort by most recently updated
     });
 
