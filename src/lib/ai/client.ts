@@ -112,18 +112,27 @@ export async function* streamChat(
         model = config.ollamaModel || 'llama3.1';
     }
 
-    // Debug logging for Ollama
-    if (config.aiProvider === 'ollama') {
-        console.log('[Ollama Stream] Using model:', model);
-    }
+    // Unified configuration for both Cloud and Local AI
+    // User requested identical configuration for both
+    const maxTokens = 4000; 
+
+    // Debug logging
+    console.log(`[AI Stream] Provider: ${config.aiProvider}, Model: ${model}, MaxTokens: ${maxTokens}`);
+
+    // Add timeout controller (60s)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
 
     try {
         const stream = await openai.chat.completions.create({
             model,
             messages,
             temperature: options?.temperature ?? 0.7,
+            max_tokens: maxTokens,
             stream: true,
-        });
+        }, { signal: controller.signal });
+
+        clearTimeout(timeoutId);
 
         for await (const chunk of stream) {
             const content = chunk.choices[0]?.delta?.content;
@@ -132,10 +141,13 @@ export async function* streamChat(
             }
         }
     } catch (error: any) {
+        clearTimeout(timeoutId);
         console.error('[AI Stream] Error:', error);
-        // Yield error message to user
-        if (error.message?.includes('connect') || error.message?.includes('ECONNREFUSED')) {
-            yield 'Error: Cannot connect to Ollama. Please ensure Ollama is running.';
+        
+        if (error.name === 'AbortError') {
+            yield 'Error: AI request timed out (60s). Please try again or check your model configuration.';
+        } else if (error.message?.includes('connect') || error.message?.includes('ECONNREFUSED')) {
+            yield 'Error: Cannot connect to AI service. If using Ollama, ensure it is running.';
         } else {
             yield `Error: ${error.message || 'Stream failed'}`;
         }

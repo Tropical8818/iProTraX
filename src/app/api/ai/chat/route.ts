@@ -39,10 +39,21 @@ export async function POST(request: Request) {
         // INTELLIGENT QUERY: Extract WO ID from user message if present
         let queriedWoId: string | undefined;
         if (message) {
-            // Match common WO ID patterns: numbers, alphanumeric with dashes, etc.
-            const woIdMatch = message.match(/\b([A-Z0-9]{2,}[-_]?[0-9]{4,}|[0-9]{6,})\b/i);
-            if (woIdMatch) {
-                queriedWoId = woIdMatch[1];
+            // 1. Explicit prefix match (Strongest signal) e.g., "WO 123", "Order #456", "工单 789"
+            const explicitMatch = message.match(/(?:WO|Order|工单)[\s#.:-]*([A-Za-z0-9-]+)/i);
+
+            if (explicitMatch) {
+                queriedWoId = explicitMatch[1];
+            } else {
+                // 2. Pattern match (Heuristic) e.g., "6000856668", "WO-1234"
+                // Match at least 4 digits, or alphanumeric with minimal structure
+                const patternMatch = message.match(/\b([A-Z0-9]{2,}[-_]?[0-9]{3,}|[0-9]{4,})\b/i);
+                if (patternMatch) {
+                    queriedWoId = patternMatch[1];
+                }
+            }
+
+            if (queriedWoId) {
                 console.log('[AI Chat] Detected WO ID in query:', queriedWoId);
             }
         }
