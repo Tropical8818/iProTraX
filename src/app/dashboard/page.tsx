@@ -692,7 +692,11 @@ export default function DashboardPage() {
             <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
                 <div className="max-w-full mx-auto px-4 h-14 flex items-center justify-between">
                     {/* Left: Logo and Title */}
-                    <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => router.push('/dashboard')}
+                        className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+                        title="Return to Home"
+                    >
                         <div className="bg-indigo-600 p-2 rounded-lg">
                             <Factory className="w-5 h-5 text-white" />
                         </div>
@@ -700,7 +704,7 @@ export default function DashboardPage() {
                         <div className="hidden sm:block text-sm text-slate-500 border-l border-slate-200 pl-3">
                             {currentDate}
                         </div>
-                    </div>
+                    </button>
 
                     {/* Right: Product Selector & Nav */}
                     <div className="flex items-center gap-2 justify-end min-w-0">

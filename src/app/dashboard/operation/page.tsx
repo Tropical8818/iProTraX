@@ -163,12 +163,16 @@ function OperationContent() {
             {/* Header - Mobile optimized */}
             <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
                 <div className="max-w-full mx-auto px-2 sm:px-4 h-14 flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2 sm:gap-3">
+                    <button
+                        onClick={() => router.push('/dashboard')}
+                        className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+                        title="Return to Home"
+                    >
                         <div className="bg-indigo-600 p-1.5 sm:p-2 rounded-lg">
                             <Factory className="w-5 h-5 text-white" />
                         </div>
                         <h1 className="text-base sm:text-lg font-bold text-slate-900 hidden sm:block">ProTracker <span className="text-indigo-600 text-xs ml-1">V6.5.0</span></h1>
-                    </div>
+                    </button>
 
                     {/* Operator Display */}
                     <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-3 py-2 rounded-lg">
