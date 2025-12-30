@@ -30,24 +30,26 @@ const bcrypt = require('bcryptjs');
 async function checkAndSeed() {
     const prisma = new PrismaClient();
     try {
-        const adminCount = await prisma.user.count({ where: { role: 'admin' } });
-        if (adminCount === 0) {
-            console.log('📝 Creating default admin user...');
-            const password = process.env.ADMIN_PASSWORD || 'admin123';
-            const hash = await bcrypt.hash(password, 10);
+        const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+        const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+        
+        const existingUser = await prisma.user.findUnique({ where: { username: adminUsername } });
+        
+        if (!existingUser) {
+            console.log(`📝 Creating admin user: ${adminUsername}...`);
+            const hash = await bcrypt.hash(adminPassword, 10);
             await prisma.user.create({
                 data: {
-                    username: 'admin',
+                    username: adminUsername,
                     passwordHash: hash,
-                    employeeId: 'admin',
+                    employeeId: adminUsername,
                     role: 'admin',
                     status: 'approved'
                 }
             });
-            console.log('✅ Default admin created (username: admin, password: ' + password + ')');
-            console.log('⚠️  Please change the password after first login!');
+            console.log(`✅ Admin created! Username: ${adminUsername}, Password: ${adminPassword}`);
         } else {
-            console.log('✅ Admin user(s) already exist');
+            console.log(`✅ Admin user "${adminUsername}" already exists.`);
         }
     } finally {
         await prisma.\$disconnect();
