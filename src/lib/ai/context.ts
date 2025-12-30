@@ -102,32 +102,41 @@ export async function buildAIContext(productId?: string, queriedWoId?: string): 
 
     // INTELLIGENT QUERY: If user queried a specific WO ID, ensure it's in the context
     if (queriedWoId) {
-        // Strategy 1: Check if already in the fetched list (Exact match)
-        const hasQueriedOrder = orders.some(o => o.woId === queriedWoId);
+        console.log(`[AI Context] Intelligent Query START for: "${queriedWoId}" in Product: ${productId}`);
 
-        if (!hasQueriedOrder) {
+        // Strategy 1: Check if already in the fetched list (Exact match)
+        const existingOrderIndex = orders.findIndex(o => o.woId === queriedWoId);
+
+        if (existingOrderIndex !== -1) {
+            console.log(`[AI Context] Intelligent Query: Order found in recent list at index ${existingOrderIndex}. Promoting to TOP.`);
+            // Move to top to ensure it gets detailed info (which is limited to top 20)
+            const existingOrder = orders[existingOrderIndex];
+            orders.splice(existingOrderIndex, 1); // Remove from current position
+            orders.unshift(existingOrder); // Add to start
+        } else {
             let queriedOrder = null;
 
             // Strategy 2: Database Exact Match
+            console.log(`[AI Context] Strategy 2: Exact Match for "${queriedWoId}"...`);
             queriedOrder = await prisma.order.findFirst({
                 where: { woId: queriedWoId, productId },
                 include: { product: { select: { name: true, config: true } } }
             });
 
-            // Strategy 3: Fuzzy Match (Contains) - e.g. "6668" -> "6000856668"
+            // Strategy 3: Fuzzy Match (Contains)
             if (!queriedOrder && queriedWoId.length >= 4) {
-                console.log(`[AI Context] Intelligent Query: Trying fuzzy match for "${queriedWoId}"`);
+                console.log(`[AI Context] Strategy 3: Fuzzy Match for "${queriedWoId}"...`);
                 queriedOrder = await prisma.order.findFirst({
                     where: { woId: { contains: queriedWoId }, productId },
                     include: { product: { select: { name: true, config: true } } }
                 });
             }
 
-            // Strategy 4: Numeric Match - e.g. "WO-1234" -> "1234" or "1234" -> "WO-1234"
+            // Strategy 4: Numeric Match
             if (!queriedOrder) {
                 const numericPart = queriedWoId.replace(/\D/g, '');
                 if (numericPart.length >= 4 && numericPart !== queriedWoId) {
-                    console.log(`[AI Context] Intelligent Query: Trying numeric match for "${numericPart}"`);
+                    console.log(`[AI Context] Strategy 4: Numeric Match for "${numericPart}"...`);
                     queriedOrder = await prisma.order.findFirst({
                         where: { woId: { contains: numericPart }, productId },
                         include: { product: { select: { name: true, config: true } } }
@@ -137,10 +146,10 @@ export async function buildAIContext(productId?: string, queriedWoId?: string): 
 
             if (queriedOrder) {
                 // Add to beginning of orders array for priority
-                console.log(`[AI Context] Found order via Intelligent Query: ${queriedOrder.woId}`);
+                console.log(`[AI Context] SUCCESS: Found order via Intelligent Query: ${queriedOrder.woId}`);
                 orders = [queriedOrder, ...orders];
             } else {
-                console.log(`[AI Context] Intelligent Query failed to find order: "${queriedWoId}"`);
+                console.log(`[AI Context] FAILED: Intelligent Query failed to find order: "${queriedWoId}"`);
             }
         }
     }
