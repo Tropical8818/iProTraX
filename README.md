@@ -128,7 +128,7 @@ Contact author for access: mailto: jkdb0g@whatifthenhow.com
 ## 💝 Support This Project
 If you find ProTracker helpful, consider supporting its development:
 
-**Bitcoin (BTC)**: `bc6kx2h8kkgyhz9f84w7cvq5l7`
+**Bitcoin (BTC)**: `bc1q7fa9vkkqx27w6y6kx2h8kkgyhz9f84w7cvq5l7`
 
 Your support helps maintain and improve this open-source project. Thank you! 🙏
 
