@@ -100,6 +100,7 @@ export default function DashboardPage() {
     const [logs, setLogs] = useState<OperationLog[]>([]);
     const [showLogsModal, setShowLogsModal] = useState(false);
     const [loadingLogs, setLoadingLogs] = useState(false);
+    const [logsNotification, setLogsNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
     // ECD settings - separate Saturday/Sunday
 
@@ -560,15 +561,19 @@ export default function DashboardPage() {
         try {
             const res = await fetch('/api/logs', { method: 'DELETE' });
             if (res.ok) {
-                alert('Logs cleared successfully');
+                setLogsNotification({ type: 'success', message: 'Logs cleared successfully!' });
                 fetchLogs();
+                // Auto-dismiss after 5 seconds
+                setTimeout(() => setLogsNotification(null), 5000);
             } else {
                 const data = await res.json();
-                alert(data.error || 'Failed to clear logs');
+                setLogsNotification({ type: 'error', message: data.error || 'Failed to clear logs' });
+                setTimeout(() => setLogsNotification(null), 5000);
             }
         } catch (e) {
             console.error(e);
-            alert('Failed to clear logs');
+            setLogsNotification({ type: 'error', message: 'Failed to clear logs' });
+            setTimeout(() => setLogsNotification(null), 5000);
         }
     };
 
@@ -1625,6 +1630,23 @@ export default function DashboardPage() {
                                 </button>
                             </div>
                         </div>
+
+                        {/* Notification */}
+                        {logsNotification && (
+                            <div className={`mx-6 mt-4 px-4 py-3 rounded-lg flex items-center gap-2 ${logsNotification.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+                                }`}>
+                                {logsNotification.type === 'success' ? (
+                                    <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                ) : (
+                                    <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                )}
+                                <span className="font-medium">{logsNotification.message}</span>
+                            </div>
+                        )}
 
                         {loadingLogs ? (
                             <div className="py-20 text-center text-slate-400 flex flex-col items-center gap-3">
