@@ -8,15 +8,17 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=file:/app/prisma/dev.db
+      - DATABASE_URL=file:/app/data/db/prod.db
+      - NEXTAUTH_SECRET=your-secret-key-change-this
+      - NEXTAUTH_URL=http://localhost:3000
+      - ADMIN_USERNAME=superadmin
+      - ADMIN_PASSWORD=superadmin123
       # Add your OpenAI Key here or in a .env file next to this compose file
       - OPENAI_API_KEY=${OPENAI_API_KEY}
     volumes:
-      # Persist the database and other prisma files
-      - ./prisma:/app/prisma
-      # Optional: Persist uploaded files if you implement local file storage later
-      # - ./uploads:/app/uploads
+      # Persist the database and uploads
       - ./data:/app/data
+      - ./public/uploads:/app/public/uploads
     networks:
       - tracker-network
 
