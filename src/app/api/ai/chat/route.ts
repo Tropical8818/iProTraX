@@ -23,6 +23,14 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { message, productId, conversationHistory, mode } = body;
 
+        // CRITICAL: productId is required for product line isolation
+        // With 20-100 production lines, AI must never cross boundaries
+        if (!productId) {
+            return NextResponse.json({
+                error: 'Product line must be specified for AI chat. Please select a product line first.'
+            }, { status: 400 });
+        }
+
         // Message is optional for 'report' mode (can be auto-triggered)
         if (!message && mode !== 'report' && mode !== 'analysis') {
             return NextResponse.json({ error: 'Message is required' }, { status: 400 });

@@ -43,6 +43,12 @@ export interface AIContext {
 
 // Build context for AI from production data
 export async function buildAIContext(productId?: string): Promise<AIContext> {
+    // CRITICAL: Require productId for product line isolation
+    // This prevents AI from accessing data across multiple product lines
+    if (!productId) {
+        throw new Error('Product ID is required for AI context. Cannot access data without product line specification.');
+    }
+
     // Fetch products
     const products = await prisma.product.findMany({
         select: {
@@ -240,6 +246,18 @@ export async function buildAIContext(productId?: string): Promise<AIContext> {
 // Format context as a string for the AI prompt
 export function formatContextForAI(context: AIContext, activeProductId?: string): string {
     const lines: string[] = [];
+
+    // Show current product line scope (CRITICAL for isolation)
+    lines.push('## Current Product Line (SCOPE)');
+    const activeProduct = context.products.find(p => p.id === activeProductId);
+    if (activeProduct) {
+        lines.push(`**You are assisting with: ${activeProduct.name}**`);
+        lines.push('**IMPORTANT**: You can ONLY see and answer questions about THIS product line.');
+        lines.push('If asked about other product lines, respond: "I can only assist with the current product line. Please switch product lines to access that information."');
+    } else {
+        lines.push('**Product line context not specified**');
+    }
+    lines.push('');
 
     lines.push('## Production Statistics');
     lines.push(`- Total Orders: ${context.orders.length}`);
