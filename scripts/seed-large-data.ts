@@ -48,7 +48,7 @@ async function main() {
             data[steps[0]] = 'WIP';
         } else if (progress > 0.9) {
             // Completed
-            steps.forEach(s => data[s] = now.toISOString().split('T')[0]);
+            steps.forEach((s: string) => data[s] = now.toISOString().split('T')[0]);
         } else {
             // Somewhere in between
             const stepIndex = Math.floor(progress * steps.length);
