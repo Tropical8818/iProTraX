@@ -84,7 +84,8 @@ export async function buildAIContext(productId?: string, queriedWoId?: string): 
         if (productData[0].config.aiProvider) activeProvider = productData[0].config.aiProvider;
     }
 
-    // Fetch orders - get more for better AI lookup
+    // Fetch ALL orders for this product line (no limit)
+    // With intelligent query, AI can access any order regardless of count
     const orderWhere = productId ? { productId } : {};
     let orders = await prisma.order.findMany({
         where: orderWhere,
@@ -93,8 +94,8 @@ export async function buildAIContext(productId?: string, queriedWoId?: string): 
                 select: { name: true, config: true }
             }
         },
-        take: 500, // Increased for better AI order recognition
-        orderBy: { updatedAt: 'desc' }
+        // REMOVED: take: 500 - now fetches ALL orders
+        orderBy: { updatedAt: 'desc' } // Sort by most recently updated
     });
 
     // INTELLIGENT QUERY: If user queried a specific WO ID, ensure it's in the context
