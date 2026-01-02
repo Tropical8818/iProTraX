@@ -126,7 +126,7 @@ Contact author for access: mailto: jkdb0g@whatifthenhow.com
 ---
 
 ## 📝 Changelog highlights
-*   **v7.0.0**: Configurable AI Visibility, Enhanced AI Privacy (Strict ID mode), Supervisor Excel Import, and Centralized Version Management.
+*   **v7.0.0**: Smart Comments (Order-level Collaboration), Configurable AI Visibility, Enhanced AI Privacy (Strict ID mode), Supervisor Excel Import, and Multi-tier Employee Cooperation.
 *   **v6.5.0**: Docker Production Support (Node 22, Fixed Watcher, CVE Remediation).
 *   **v6.4.0**: Added Order Deletion & Kiosk Alignment fixes.
 *   **v6.3.0**: Introduced Super Edit Mode.
