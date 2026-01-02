@@ -6,11 +6,14 @@ services:
       dockerfile: Dockerfile
     restart: always
     ports:
-      - "3000:3000"
+      - "3001:3001"
     environment:
+      - PORT=3001
       - DATABASE_URL=file:/app/data/db/prod.db
       # Add your OpenAI Key here or in a .env file next to this compose file
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Timezone configuration (default: Asia/Shanghai)
+      - TZ=${TZ:-Asia/Shanghai}
     volumes:
       # Persist the database and uploads
       - ./data:/app/data

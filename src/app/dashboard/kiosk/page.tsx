@@ -397,24 +397,40 @@ export default function KioskPage() {
                                         const stepIndex = availableSteps.findIndex(s => s === targetStep);
 
                                         // Safety parsing function for DD-MMM[, HH:mm] format
+                                        // Safety parsing function for various formats
                                         const parseStepDate = (val: any) => {
                                             if (!val || typeof val !== 'string') return null;
-                                            // Extract date and optional time component
-                                            const match = val.match(/(\d{1,2})-(\w{3})(?:,\s*(\d{1,2}):(\d{1,2}))?/);
-                                            if (!match) return null;
 
-                                            const day = parseInt(match[1]);
-                                            const monthStr = match[2];
-                                            const hour = match[3] ? parseInt(match[3]) : 0;
-                                            const minute = match[4] ? parseInt(match[4]) : 0;
+                                            // Case 1: YYYY-MM-DD [HH:mm] (Standard format)
+                                            const matchISO = val.match(/(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/);
+                                            if (matchISO) {
+                                                const year = parseInt(matchISO[1]);
+                                                const monthIndex = parseInt(matchISO[2]) - 1;
+                                                const day = parseInt(matchISO[3]);
+                                                const hour = matchISO[4] ? parseInt(matchISO[4]) : 0;
+                                                const minute = matchISO[5] ? parseInt(matchISO[5]) : 0;
+                                                const d = new Date(year, monthIndex, day, hour, minute);
+                                                return !isNaN(d.getTime()) ? d : null;
+                                            }
 
-                                            const year = new Date().getFullYear();
-                                            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                                            const monthIndex = months.findIndex(m => m.toLowerCase() === monthStr.toLowerCase());
+                                            // Case 2: Legacy format DD-MMM[, HH:mm]
+                                            const matchLegacy = val.match(/(\d{1,2})-(\w{3})(?:,\s*(\d{1,2}):(\d{1,2}))?/);
+                                            if (matchLegacy) {
+                                                const day = parseInt(matchLegacy[1]);
+                                                const monthStr = matchLegacy[2];
+                                                const hour = matchLegacy[3] ? parseInt(matchLegacy[3]) : 0;
+                                                const minute = matchLegacy[4] ? parseInt(matchLegacy[4]) : 0;
 
-                                            if (monthIndex === -1) return null;
-                                            const d = new Date(year, monthIndex, day, hour, minute);
-                                            return !isNaN(d.getTime()) ? d : null;
+                                                const year = new Date().getFullYear();
+                                                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                                                const monthIndex = months.findIndex(m => m.toLowerCase() === monthStr.toLowerCase());
+
+                                                if (monthIndex === -1) return null;
+                                                const d = new Date(year, monthIndex, day, hour, minute);
+                                                return !isNaN(d.getTime()) ? d : null;
+                                            }
+
+                                            return null;
                                         };
 
                                         const currentVal = order.data[targetStep];

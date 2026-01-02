@@ -30,14 +30,14 @@
             }
         }
     ],
-    "activeProductId": "product_1767265346743",
+    "activeProductId": "product_1767354240275",
     "USER_PASSWORD": "123456",
     "SUPERVISOR_PASSWORD": "dhe-supervisor",
     "ADMIN_PASSWORD": "dhe-admin",
     "includeSaturday": false,
     "includeSunday": false,
     "aiProvider": "ollama",
-    "ollamaUrl": "http://localhost:11434/v1",
+    "ollamaUrl": "http://host.docker.internal:11434/v1",
     "ollamaModel": "llama3.1",
     "includeWeekends": false,
     "systemPrompt": ""

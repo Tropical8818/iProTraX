@@ -40,7 +40,8 @@ RUN adduser --system --uid 1001 nextjs
 
 # Install npm for bootstrap script (npx prisma)
 # Upgrade to latest npm to fix CVEs
-RUN apk add --no-cache npm && npm install -g npm@latest
+# Install tzdata for timezone support
+RUN apk add --no-cache npm tzdata && npm install -g npm@latest
 
 # Copy necessary files
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public

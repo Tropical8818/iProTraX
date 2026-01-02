@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 import * as fs from 'fs';
 import { getConfig, getProductById, Product } from './config';
+import { formatToExcelTimestamp, getNow } from './date-utils';
 
 // Columns that are NOT process steps
 const NON_STEP_COLUMNS = ['WO ID', 'PN', 'Description', 'Remarks', 'Type', 'QCP', 'WO DUE', 'Priority', ' Priority'];
@@ -223,8 +224,8 @@ export function updateOrderStep(woId: string, step: string, status: string, oper
     // Determine cell value
     let cellValue: string;
     if (status === 'Done') {
-        const now = new Date();
-        const formatted = now.toISOString().slice(0, 16).replace('T', ' ');
+        const now = getNow();
+        const formatted = formatToExcelTimestamp(now);
         cellValue = operatorId ? `${formatted} (ID: ${operatorId})` : formatted;
     } else if (status === 'Reset') {
         cellValue = '';

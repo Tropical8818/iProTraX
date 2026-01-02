@@ -9,6 +9,7 @@ import * as XLSX from 'xlsx';
 import * as fs from 'fs';
 import { normalizeHeaders, getDefaultMappings, validateRequiredColumns, type ColumnMappings } from '@/lib/columnMapping';
 import { validateOrderData, getDefaultValidationRules, type ValidationRules, type ValidationError } from '@/lib/validation';
+import { formatToShortTimestamp, getNow, excelSerialToDate, formatToExcelTimestamp, formatToDateOnly } from '@/lib/date-utils';
 
 export interface ImportOptions {
     productId: string;
@@ -107,24 +108,18 @@ export async function importFromBuffer(buffer: Buffer, options: ImportOptions): 
                 // Excel dates: serial 1 = 1/1/1900, 45000 ≈ 2023
                 // Reasonable date range: 1 (1900) to 100000 (2173)
                 if (value > 1 && value < 100000) {
-                    // Convert Excel serial date to JS Date
-                    const excelEpoch = new Date(1899, 11, 30); // Excel's epoch
-                    const jsDate = new Date(excelEpoch.getTime() + value * 86400000);
+                    // Convert Excel serial date to JS Date using robust util
+                    const jsDate = excelSerialToDate(value);
+                    const hasTime = (value % 1) !== 0;
 
-                    // Format as dd-MMM, HH:mm
-                    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-                    const day = String(jsDate.getDate()).padStart(2, '0');
-                    const month = months[jsDate.getMonth()];
-
-                    const hours = (value % 1) * 24;
-                    if (hours > 0) {
-                        // Has time component: dd-MMM, HH:mm
-                        const hour = String(jsDate.getHours()).padStart(2, '0');
-                        const minute = String(jsDate.getMinutes()).padStart(2, '0');
-                        rowData[header] = `${day}-${month}, ${hour}:${minute}`;
+                    if (hasTime) {
+                        // Has time component: YYYY-MM-DD HH:mm
+                        // We use the full timestamp format to preserve Year and Time
+                        rowData[header] = formatToExcelTimestamp(jsDate);
                     } else {
-                        // Date only: dd-MMM
-                        rowData[header] = `${day}-${month}`;
+                        // Date only: YYYY-MM-DD
+                        // We use YYYY-MM-DD to preserve Year which is critical for Due Dates
+                        rowData[header] = formatToDateOnly(jsDate);
                     }
                     return;
                 }
@@ -146,7 +141,7 @@ export async function importFromBuffer(buffer: Buffer, options: ImportOptions): 
         );
 
         if (woRelKey && !rowData[woRelKey]) {
-            rowData[woRelKey] = formatTimestamp(new Date());
+            rowData[woRelKey] = formatToShortTimestamp(getNow());
         }
 
         // Validate row data
@@ -194,7 +189,7 @@ export async function importFromBuffer(buffer: Buffer, options: ImportOptions): 
             } else {
                 // For new orders, auto-set first step timestamp
                 if (index === 0) {
-                    finalOrderData[step] = formatTimestamp(new Date());
+                    finalOrderData[step] = formatToShortTimestamp(getNow());
                 } else {
                     finalOrderData[step] = '';
                 }
@@ -258,14 +253,8 @@ export async function importFromFile(filePath: string, options: ImportOptions): 
 /**
  * Format a date as dd-MMM, HH:mm
  */
-function formatTimestamp(date: Date): string {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = months[date.getMonth()];
-    const hour = String(date.getHours()).padStart(2, '0');
-    const minute = String(date.getMinutes()).padStart(2, '0');
-    return `${day}-${month}, ${hour}:${minute}`;
-}
+// Removed local function in favor of date-utils
+
 
 /**
  * Create an error result

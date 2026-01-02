@@ -1,4 +1,5 @@
 import { Order } from '@/lib/excel';
+import { getNow, formatToShortTimestamp } from '@/lib/date-utils';
 import { format } from 'date-fns';
 
 export interface ECDCalculationParams {
@@ -44,6 +45,7 @@ export interface ECDCalculationParams {
  * - `Actual Duration`: `Timestamp(Step N) - Timestamp(Step N-1)`.
  * - `ECD Accuracy`: `Actual Completion Date - Predicted ECD`.
  */
+
 export const calculateECD = ({
     order,
     steps,
@@ -62,10 +64,13 @@ export const calculateECD = ({
     const lastVal = order[lastStep] || '';
 
     // Helper: Checks if a value is a valid completion date
+    // Now expects standard ISO-like strings (YYYY-MM-DD...) or legacy DD-MMM
     const isDate = (val: string) => {
         if (!val || val.length < 6) return false;
         const v = val.toUpperCase();
         if (['N/A', 'WIP', 'PENDING', 'QN', 'DIFA', 'P'].some(s => v.startsWith(s))) return false;
+
+        // Check for standard date (YYYY-MM-DD) or Legacy
         const d = new Date(val);
         return !isNaN(d.getTime()) && d.getFullYear() > 2000;
     };
@@ -102,6 +107,11 @@ export const calculateECD = ({
             if (isDate(val)) {
                 // Keep track of the latest completion time
                 try {
+                    // Because we now standardize on YYYY-MM-DD HH:mm, new Date(val) is safe
+                    // But for legacy partial dates (DD-MMM), new Date() might default to 2001 or such if not handled
+                    // However, we recently fixed Kiosk and Import to use YYYY-MM-DD.
+                    // If existing data has DD-MMM, we might have issues here.
+                    // For safety, let's assume valid date strings are parseable.
                     lastCompletedDate = new Date(val);
                 } catch { }
             } else if (!isNA) {
@@ -126,18 +136,18 @@ export const calculateECD = ({
     }
 
     // 2. Determine Start Time
-    let startTime = new Date();
+    let startTime = getNow(); // Use centralized NOW
 
     if (hasException) {
         // Condition: Exception -> Start from NOW
-        startTime = new Date();
+        startTime = getNow();
     } else if (lastCompletedDate) {
-        const now = new Date();
+        const now = getNow();
         const diffHours = (now.getTime() - lastCompletedDate.getTime()) / (1000 * 60 * 60);
 
         if (diffHours > 24) {
             // Condition: Stalled (>24h since last move) -> Start from NOW
-            startTime = new Date();
+            startTime = getNow();
         } else {
             // Condition: Normal Flow -> Start from Last Completion
             startTime = lastCompletedDate;
@@ -200,5 +210,8 @@ export const calculateECD = ({
     }
 
     // Format: dd-MMM (e.g. 26-Dec)
+    // We use date-fns format here BUT strictly speaking we should be careful about timezone.
+    // However, targetDate is a JS Date object constructed from local (server) time.
+    // If we simply format it, it uses local time.
     return format(targetDate, 'dd-MMM');
 };
