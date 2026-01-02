@@ -671,7 +671,8 @@ export default function PlannerTable({
                                             {isSuperEditing && onUpdateDetail ? (
                                                 <input
                                                     type="text"
-                                                    defaultValue={value}
+                                                    defaultValue={formatDate(value, 'yyyy-MM-dd')}
+                                                    placeholder="YYYY-MM-DD"
                                                     className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                                     onBlur={(e) => {
                                                         const newVal = e.target.value.trim();
@@ -683,7 +684,7 @@ export default function PlannerTable({
                                                     onClick={(e) => e.stopPropagation()}
                                                 />
                                             ) : (
-                                                formatDate(value, 'dd-MM-yyyy')
+                                                formatDate(value, 'dd-MMM')
                                             )}
                                         </td>
                                     );
