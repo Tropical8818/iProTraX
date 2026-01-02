@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Lock, LogIn, Loader2, Eye, EyeOff, CreditCard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { APP_VERSION } from '@/lib/version';
 
 export default function LoginPage() {
     const [employeeId, setEmployeeId] = useState('');
@@ -53,7 +54,7 @@ export default function LoginPage() {
                         <div className="bg-indigo-500/20 p-4 rounded-2xl mb-4">
                             <Lock className="w-10 h-10 text-indigo-400" />
                         </div>
-                        <h1 className="text-3xl font-bold text-white">ProTracker <span className="text-indigo-400 text-lg">V6.6.0</span></h1>
+                        <h1 className="text-3xl font-bold text-white">ProTracker <span className="text-indigo-400 text-lg">{APP_VERSION}</span></h1>
                         <p className="text-slate-400 mt-2">Sign in to your account</p>
                     </div>
 

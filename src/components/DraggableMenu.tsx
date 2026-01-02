@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Menu, X, HardHat, Table2, Pencil, Ban, PauseCircle, Eraser, Upload, ScanBarcode, RefreshCw, Settings, LogOut, Info, Users } from 'lucide-react';
 import type { Product } from '@/lib/config';
+import { APP_VERSION } from '@/lib/version';
 
 interface DraggableMenuProps {
     products: Product[];
@@ -226,7 +227,7 @@ export default function DraggableMenu({
                     )}
 
                     <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400">
-                        <span>v6.6.0</span>
+                        <span>{APP_VERSION}</span>
                         <button onClick={onLogout} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-medium">
                             <LogOut className="w-4 h-4" />
                             Log Out

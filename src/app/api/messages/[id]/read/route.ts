@@ -8,7 +8,7 @@ import { getSession } from '@/lib/auth';
  */
 export async function POST(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    context: { params: Promise<{ id: string }> } // Updated for Next.js 15+
 ) {
     const session = await getSession();
     if (!session) {
@@ -16,7 +16,8 @@ export async function POST(
     }
 
     try {
-        const commentId = params.id;
+        const { id: commentId } = await context.params;
+
 
         const comment = await prisma.comment.findUnique({
             where: { id: commentId },
