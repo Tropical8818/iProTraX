@@ -84,6 +84,8 @@ Visit http://localhost:3000
     *   **Risk Analysis**: "Which orders are stuck in WIP for >24h?"
     *   **Report Generation**: "Draft a shift handover report based on today's logs."
     *   **Context Aware**: Knows your specific product lines and terminology.
+    *   **Category Analysis**: Analyzes comments tagged with categories (e.g., QN, Machine, Material) to identify bottlenecks.
+    *   **Smart Comments**: Tracks discussions per-step, allowing precise problem-solving directly in the flow.
 
 ---
 

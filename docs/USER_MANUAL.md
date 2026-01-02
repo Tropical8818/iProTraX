@@ -1,6 +1,6 @@
 # ProTracker User Manual
 
-**Version 6.3.0**
+**Version 7.0.0**
 
 ---
 
@@ -18,6 +18,7 @@
 4. [Operation View](#operation-view)
    - [Barcode Scanning](#barcode-scanning)
    - [Quick Status Updates](#quick-status-updates)
+   - [Smart Comments](#smart-comments)
 5. [Batch Operations](#batch-operations)
    - [P Mode](#p-mode)
    - [N/A Mode](#na-mode)
@@ -134,6 +135,20 @@ In Operation View, you can quickly update order status:
    - **QN** - Quality notification
    - **N/A** - Not applicable
 
+### Smart Comments
+
+Collaborate directly on specific steps to solve issues faster.
+
+1.  **Click the Comment Icon** attached to any step in Operation View.
+2.  **Add a Comment**: Type your message.
+3.  **Select a Category**: Tag the comment to help the AI analyze issues.
+    *   `General`: Normal discussion.
+    *   `QN` (Quality): Quality issues, defects.
+    *   `Material`: Missing parts, wrong material.
+    *   `Machine`: Equipment breakdown or maintenance.
+    *   `Hold`: Process blockers.
+4.  **Send**: The comment is logged with your User ID and timestamp.
+
 ---
 
 ## Kiosk Mode (Shop Floor Monitor)
@@ -231,6 +246,8 @@ In the Operation Logs modal:
 
 > **Note**: Existing WO IDs are automatically skipped to prevent duplicates.
 
+
+
 ---
 
 ## AI Assistant
@@ -248,6 +265,13 @@ ProTracker includes a smart, floating AI assistant to help you:
 2. Type your question or use the **Quick Tools** (Admin/Supervisor only):
     - **Analyze Risks**: Identify orders at risk of delay.
     - **Morning Report**: Generate a summary for your daily standup.
+    - **Category Diagnosis**: Ask "What are the top quality issues?" to analyze comments tagged with `QN`.
+
+### AI Category Analysis 🧠
+The AI automatically aggregates comments by category to provide deep insights:
+*   **Bottleneck Detection**: "Why are 5 orders on Hold in Assembly?" (Analyzes `Hold` comments)
+*   **Maintenance Alerts**: "Show me recent machine issues." (Analyzes `Machine` comments)
+*   **Quality Trends**: "Summarize QN reports from last week." (Analyzes `QN` comments)
 
 ### Smart Navigation 🚀
 You can ask the AI to take you to an order:
