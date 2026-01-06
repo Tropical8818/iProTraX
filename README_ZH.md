@@ -1,4 +1,4 @@
-# ProTracker - 敏捷制造协同平台 (Agile Manufacturing Collaboration Platform)
+# iProTraX - 敏捷制造协同平台 (Agile Manufacturing Collaboration Platform)
 > 连接僵化 ERP 与动态车间的敏捷协同层。
 
 [🇺🇸 English](README.md) | [🇨🇳 简体中文](README_ZH.md)
@@ -29,8 +29,8 @@
 
 ---
 
-## �💡 解决方案：ProTracker
-ProTracker 不是要取代 SAP。它是连接重型 ERP 与敏捷团队之间的 **敏捷协同层 (Agile Collaboration Layer)**。
+## 💡 解决方案：iProTraX
+iProTraX 不是要取代 SAP。它是连接重型 ERP 与敏捷团队之间的 **敏捷协同层 (Agile Collaboration Layer)**。
 
 它提供了一个轻量级、实时的可视化界面：
 *   **可视化隐形数据**：追踪 SAP 遗漏的微小步骤和实时状态。
@@ -38,7 +38,7 @@ ProTracker 不是要取代 SAP。它是连接重型 ERP 与敏捷团队之间的
 *   **电子看板 (Kiosk)**：用大屏幕、自动刷新的车间显示器取代"微信询问"。
 *   **AI 驱动洞察**：内置 AI 助手分析风险并生成日报，取代人工数据整理。
 
-![ProTracker Architecture](public/system_architecture.png)
+![iProTraX Architecture](public/system_architecture.png)
 
 ---
 

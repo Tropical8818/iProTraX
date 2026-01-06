@@ -1,4 +1,4 @@
-# ProTracker User Manual
+# iProTraX User Manual
 
 **Version 7.0.0**
 
@@ -42,7 +42,7 @@
 
 ## Introduction
 
-**ProTracker** is an AI-powered production tracking system designed for manufacturing environments. It helps you:
+**iProTraX** is an AI-powered production tracking system designed for manufacturing environments. It helps you:
 
 - Track work orders through multiple production steps
 - Update order status in real-time via desktop or mobile
@@ -61,7 +61,7 @@
 
 ### Login
 
-1. Navigate to the ProTracker URL (e.g., `http://localhost:3001`)
+1. Navigate to the iProTraX URL (e.g., `http://localhost:3001`)
 2. Enter your **Employee ID** and **Password**
 3. Click **Login**
 
@@ -252,7 +252,7 @@ In the Operation Logs modal:
 
 ## AI Assistant
 
-ProTracker includes a smart, floating AI assistant to help you:
+iProTraX includes a smart, floating AI assistant to help you:
 
 - Analyze production risks and delays
 - Generate daily morning reports
@@ -372,4 +372,4 @@ Navigate to **Settings → User Management** to:
 
 For technical support, contact your system administrator.
 
-**ProTracker v7.0.0** - AI-Powered Production Tracker
+**iProTraX v7.0.0** - AI-Powered Production Tracker

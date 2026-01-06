@@ -1,4 +1,4 @@
-# ProTracker - The Agile Manufacturing Collaboration Platform
+# iProTraX - The Agile Manufacturing Collaboration Platform
 > Bridging the gap between rigid ERP systems and the dynamic shop floor.
 
 [🇺🇸 English](README.md) | [🇨🇳 简体中文](README_ZH.md)
@@ -29,7 +29,7 @@ After the initial deployment, use the following credentials to access the **Supe
 
 ---
 
-ProTracker is not a replacement for SAP. It is the **Agile Collaboration Layer** that sits between your heavy ERP and your agile teams.
+iProTraX is not a replacement for SAP. It is the **Agile Collaboration Layer** that sits between your heavy ERP and your agile teams.
 
 It provides a lightweight, real-time visual interface that:
 *   **Visualizes the Invisible**: Tracks the micro-steps and real-time status that SAP misses.
@@ -37,7 +37,7 @@ It provides a lightweight, real-time visual interface that:
 *   **Kiosk Mode**: Replaces "asking via WeChat" with large, auto-updating shop floor monitors.
 *   **AI-Driven Insights**: A built-in AI assistant that analyzes risk and generates reports, replacing manual data crunching.
 
-![ProTracker Architecture](public/system_architecture.png)
+![iProTraX Architecture](public/system_architecture.png)
 
 ---
 

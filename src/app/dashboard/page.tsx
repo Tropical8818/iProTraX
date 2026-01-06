@@ -7,7 +7,7 @@ import {
     LayoutDashboard, FileText, Settings, LogOut,
     Maximize, Minimize, Activity, AlertCircle, ScanBarcode, ArrowRight,
     Play, Ban, PauseCircle, Eraser, Info, HardHat, Upload, Users,
-    Factory, ChevronDown, Table2, Pencil, Eye, EyeOff, ClipboardList,
+    ChevronDown, Table2, Pencil, Eye, EyeOff, ClipboardList,
     RefreshCw, X, FileSpreadsheet, Check, Clock, CheckCircle2, Layers, AlertTriangle, Sparkles, Megaphone,
     History, Loader2, Download, Trash2, BarChart2, TrendingUp, Monitor, ChevronUp
 } from 'lucide-react';
@@ -60,7 +60,15 @@ export default function DashboardPage() {
     const [currentDate, setCurrentDate] = useState('');
 
     useEffect(() => {
-        setCurrentDate(new Date().toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }));
+        const updateDateTime = () => {
+            const now = new Date();
+            const date = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const time = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+            setCurrentDate(`${date} · ${time}`);
+        };
+        updateDateTime();
+        const timer = setInterval(updateDateTime, 60000); // Update every minute
+        return () => clearInterval(timer);
     }, []);
 
     const [orders, setOrders] = useState<Order[]>([]);
@@ -98,6 +106,7 @@ export default function DashboardPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [selectedProductId, setSelectedProductId] = useState<string>('');
     const [productMenuOpen, setProductMenuOpen] = useState(false);
+    const [batchMenuOpen, setBatchMenuOpen] = useState(false);
 
     // Logs state
     const [logs, setLogs] = useState<OperationLog[]>([]);
@@ -704,19 +713,13 @@ export default function DashboardPage() {
             {/* Header */}
             <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
                 <div className="max-w-full mx-auto px-4 h-14 flex items-center justify-between">
-                    {/* Left: Logo and Title */}
+                    {/* Left: Logo */}
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+                        className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
                         title="Return to Home"
                     >
-                        <div className="bg-indigo-600 p-2 rounded-lg">
-                            <Factory className="w-5 h-5 text-white" />
-                        </div>
-                        <h1 className="text-lg font-bold text-slate-900">ProTracker <span className="text-indigo-600 text-xs ml-1">{APP_VERSION}</span></h1>
-                        <div className="hidden sm:block text-sm text-slate-500 border-l border-slate-200 pl-3">
-                            {currentDate}
-                        </div>
+                        <img src="/logo.png" alt="iProTraX" className="h-9 w-auto" />
                     </button>
 
                     {/* Right: Product Selector & Nav */}
@@ -772,7 +775,7 @@ export default function DashboardPage() {
                         )}
 
                         {/* DESKTOP NAV - Hidden on Mobile */}
-                        <nav className="hidden md:flex items-center gap-2 overflow-x-auto max-w-full scrollbar-hide px-1">
+                        <nav className="hidden md:flex items-center gap-2 px-1">
 
                             <div className="w-px h-6 bg-slate-200" />
 
@@ -804,109 +807,49 @@ export default function DashboardPage() {
                                 <span className="hidden sm:inline">Insights</span>
                             </button>
 
-                            {/* Batch Operations Group */}
+                            {/* Batch Operations Dropdown */}
                             {(role === 'admin' || role === 'supervisor') && (
-                                <div className="flex items-center gap-1 px-2 py-1 bg-slate-100 rounded-lg border border-slate-200">
-                                    <Layers className="w-3.5 h-3.5 text-slate-400 mr-0.5" />
+                                <div className="relative">
                                     <button
-                                        onClick={() => { setPMode(!pMode); if (!pMode) { setNaMode(false); setEraseMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } }}
-                                        className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-all ${pMode
-                                            ? 'bg-blue-600 text-white shadow-sm'
-                                            : 'text-slate-600 hover:bg-white hover:shadow-sm'
+                                        onClick={() => setBatchMenuOpen(!batchMenuOpen)}
+                                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${pMode || naMode || holdMode || qnMode || wipMode || completeMode || eraseMode
+                                            ? 'bg-indigo-600 text-white shadow-sm'
+                                            : 'text-slate-700 hover:bg-slate-50 border border-slate-200'
                                             }`}
-                                        title={pMode ? 'Exit P Mode' : 'Enter P Mode - Click cells to set P'}
                                     >
-                                        <Pencil className="w-3.5 h-3.5" />
-                                        <span>P</span>
+                                        <Layers className="w-4 h-4" />
+                                        <span className="hidden sm:inline">
+                                            {pMode ? 'Plan' : naMode ? 'N/A' : holdMode ? 'Hold Mode' : qnMode ? 'QN Mode' : wipMode ? 'WIP Mode' : completeMode ? 'Complete' : eraseMode ? 'Erase' : 'Edit'}
+                                        </span>
+                                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${batchMenuOpen ? 'rotate-180' : ''}`} />
                                     </button>
 
-                                    <button
-                                        onClick={() => { setNaMode(!naMode); if (!naMode) { setPMode(false); setEraseMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } }}
-                                        className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-all ${naMode
-                                            ? 'bg-slate-600 text-white shadow-sm'
-                                            : 'text-slate-600 hover:bg-white hover:shadow-sm'
-                                            }`}
-                                        title={naMode ? 'Exit N/A Mode' : 'Enter N/A Mode - Click cells to set N/A'}
-                                    >
-                                        <Ban className="w-3.5 h-3.5" />
-                                        <span>N/A</span>
-                                    </button>
-
-                                    <button
-                                        onClick={() => { setHoldMode(!holdMode); if (!holdMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } }}
-                                        className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-all ${holdMode
-                                            ? 'bg-orange-600 text-white shadow-sm'
-                                            : 'text-slate-600 hover:bg-white hover:shadow-sm'
-                                            }`}
-                                        title={holdMode ? 'Exit Hold Mode' : 'Enter Hold Mode - Click cells to set Hold'}
-                                    >
-                                        <PauseCircle className="w-3.5 h-3.5" />
-                                        <span>Hold</span>
-                                    </button>
-
-                                    <button
-                                        onClick={() => { setQnMode(!qnMode); if (!qnMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setHoldMode(false); setWipMode(false); } }}
-                                        className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-all ${qnMode
-                                            ? 'bg-red-600 text-white shadow-sm'
-                                            : 'text-slate-600 hover:bg-white hover:shadow-sm'
-                                            }`}
-                                        title={qnMode ? 'Exit QN Mode' : 'Enter QN Mode - Click cells to set Quality Notification'}
-                                    >
-                                        <AlertTriangle className="w-3.5 h-3.5" />
-                                        <span>QN</span>
-                                    </button>
-
-                                    <button
-                                        onClick={() => { setWipMode(!wipMode); if (!wipMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setHoldMode(false); setQnMode(false); } }}
-                                        className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-all ${wipMode
-                                            ? 'bg-yellow-500 text-white shadow-sm'
-                                            : 'text-slate-600 hover:bg-white hover:shadow-sm'
-                                            }`}
-                                        title={wipMode ? 'Exit WIP Mode' : 'Enter WIP Mode - Click cells to set Work In Progress'}
-                                    >
-                                        <Clock className="w-3.5 h-3.5" />
-                                        <span>WIP</span>
-                                    </button>
-
-                                    <button
-                                        onClick={() => { setCompleteMode(!completeMode); if (!completeMode) { setPMode(false); setNaMode(false); setHoldMode(false); setQnMode(false); setEraseMode(false); setWipMode(false); } }}
-                                        className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-all ${completeMode
-                                            ? 'bg-green-600 text-white shadow-sm'
-                                            : 'text-slate-600 hover:bg-white hover:shadow-sm'
-                                            }`}
-                                        title={completeMode ? 'Exit Complete Mode' : 'Enter Complete Mode - Click cells to mark complete with date'}
-                                    >
-                                        <CheckCircle2 className="w-3.5 h-3.5" />
-                                        <span>C</span>
-                                    </button>
-
-                                    <div className="w-px h-5 bg-slate-300 mx-0.5" />
-
-                                    <button
-                                        onClick={() => {
-                                            if (eraseMode) {
-                                                setEraseMode(false);
-                                            } else if (role === 'admin') {
-                                                setEraseMode(true);
-                                                setPMode(false);
-                                                setNaMode(false);
-                                                setHoldMode(false);
-                                                setCompleteMode(false);
-                                            } else {
-                                                setErasePasswordModal(true);
-                                                setErasePassword('');
-                                                setErasePasswordError('');
-                                            }
-                                        }}
-                                        className={`flex items-center gap-1 px-2 py-1.5 rounded text-xs font-medium transition-all ${eraseMode
-                                            ? 'bg-red-600 text-white shadow-sm'
-                                            : 'text-red-500 hover:bg-white hover:shadow-sm'
-                                            }`}
-                                        title={eraseMode ? 'Exit Erase Mode' : 'Enter Erase Mode - Click any cell to clear'}
-                                    >
-                                        <Eraser className="w-3.5 h-3.5" />
-                                        <span>Erase</span>
-                                    </button>
+                                    {batchMenuOpen && (
+                                        <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-lg border border-slate-200 py-1 min-w-[140px] z-[100]">
+                                            <button onClick={() => { setPMode(!pMode); if (!pMode) { setNaMode(false); setEraseMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${pMode ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                                <Pencil className="w-4 h-4" /> Plan
+                                            </button>
+                                            <button onClick={() => { setNaMode(!naMode); if (!naMode) { setPMode(false); setEraseMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${naMode ? 'bg-slate-100 text-slate-700' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                                <Ban className="w-4 h-4" /> N/A
+                                            </button>
+                                            <button onClick={() => { setHoldMode(!holdMode); if (!holdMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${holdMode ? 'bg-orange-50 text-orange-700' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                                <PauseCircle className="w-4 h-4" /> Hold
+                                            </button>
+                                            <button onClick={() => { setQnMode(!qnMode); if (!qnMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setHoldMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${qnMode ? 'bg-red-50 text-red-700' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                                <AlertTriangle className="w-4 h-4" /> QN
+                                            </button>
+                                            <button onClick={() => { setWipMode(!wipMode); if (!wipMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setHoldMode(false); setQnMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${wipMode ? 'bg-yellow-50 text-yellow-700' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                                <Clock className="w-4 h-4" /> WIP
+                                            </button>
+                                            <button onClick={() => { setCompleteMode(!completeMode); if (!completeMode) { setPMode(false); setNaMode(false); setHoldMode(false); setQnMode(false); setEraseMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${completeMode ? 'bg-green-50 text-green-700' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                                <CheckCircle2 className="w-4 h-4" /> Complete
+                                            </button>
+                                            <div className="border-t border-slate-100 my-1" />
+                                            <button onClick={() => { if (eraseMode) { setEraseMode(false); } else if (role === 'admin') { setEraseMode(true); setPMode(false); setNaMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } else { setErasePasswordModal(true); setErasePassword(''); setErasePasswordError(''); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${eraseMode ? 'bg-red-50 text-red-700' : 'text-red-500 hover:bg-red-50'}`}>
+                                                <Eraser className="w-4 h-4" /> Erase
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -988,8 +931,8 @@ export default function DashboardPage() {
                             <MessageNotification />
                         </div>
 
-                        {/* Fixed Actions (Info, Logout) */}
-                        <div className="flex items-center gap-1 shrink-0 ml-1 border-l border-slate-200 pl-2">
+                        {/* Fixed Actions (Logout) */}
+                        <div className="flex items-center shrink-0 ml-1 border-l border-slate-200 pl-2">
                             <button
                                 onClick={handleLogout}
                                 className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
@@ -1003,124 +946,126 @@ export default function DashboardPage() {
             </header>
 
             {/* Production Insights Section */}
-            {showAnalytics && (
-                <div className="bg-white border-b border-slate-200 animate-in slide-in-from-top duration-300">
-                    <div className="max-w-7xl mx-auto px-4 py-8">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="flex items-center gap-2">
-                                <TrendingUp className="w-5 h-5 text-indigo-600" />
-                                <h2 className="text-xl font-bold text-slate-900">Production Insights</h2>
-                                <span className="text-xs bg-indigo-100 text-indigo-700 font-medium px-2 py-0.5 rounded-full ml-2">Last 7 Days</span>
+            {
+                showAnalytics && (
+                    <div className="bg-white border-b border-slate-200 animate-in slide-in-from-top duration-300">
+                        <div className="max-w-7xl mx-auto px-4 py-8">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-2">
+                                    <TrendingUp className="w-5 h-5 text-indigo-600" />
+                                    <h2 className="text-xl font-bold text-slate-900">Production Insights</h2>
+                                    <span className="text-xs bg-indigo-100 text-indigo-700 font-medium px-2 py-0.5 rounded-full ml-2">Last 7 Days</span>
+                                </div>
+                                <button
+                                    onClick={() => fetchAnalyticsData(selectedProductId)}
+                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
+                                >
+                                    <RefreshCw className={`w-4 h-4 ${loadingAnalytics ? 'animate-spin' : ''}`} />
+                                </button>
                             </div>
-                            <button
-                                onClick={() => fetchAnalyticsData(selectedProductId)}
-                                className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
-                            >
-                                <RefreshCw className={`w-4 h-4 ${loadingAnalytics ? 'animate-spin' : ''}`} />
-                            </button>
+
+                            {loadingAnalytics && !analyticsData ? (
+                                <div className="h-[300px] flex items-center justify-center">
+                                    <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
+                                </div>
+                            ) : analyticsData ? (
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                    {/* Summary Cards */}
+                                    <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
+                                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Top Producing Step</div>
+                                            <div className="text-xl font-bold text-indigo-600">{analyticsData.summary.topProducer}</div>
+                                        </div>
+                                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Current Bottleneck</div>
+                                            <div className="text-xl font-bold text-orange-600">{analyticsData.summary.bottleneck}</div>
+                                        </div>
+                                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                                            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Total Yield (7d)</div>
+                                            <div className="text-xl font-bold text-emerald-600">{analyticsData.summary.totalOutput} units</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Step Productivity Chart */}
+                                    <div className="bg-white p-5 rounded-xl border border-slate-200 h-[350px]">
+                                        <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Output per Step
+                                        </h3>
+                                        <ResponsiveContainer width="100%" height="90%">
+                                            <BarChart data={analyticsData.productivity}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
+                                                <YAxis fontSize={10} axisLine={false} tickLine={false} />
+                                                <Tooltip
+                                                    cursor={{ fill: '#f8fafc' }}
+                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                />
+                                                <Bar dataKey="count" fill="#4f46e5" radius={[4, 4, 0, 0]} barSize={32} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+
+                                    {/* Bottleneck Chart */}
+                                    <div className="bg-white p-5 rounded-xl border border-slate-200 h-[350px]">
+                                        <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                                            <AlertTriangle className="w-4 h-4 text-orange-500" /> Work In Progress
+                                        </h3>
+                                        <ResponsiveContainer width="100%" height="90%">
+                                            <BarChart data={analyticsData.bottlenecks}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
+                                                <YAxis fontSize={10} axisLine={false} tickLine={false} />
+                                                <Tooltip
+                                                    cursor={{ fill: '#fff7ed' }}
+                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                />
+                                                <Bar dataKey="count" fill="#f97316" radius={[4, 4, 0, 0]} barSize={32} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+
+                                    {/* Yield Trend Chart */}
+                                    <div className="bg-white p-5 rounded-xl border border-slate-200 h-[350px]">
+                                        <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                                            <TrendingUp className="w-4 h-4 text-indigo-500" /> Daily Production
+                                        </h3>
+                                        <ResponsiveContainer width="100%" height="90%">
+                                            <AreaChart data={analyticsData.trend}>
+                                                <defs>
+                                                    <linearGradient id="colorOutput" x1="0" y1="0" x2="0" y2="1">
+                                                        <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.1} />
+                                                        <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
+                                                    </linearGradient>
+                                                </defs>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                                                <XAxis
+                                                    dataKey="date"
+                                                    fontSize={10}
+                                                    axisLine={false}
+                                                    tickLine={false}
+                                                    tickFormatter={(str) => {
+                                                        const date = new Date(str);
+                                                        return format(date, 'MMM d');
+                                                    }}
+                                                />
+                                                <YAxis fontSize={10} axisLine={false} tickLine={false} />
+                                                <Tooltip
+                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                                                />
+                                                <Area type="monotone" dataKey="output" stroke="#4f46e5" fillOpacity={1} fill="url(#colorOutput)" strokeWidth={3} />
+                                            </AreaChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="h-[300px] flex items-center justify-center text-slate-400">
+                                    No production data found for the last 7 days.
+                                </div>
+                            )}
                         </div>
-
-                        {loadingAnalytics && !analyticsData ? (
-                            <div className="h-[300px] flex items-center justify-center">
-                                <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
-                            </div>
-                        ) : analyticsData ? (
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                {/* Summary Cards */}
-                                <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
-                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                                        <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Top Producing Step</div>
-                                        <div className="text-xl font-bold text-indigo-600">{analyticsData.summary.topProducer}</div>
-                                    </div>
-                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                                        <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Current Bottleneck</div>
-                                        <div className="text-xl font-bold text-orange-600">{analyticsData.summary.bottleneck}</div>
-                                    </div>
-                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                                        <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Total Yield (7d)</div>
-                                        <div className="text-xl font-bold text-emerald-600">{analyticsData.summary.totalOutput} units</div>
-                                    </div>
-                                </div>
-
-                                {/* Step Productivity Chart */}
-                                <div className="bg-white p-5 rounded-xl border border-slate-200 h-[350px]">
-                                    <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                                        <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Output per Step
-                                    </h3>
-                                    <ResponsiveContainer width="100%" height="90%">
-                                        <BarChart data={analyticsData.productivity}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                            <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
-                                            <YAxis fontSize={10} axisLine={false} tickLine={false} />
-                                            <Tooltip
-                                                cursor={{ fill: '#f8fafc' }}
-                                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                            />
-                                            <Bar dataKey="count" fill="#4f46e5" radius={[4, 4, 0, 0]} barSize={32} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-
-                                {/* Bottleneck Chart */}
-                                <div className="bg-white p-5 rounded-xl border border-slate-200 h-[350px]">
-                                    <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                                        <AlertTriangle className="w-4 h-4 text-orange-500" /> Work In Progress
-                                    </h3>
-                                    <ResponsiveContainer width="100%" height="90%">
-                                        <BarChart data={analyticsData.bottlenecks}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                            <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
-                                            <YAxis fontSize={10} axisLine={false} tickLine={false} />
-                                            <Tooltip
-                                                cursor={{ fill: '#fff7ed' }}
-                                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                            />
-                                            <Bar dataKey="count" fill="#f97316" radius={[4, 4, 0, 0]} barSize={32} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-
-                                {/* Yield Trend Chart */}
-                                <div className="bg-white p-5 rounded-xl border border-slate-200 h-[350px]">
-                                    <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                                        <TrendingUp className="w-4 h-4 text-indigo-500" /> Daily Production
-                                    </h3>
-                                    <ResponsiveContainer width="100%" height="90%">
-                                        <AreaChart data={analyticsData.trend}>
-                                            <defs>
-                                                <linearGradient id="colorOutput" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.1} />
-                                                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                            <XAxis
-                                                dataKey="date"
-                                                fontSize={10}
-                                                axisLine={false}
-                                                tickLine={false}
-                                                tickFormatter={(str) => {
-                                                    const date = new Date(str);
-                                                    return format(date, 'MMM d');
-                                                }}
-                                            />
-                                            <YAxis fontSize={10} axisLine={false} tickLine={false} />
-                                            <Tooltip
-                                                contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                            />
-                                            <Area type="monotone" dataKey="output" stroke="#4f46e5" fillOpacity={1} fill="url(#colorOutput)" strokeWidth={3} />
-                                        </AreaChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="h-[300px] flex items-center justify-center text-slate-400">
-                                No production data found for the last 7 days.
-                            </div>
-                        )}
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Main Content */}
             <main className="p-4">
@@ -1438,7 +1383,7 @@ export default function DashboardPage() {
                         </button>
                         {/* Tooltip */}
                         <div className="absolute bottom-full left-0 mb-2 w-auto min-w-[120px] bg-[#4e80ff] text-white text-[10px] p-3 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 animate-in slide-in-from-bottom-2">
-                            <div className="font-bold text-xs mb-1 whitespace-nowrap">ProTracker</div>
+                            <div className="font-bold text-xs mb-1 whitespace-nowrap">iProTraX</div>
                             <div className="space-y-0.5 text-slate-300">
                                 <div className="flex justify-between gap-3"><span>Version:</span> <span>{APP_VERSION}</span></div>
                                 <div className="flex justify-between gap-3"><span>Developer:</span> <span>Eric</span></div>
@@ -1450,86 +1395,128 @@ export default function DashboardPage() {
             </main>
 
             {/* Bulk Confirmation Modal */}
-            {bulkConfirmState.isOpen && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl p-6 max-w-sm mx-4 shadow-xl">
-                        <h3 className="text-lg font-bold text-slate-900 mb-2">Confirm Bulk Action</h3>
-                        <p className="text-slate-600 mb-4">
-                            Are you sure you want to mark <strong>{bulkConfirmState.count}</strong> orders as
-                            <span className={`font-bold ml-1 ${bulkConfirmState.mode === 'P' ? 'text-blue-600' : bulkConfirmState.mode === 'Hold' ? 'text-orange-600' : bulkConfirmState.mode === 'QN' ? 'text-red-600' : bulkConfirmState.mode === 'WIP' ? 'text-yellow-600' : bulkConfirmState.mode === 'Complete' ? 'text-green-600' : 'text-slate-500'}`}>
-                                {bulkConfirmState.mode === 'P' ? 'P' : bulkConfirmState.mode === 'Hold' ? 'Hold' : bulkConfirmState.mode === 'QN' ? 'QN' : bulkConfirmState.mode === 'WIP' ? 'WIP' : bulkConfirmState.mode === 'Complete' ? 'Complete (Today)' : 'N/A'}
-                            </span> for
-                            <span className="font-semibold ml-1">{bulkConfirmState.step}</span>?
-                        </p>
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setBulkConfirmState({ ...bulkConfirmState, isOpen: false })}
-                                className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={async () => {
-                                    const { step, mode, targets } = bulkConfirmState;
-                                    let status = 'N/A';
-                                    if (mode === 'P') status = 'P';
-                                    else if (mode === 'Hold') status = 'Hold';
-                                    else if (mode === 'QN') status = 'QN';
-                                    else if (mode === 'WIP') status = 'WIP';
-                                    else if (mode === 'Complete') status = format(new Date(), 'dd-MMM, HH:mm');
-                                    try {
-                                        const updates = targets.map((o: any) => ({
-                                            woId: o['WO ID'],
-                                            step,
-                                            status
-                                        }));
+            {
+                bulkConfirmState.isOpen && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-xl p-6 max-w-sm mx-4 shadow-xl">
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">Confirm Bulk Action</h3>
+                            <p className="text-slate-600 mb-4">
+                                Are you sure you want to mark <strong>{bulkConfirmState.count}</strong> orders as
+                                <span className={`font-bold ml-1 ${bulkConfirmState.mode === 'P' ? 'text-blue-600' : bulkConfirmState.mode === 'Hold' ? 'text-orange-600' : bulkConfirmState.mode === 'QN' ? 'text-red-600' : bulkConfirmState.mode === 'WIP' ? 'text-yellow-600' : bulkConfirmState.mode === 'Complete' ? 'text-green-600' : 'text-slate-500'}`}>
+                                    {bulkConfirmState.mode === 'P' ? 'P' : bulkConfirmState.mode === 'Hold' ? 'Hold' : bulkConfirmState.mode === 'QN' ? 'QN' : bulkConfirmState.mode === 'WIP' ? 'WIP' : bulkConfirmState.mode === 'Complete' ? 'Complete (Today)' : 'N/A'}
+                                </span> for
+                                <span className="font-semibold ml-1">{bulkConfirmState.step}</span>?
+                            </p>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setBulkConfirmState({ ...bulkConfirmState, isOpen: false })}
+                                    className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        const { step, mode, targets } = bulkConfirmState;
+                                        let status = 'N/A';
+                                        if (mode === 'P') status = 'P';
+                                        else if (mode === 'Hold') status = 'Hold';
+                                        else if (mode === 'QN') status = 'QN';
+                                        else if (mode === 'WIP') status = 'WIP';
+                                        else if (mode === 'Complete') status = format(new Date(), 'dd-MMM, HH:mm');
+                                        try {
+                                            const updates = targets.map((o: any) => ({
+                                                woId: o['WO ID'],
+                                                step,
+                                                status
+                                            }));
 
-                                        const res = await fetch('/api/orders/batch', {
-                                            method: 'PATCH',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ updates, operatorId: 'admin', productId: selectedProductId })
-                                        });
+                                            const res = await fetch('/api/orders/batch', {
+                                                method: 'PATCH',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ updates, operatorId: 'admin', productId: selectedProductId })
+                                            });
 
-                                        if (res.ok) {
-                                            await fetchOrders();
-                                            setBulkConfirmState({ ...bulkConfirmState, isOpen: false });
-                                        } else {
+                                            if (res.ok) {
+                                                await fetchOrders();
+                                                setBulkConfirmState({ ...bulkConfirmState, isOpen: false });
+                                            } else {
+                                                alert('Batch update failed');
+                                            }
+                                        } catch (err) {
+                                            console.error(err);
                                             alert('Batch update failed');
                                         }
-                                    } catch (err) {
-                                        console.error(err);
-                                        alert('Batch update failed');
-                                    }
-                                }}
-                                className={`flex-1 py-2 text-white rounded-lg font-medium ${bulkConfirmState.mode === 'P' ? 'bg-indigo-600 hover:bg-indigo-500' : bulkConfirmState.mode === 'Complete' ? 'bg-green-600 hover:bg-green-500' : 'bg-slate-600 hover:bg-slate-500'}`}
-                            >
-                                Confirm
-                            </button>
+                                    }}
+                                    className={`flex-1 py-2 text-white rounded-lg font-medium ${bulkConfirmState.mode === 'P' ? 'bg-indigo-600 hover:bg-indigo-500' : bulkConfirmState.mode === 'Complete' ? 'bg-green-600 hover:bg-green-500' : 'bg-slate-600 hover:bg-slate-500'}`}
+                                >
+                                    Confirm
+                                </button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Erase Mode Password Confirmation Modal */}
-            {erasePasswordModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl p-6 max-w-sm mx-4 shadow-xl">
-                        <h3 className="text-lg font-bold text-red-600 mb-2">⚠️ Enable Erase Mode</h3>
-                        <p className="text-slate-600 mb-4 text-sm">
-                            Erase mode allows you to clear any cell content. Please enter your password to confirm.
-                        </p>
+            {
+                erasePasswordModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-xl p-6 max-w-sm mx-4 shadow-xl">
+                            <h3 className="text-lg font-bold text-red-600 mb-2">⚠️ Enable Erase Mode</h3>
+                            <p className="text-slate-600 mb-4 text-sm">
+                                Erase mode allows you to clear any cell content. Please enter your password to confirm.
+                            </p>
 
 
-                        <div className="relative mb-4">
-                            <input
-                                type={erasePasswordVisible ? 'text' : 'password'}
-                                value={erasePassword}
-                                onChange={(e) => setErasePassword(e.target.value)}
-                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-200 pr-10 text-slate-800"
-                                placeholder={role === 'supervisor' ? 'Supervisor Password' : 'Admin Password'}
-                                autoFocus
-                                onKeyDown={async (e) => {
-                                    if (e.key === 'Enter' && erasePassword) {
+                            <div className="relative mb-4">
+                                <input
+                                    type={erasePasswordVisible ? 'text' : 'password'}
+                                    value={erasePassword}
+                                    onChange={(e) => setErasePassword(e.target.value)}
+                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-200 pr-10 text-slate-800"
+                                    placeholder={role === 'supervisor' ? 'Supervisor Password' : 'Admin Password'}
+                                    autoFocus
+                                    onKeyDown={async (e) => {
+                                        if (e.key === 'Enter' && erasePassword) {
+                                            const res = await fetch('/api/auth', {
+                                                method: 'POST',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ password: erasePassword })
+                                            });
+                                            const data = await res.json();
+                                            if (data.role === role) {
+                                                setErasePasswordModal(false);
+                                                setEraseMode(true);
+                                                setPMode(false);
+                                                setNaMode(false);
+                                                setHoldMode(false);
+                                            } else {
+                                                setErasePasswordError('Invalid password');
+                                            }
+                                        }
+                                    }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setErasePasswordVisible(!erasePasswordVisible)}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                                >
+                                    {erasePasswordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
+                                </button>
+                            </div>
+                            {erasePasswordError && (
+                                <p className="text-red-500 text-sm mb-2">{erasePasswordError}</p>
+                            )}
+
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setErasePasswordModal(false)}
+                                    className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={async () => {
                                         const res = await fetch('/api/auth', {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
@@ -1541,164 +1528,129 @@ export default function DashboardPage() {
                                             setEraseMode(true);
                                             setPMode(false);
                                             setNaMode(false);
-                                            setHoldMode(false);
                                         } else {
                                             setErasePasswordError('Invalid password');
                                         }
-                                    }
-                                }}
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setErasePasswordVisible(!erasePasswordVisible)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                            >
-                                {erasePasswordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
-                            </button>
-                        </div>
-                        {erasePasswordError && (
-                            <p className="text-red-500 text-sm mb-2">{erasePasswordError}</p>
-                        )}
-
-                        <div className="flex gap-2">
-                            <button
-                                onClick={() => setErasePasswordModal(false)}
-                                className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={async () => {
-                                    const res = await fetch('/api/auth', {
-                                        method: 'POST',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({ password: erasePassword })
-                                    });
-                                    const data = await res.json();
-                                    if (data.role === role) {
-                                        setErasePasswordModal(false);
-                                        setEraseMode(true);
-                                        setPMode(false);
-                                        setNaMode(false);
-                                    } else {
-                                        setErasePasswordError('Invalid password');
-                                    }
-                                }}
-                                disabled={!erasePassword}
-                                className="flex-1 py-2 bg-red-600 text-white rounded-lg font-medium disabled:opacity-50"
-                            >
-                                Enable
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Click outside to close product menu */}
-            {productMenuOpen && (
-                <div
-                    className="fixed inset-0 z-40"
-                    onClick={() => setProductMenuOpen(false)}
-                />
-            )}
-
-            {/* Operation Logs Modal */}
-            {showLogsModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl p-6 max-w-5xl w-full mx-4 shadow-xl max-h-[85vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                                <History className="w-6 h-6 text-indigo-600" />
-                                Operation Logs
-                            </h3>
-                            <div className="flex items-center gap-2">
-
-                                <button onClick={() => setShowLogsModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
-                                    <X className="w-6 h-6" />
+                                    }}
+                                    disabled={!erasePassword}
+                                    className="flex-1 py-2 bg-red-600 text-white rounded-lg font-medium disabled:opacity-50"
+                                >
+                                    Enable
                                 </button>
                             </div>
                         </div>
-
-                        {/* Notification */}
-                        {logsNotification && (
-                            <div className={`mx-6 mt-4 px-4 py-3 rounded-lg flex items-center gap-2 ${logsNotification.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
-                                }`}>
-                                {logsNotification.type === 'success' ? (
-                                    <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                    </svg>
-                                ) : (
-                                    <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                )}
-                                <span className="font-medium">{logsNotification.message}</span>
-                            </div>
-                        )}
-
-                        {loadingLogs ? (
-                            <div className="py-20 text-center text-slate-400 flex flex-col items-center gap-3">
-                                <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
-                                <span>Loading history...</span>
-                            </div>
-                        ) : logs.length === 0 ? (
-                            <div className="py-20 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                                No operation logs found
-                            </div>
-                        ) : (
-                            <div className="flex-1 overflow-y-auto border border-slate-200 rounded-lg shadow-sm">
-                                <table className="w-full text-sm">
-                                    <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
-                                        <tr>
-                                            <th className="px-4 py-3 text-left font-semibold text-slate-700 border-b border-slate-200">Time</th>
-                                            <th className="px-4 py-3 text-left font-semibold text-slate-700 border-b border-slate-200">Operator</th>
-                                            <th className="px-4 py-3 text-left font-semibold text-slate-700 border-b border-slate-200">WO ID</th>
-                                            <th className="px-4 py-3 text-left font-semibold text-slate-700 border-b border-slate-200">Step</th>
-                                            <th className="px-4 py-3 text-left font-semibold text-slate-700 border-b border-slate-200">Action</th>
-                                            <th className="px-4 py-3 text-left font-semibold text-slate-700 border-b border-slate-200">Change</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 bg-white">
-                                        {logs.map(log => (
-                                            <tr key={log.id} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-4 py-3 whitespace-nowrap text-slate-500 font-mono text-xs">
-                                                    {new Date(log.timestamp).toLocaleString('en-US', {
-                                                        month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                                                    })}
-                                                </td>
-                                                <td className="px-4 py-3 font-medium text-indigo-600">{log.operatorId}</td>
-                                                <td className="px-4 py-3 font-medium text-slate-900">{log.woId}</td>
-                                                <td className="px-4 py-3 truncate max-w-[150px] text-slate-600" title={log.step}>{log.step}</td>
-                                                <td className="px-4 py-3">
-                                                    <span className={`px-2 py-1 rounded-md text-xs font-semibold border ${log.action === 'Done' ? 'bg-green-50 text-green-700 border-green-100' :
-                                                        log.action === 'WIP' ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
-                                                            log.action === 'P' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                                                                log.action === 'Reset' ? 'bg-slate-100 text-slate-600 border-slate-200' :
-                                                                    'bg-slate-50 text-slate-600 border-slate-100'
-                                                        }`}>
-                                                        {log.action}
-                                                    </span>
-                                                </td>
-                                                <td className="px-4 py-3 text-slate-600 text-sm">
-                                                    {log.previousValue ? (
-                                                        <span className="flex items-center gap-1.5 flex-wrap">
-                                                            <span className="line-through text-slate-400 text-xs">{log.previousValue}</span>
-                                                            <ArrowRight className="w-3 h-3 text-slate-400" />
-                                                            <span className="font-medium text-slate-900">{log.newValue || '-'}</span>
-                                                        </span>
-                                                    ) : (
-                                                        <span className="font-medium text-slate-900">{log.newValue || '-'}</span>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        )}
                     </div>
-                </div>
-            )
+                )
+            }
+
+            {/* Click outside to close product menu */}
+            {
+                productMenuOpen && (
+                    <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setProductMenuOpen(false)}
+                    />
+                )
+            }
+
+            {/* Operation Logs Modal */}
+            {
+                showLogsModal && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-xl p-6 max-w-5xl w-full mx-4 shadow-xl max-h-[85vh] overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                                    <History className="w-6 h-6 text-indigo-600" />
+                                    Operation Logs
+                                </h3>
+                                <div className="flex items-center gap-2">
+
+                                    <button onClick={() => setShowLogsModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
+                                        <X className="w-6 h-6" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Notification */}
+                            {logsNotification && (
+                                <div className={`mx-6 mt-4 px-4 py-3 rounded-lg flex items-center gap-2 ${logsNotification.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
+                                    }`}>
+                                    {logsNotification.type === 'success' ? (
+                                        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    ) : (
+                                        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    )}
+                                    <span className="font-medium">{logsNotification.message}</span>
+                                </div>
+                            )}
+
+                            {loadingLogs ? (
+                                <div className="py-20 text-center text-slate-400 flex flex-col items-center gap-3">
+                                    <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
+                                    <span>Loading history...</span>
+                                </div>
+                            ) : logs.length === 0 ? (
+                                <div className="py-20 text-center text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                    No operation logs found
+                                </div>
+                            ) : (
+                                <div className="flex-1 overflow-y-auto border border-slate-200 rounded-lg shadow-sm">
+                                    <table className="w-full text-sm">
+                                        <thead className="bg-slate-50 sticky top-0 z-10 shadow-sm">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left font-semibold text-slate-700 border-b border-slate-200">Time</th>
+                                                <th className="px-4 py-3 text-left font-semibold text-slate-700 border-b border-slate-200">Operator</th>
+                                                <th className="px-4 py-3 text-left font-semibold text-slate-700 border-b border-slate-200">WO ID</th>
+                                                <th className="px-4 py-3 text-left font-semibold text-slate-700 border-b border-slate-200">Step</th>
+                                                <th className="px-4 py-3 text-left font-semibold text-slate-700 border-b border-slate-200">Action</th>
+                                                <th className="px-4 py-3 text-left font-semibold text-slate-700 border-b border-slate-200">Change</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 bg-white">
+                                            {logs.map(log => (
+                                                <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                                                    <td className="px-4 py-3 whitespace-nowrap text-slate-500 font-mono text-xs">
+                                                        {new Date(log.timestamp).toLocaleString('en-US', {
+                                                            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+                                                        })}
+                                                    </td>
+                                                    <td className="px-4 py-3 font-medium text-indigo-600">{log.operatorId}</td>
+                                                    <td className="px-4 py-3 font-medium text-slate-900">{log.woId}</td>
+                                                    <td className="px-4 py-3 truncate max-w-[150px] text-slate-600" title={log.step}>{log.step}</td>
+                                                    <td className="px-4 py-3">
+                                                        <span className={`px-2 py-1 rounded-md text-xs font-semibold border ${log.action === 'Done' ? 'bg-green-50 text-green-700 border-green-100' :
+                                                            log.action === 'WIP' ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
+                                                                log.action === 'P' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                                                                    log.action === 'Reset' ? 'bg-slate-100 text-slate-600 border-slate-200' :
+                                                                        'bg-slate-50 text-slate-600 border-slate-100'
+                                                            }`}>
+                                                            {log.action}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-slate-600 text-sm">
+                                                        {log.previousValue ? (
+                                                            <span className="flex items-center gap-1.5 flex-wrap">
+                                                                <span className="line-through text-slate-400 text-xs">{log.previousValue}</span>
+                                                                <ArrowRight className="w-3 h-3 text-slate-400" />
+                                                                <span className="font-medium text-slate-900">{log.newValue || '-'}</span>
+                                                            </span>
+                                                        ) : (
+                                                            <span className="font-medium text-slate-900">{log.newValue || '-'}</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )
             }
 
             {/* Barcode Scanner Modal */}
@@ -1894,6 +1846,13 @@ export default function DashboardPage() {
                     }
                 }}
             />
-        </div >
+
+            {/* Footer with DateTime */}
+            <footer className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-sm border-t border-slate-200 py-2 z-40">
+                <div className="text-center text-xs text-slate-400 font-mono">
+                    {currentDate}
+                </div>
+            </footer>
+        </div>
     );
 }

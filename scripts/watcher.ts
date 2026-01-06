@@ -163,7 +163,7 @@ async function refreshWatchers() {
  */
 async function main() {
     console.log('='.repeat(60));
-    console.log('🚀 ProTracker File Watcher Service');
+    console.log('🚀 iProTraX File Watcher Service');
     console.log('='.repeat(60));
     console.log(`Started at: ${new Date().toISOString()}`);
     console.log('');

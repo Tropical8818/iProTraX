@@ -13,17 +13,17 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ProTracker",
+  title: "iProTraX",
   description: "Production order tracking system",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icon-192.svg",
-    apple: "/icon-192.svg",
+    icon: "/icon-192.png",
+    apple: "/icon-192.png",
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "ProTracker",
+    title: "iProTraX",
   },
 };
 

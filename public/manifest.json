@@ -1,6 +1,6 @@
 {
-    "name": "Production Tracker",
-    "short_name": "PT Tracker",
+    "name": "iProTraX",
+    "short_name": "iProTraX",
     "description": "Production Tracking System for Manufacturing",
     "start_url": "/login",
     "display": "standalone",
@@ -9,15 +9,15 @@
     "orientation": "any",
     "icons": [
         {
-            "src": "/icon-192.svg",
+            "src": "/icon-192.png",
             "sizes": "192x192",
-            "type": "image/svg+xml",
+            "type": "image/png",
             "purpose": "any maskable"
         },
         {
-            "src": "/icon-192.svg",
+            "src": "/icon-192.png",
             "sizes": "512x512",
-            "type": "image/svg+xml",
+            "type": "image/png",
             "purpose": "any maskable"
         }
     ]

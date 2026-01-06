@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { APP_VERSION } from '@/lib/version';
 import {
     ArrowLeft, HardHat, Clock, AlertTriangle, CheckCircle2, RotateCcw, X, ScanBarcode, PauseCircle, MessageCircle, Send, Loader2,
-    Factory, User, Table2, Settings, LogOut, Search, CheckCircle, Ban
+    User, Table2, Settings, LogOut, Search, CheckCircle, Ban
 } from 'lucide-react';
 import type { Order } from '@/lib/excel';
 import dynamic from 'next/dynamic';
@@ -335,10 +335,7 @@ function OperationContent() {
                         className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity cursor-pointer"
                         title="Return to Home"
                     >
-                        <div className="bg-indigo-600 p-1.5 sm:p-2 rounded-lg">
-                            <Factory className="w-5 h-5 text-white" />
-                        </div>
-                        <h1 className="text-base sm:text-lg font-bold text-slate-900 hidden sm:block">ProTracker <span className="text-indigo-600 text-xs ml-1">{APP_VERSION}</span></h1>
+                        <img src="/logo.png" alt="iProTraX" className="h-9 w-auto" />
                     </button>
 
                     {/* Operator Display */}

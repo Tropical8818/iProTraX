@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "🚀 ProTracker Docker Bootstrap"
+echo "🚀 iProTraX Docker Bootstrap"
 echo "================================"
 
 # Wait a moment for any file system operations to settle
@@ -67,7 +67,7 @@ checkAndSeed().catch(console.error);
 "
 
 echo "✅ Database ready!"
-echo "🌐 Starting ProTracker..."
+echo "🌐 Starting iProTraX..."
 echo ""
 
 # Start the file watcher in the background

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Activity, Clock, AlertTriangle, CheckCircle2,
-    ChevronRight, Factory, Timer, Layers, Filter, Grid, ChevronDown, Lock, Unlock, X,
+    ChevronRight, Timer, Layers, Filter, Grid, ChevronDown, Lock, Unlock, X,
     LayoutList, Maximize2, LogOut
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -194,8 +194,8 @@ export default function KioskPage() {
                     onClick={() => !isLocked && router.push('/dashboard')}
                     className={`flex items-center gap-6 transition-all ${isLocked ? 'cursor-default' : 'cursor-pointer hover:opacity-80'}`}
                 >
-                    <div className="bg-indigo-600 p-3 rounded-2xl shadow-lg transition-colors">
-                        <Factory className="w-10 h-10 text-white" />
+                    <div className="bg-white/10 p-2 rounded-2xl shadow-lg">
+                        <img src="/logo.png" alt="iProTraX" className="h-12 w-auto" />
                     </div>
                     <div>
                         <h1 className="text-4xl font-black tracking-tight text-white uppercase">Shop Floor Monitor</h1>
@@ -213,7 +213,7 @@ export default function KioskPage() {
                                 ? 'cursor-default'
                                 : 'hover:border-indigo-500 cursor-pointer'}`}
                         >
-                            <Factory className="w-5 h-5 text-indigo-400" />
+
                             <span className="text-xl font-black text-white uppercase tracking-wider">
                                 {products.find(p => p.id === selectedProductId)?.name || 'SELECT PRODUCT'}
                             </span>

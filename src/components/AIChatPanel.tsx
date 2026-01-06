@@ -34,7 +34,7 @@ export default function AIChatPanel({ productId, role = 'user', onNavigate }: AI
         if (isOpen && messages.length === 0) {
             setMessages([{
                 role: 'assistant',
-                content: '👋 Hello! I\'m the ProTracker AI Assistant.\n\nI can help you:\n• Check order status\n• Analyze production data\n• Identify potential issues\n\nTry the Advisor Tools below for deep analysis.',
+                content: '👋 Hello! I\'m the iProTraX AI Assistant.\n\nI can help you:\n• Check order status\n• Analyze production data\n• Identify potential issues\n\nTry the Advisor Tools below for deep analysis.',
                 timestamp: new Date()
             }]);
         }
@@ -200,7 +200,7 @@ export default function AIChatPanel({ productId, role = 'user', onNavigate }: AI
                             <Bot className="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="font-bold">ProTracker AI</h3>
+                            <h3 className="font-bold">iProTraX AI</h3>
                             <p className="text-xs text-indigo-200">Smart Production Assistant</p>
                         </div>
                     </div>

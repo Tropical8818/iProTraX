@@ -1,6 +1,6 @@
 # Production Deployment Guide (V7.0.0)
 
-This guide covers two methods to deploy **ProTracker V7.0.0**:
+This guide covers two methods to deploy **iProTraX V7.0.0**:
 1. **Standard Node.js Deployment** (Recommended for Mac Mini servers or simple VPS).
 2. **Docker Deployment** (Recommended for Linux servers or trial runs).
 
