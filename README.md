@@ -38,69 +38,53 @@ It provides a lightweight, real-time visual interface that:
 *   **AI-Driven Insights**: A built-in AI assistant that analyzes risk and generates reports, replacing manual data crunching.
 
 ```mermaid
-graph TD
-    subgraph RigidERP ["Rigid ERP"]
-        SAP[SAP / ME POD]
-    end
-
-    subgraph DynamicShop ["Dynamic Shop"]
-        Tech[Technician / Digital Updates]
-        Kiosk[Kiosk Mode]
-    end
-
-    subgraph AgileCollaboration ["Agile Collaboration"]
-        Core[iProTraX Core]
-        DB[(Local Database)]
-        AI[AI Copilot]
-    end
-
-    subgraph Management ["Management"]
-        Supervisor[Supervisor / Super Edit]
-        Admin[Admin / System Control]
-    end
-
-    %% Connections
-    SAP -->|"1. Auto-Import (Excel)"| Core
-    Core -->|"2. Real-time Status"| Kiosk
-    Tech -->|"3. Digital Updates"| Core
-    Core -->|"Store"| DB
+flowchart TB
+ subgraph RigidERP["Rigid ERP"]
+        SAP["SAP / ME POD"]
+  end
+ subgraph DynamicShop["Dynamic Shop"]
+        Tech["Technician / Digital Updates"]
+        Kiosk["Kiosk Mode"]
+  end
+ subgraph AgileCollaboration["Agile Collaboration"]
+        Core["iProTraX Core"]
+        DB[("Local Database")]
+        AI["AI Copilot"]
+  end
+ subgraph Management["Management"]
+        Supervisor["Supervisor / Super Edit"]
+        Admin["Admin / System Control"]
+  end
+    SAP -- "1. Auto-Import (Excel)" --> Core
+    Core -- "2. Real-time Status" --> Kiosk
+    Tech -- "3. Digital Updates" --> Core
+    Core -- Store --> DB
     Core <--> AI
-    AI -->|"Risk Analysis"| Supervisor
-    Core -->|"4. Monitoring & Correction"| Supervisor
-    Core -->|"5. CSV Export & Logs"| Admin
-    Admin -->|"7. Manage Lines & Users"| Core
-    Admin -.->|"8. Control AI Context"| AI
-    Supervisor -.->|"6. Reconciliation"| SAP
-    Tech <-->|"Step Collaboration"| Supervisor
-
-    %% Layout Enforcement
-    %% 1. Top to Middle
-    SAP ~~~ Tech
-    SAP ~~~ Core
-
-    %% 2. Middle to Bottom
-    Tech ~~~ Supervisor
+    AI -- Risk Analysis --> Supervisor
+    Core -- "4. Monitoring & Correction" --> Supervisor
+    Core -- "5. CSV Export & Logs" --> Admin
+    Admin -- "7. Manage Lines & Users" --> Core
+    Admin -. "8. Control AI Context" .-> AI
+    Supervisor -. "6. Reconciliation" .-> SAP
+    Tech <-- Step Collaboration --> Supervisor
+    SAP ~~~ Tech & Core
+    Tech ~~~ Supervisor & Core
     Core ~~~ Admin
 
-    %% 3. Middle Horizontal Alignment
-    Tech ~~~ Core
-
-    %% Styling
-    classDef sap fill:#1e3a8a,stroke:#333,stroke-width:2px,color:white;
-    classDef core fill:#4f46e5,stroke:#333,stroke-width:2px,color:white;
-    classDef kiosk fill:#059669,stroke:#333,stroke-width:2px,color:white;
-    classDef super fill:#d97706,stroke:#333,stroke-width:2px,color:white;
-    classDef admin fill:#b45309,stroke:#333,stroke-width:2px,color:white;
-    classDef db fill:#fff,stroke:#333,stroke-width:2px;
-    classDef shop fill:#f59e0b,stroke:#333,stroke-width:2px,color:black;
-
-    class SAP sap;
-    class Core core;
-    class Kiosk kiosk;
-    class Supervisor super;
-    class Admin admin;
-    class DB db;
-    class Tech shop;
+     SAP:::sap
+     Tech:::shop
+     Kiosk:::kiosk
+     Core:::core
+     DB:::db
+     Supervisor:::super
+     Admin:::admin
+    classDef sap fill:#1e3a8a,stroke:#333,stroke-width:2px,color:white
+    classDef core fill:#4f46e5,stroke:#333,stroke-width:2px,color:white
+    classDef kiosk fill:#059669,stroke:#333,stroke-width:2px,color:white
+    classDef super fill:#d97706,stroke:#333,stroke-width:2px,color:white
+    classDef admin fill:#b45309,stroke:#333,stroke-width:2px,color:white
+    classDef db fill:#fff,stroke:#333,stroke-width:2px
+    classDef shop fill:#f59e0b,stroke:#333,stroke-width:2px,color:black
 ```
 
 ---

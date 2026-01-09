@@ -39,69 +39,53 @@ iProTraX 不是要取代 SAP。它是连接重型 ERP 与敏捷团队之间的 *
 *   **AI 驱动洞察**：内置 AI 助手分析风险并生成日报，取代人工数据整理。
 
 ```mermaid
-graph TD
-    subgraph RigidERP ["Rigid ERP (僵化ERP)"]
-        SAP[SAP / ME POD]
-    end
-
-    subgraph DynamicShop ["Dynamic Shop (动态车间)"]
+flowchart TB
+ subgraph RigidERP["Rigid ERP (僵化ERP)"]
+        SAP["SAP / ME POD"]
+  end
+ subgraph DynamicShop["Dynamic Shop (动态车间)"]
         Tech["Technician / Digital Updates (技术员/数字化更新)"]
         Kiosk["Kiosk Mode (电子看板)"]
-    end
-
-    subgraph AgileCollaboration ["Agile Collaboration (敏捷协同)"]
-        Core[iProTraX Core]
-        DB[(Local Database)]
-        AI[AI Copilot]
-    end
-
-    subgraph Management ["Management (管理层)"]
+  end
+ subgraph AgileCollaboration["Agile Collaboration (敏捷协同)"]
+        Core["iProTraX Core"]
+        DB[("Local Database")]
+        AI["AI Copilot"]
+  end
+ subgraph Management["Management (管理层)"]
         Supervisor["Supervisor / Super Edit (主管/超级编辑)"]
         Admin["Admin / System Control (管理员/系统控制)"]
-    end
-
-    %% Connections
-    SAP -->|"1. Auto-Import (Excel)"| Core
-    Core -->|"2. Real-time Status"| Kiosk
-    Tech -->|"3. Digital Updates"| Core
-    Core -->|"Store"| DB
+  end
+    SAP -- "1. Auto-Import (Excel)" --> Core
+    Core -- "2. Real-time Status" --> Kiosk
+    Tech -- "3. Digital Updates" --> Core
+    Core -- Store --> DB
     Core <--> AI
-    AI -->|"Risk Analysis"| Supervisor
-    Core -->|"4. Monitoring & Correction"| Supervisor
-    Core -->|"5. CSV Export & Logs (CSV导出/日志)"| Admin
-    Admin -->|"7. Manage Lines & Users (产线管理 & 用户控制)"| Core
-    Admin -.->|"8. Control AI Context (AI能力控制)"| AI
-    Supervisor -.->|"6. Reconciliation"| SAP
-    Tech <-->|"Step Collaboration (工步级协同)"| Supervisor
-
-    %% Layout Enforcement
-    %% 1. Top to Middle
-    SAP ~~~ Tech
-    SAP ~~~ Core
-
-    %% 2. Middle to Bottom
-    Tech ~~~ Supervisor
+    AI -- Risk Analysis --> Supervisor
+    Core -- "4. Monitoring & Correction" --> Supervisor
+    Core -- "5. CSV Export & Logs (CSV导出/日志)" --> Admin
+    Admin -- "7. Manage Lines & Users (产线管理 & 用户控制)" --> Core
+    Admin -. "8. Control AI Context (AI能力控制)" .-> AI
+    Supervisor -. "6. Reconciliation" .-> SAP
+    Tech <-- "Step Collaboration (工步级协同)" --> Supervisor
+    SAP ~~~ Tech & Core
+    Tech ~~~ Supervisor & Core
     Core ~~~ Admin
 
-    %% 3. Middle Horizontal Alignment
-    Tech ~~~ Core
-
-    %% Styling
-    classDef sap fill:#1e3a8a,stroke:#333,stroke-width:2px,color:white;
-    classDef core fill:#4f46e5,stroke:#333,stroke-width:2px,color:white;
-    classDef kiosk fill:#059669,stroke:#333,stroke-width:2px,color:white;
-    classDef super fill:#d97706,stroke:#333,stroke-width:2px,color:white;
-    classDef admin fill:#b45309,stroke:#333,stroke-width:2px,color:white;
-    classDef db fill:#fff,stroke:#333,stroke-width:2px;
-    classDef shop fill:#f59e0b,stroke:#333,stroke-width:2px,color:black;
-
-    class SAP sap;
-    class Core core;
-    class Kiosk kiosk;
-    class Supervisor super;
-    class Admin admin;
-    class DB db;
-    class Tech shop;
+     SAP:::sap
+     Tech:::shop
+     Kiosk:::kiosk
+     Core:::core
+     DB:::db
+     Supervisor:::super
+     Admin:::admin
+    classDef sap fill:#1e3a8a,stroke:#333,stroke-width:2px,color:white
+    classDef core fill:#4f46e5,stroke:#333,stroke-width:2px,color:white
+    classDef kiosk fill:#059669,stroke:#333,stroke-width:2px,color:white
+    classDef super fill:#d97706,stroke:#333,stroke-width:2px,color:white
+    classDef admin fill:#b45309,stroke:#333,stroke-width:2px,color:white
+    classDef db fill:#fff,stroke:#333,stroke-width:2px
+    classDef shop fill:#f59e0b,stroke:#333,stroke-width:2px,color:black
 ```
 
 ---
