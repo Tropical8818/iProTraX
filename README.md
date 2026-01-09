@@ -37,7 +37,51 @@ It provides a lightweight, real-time visual interface that:
 *   **Kiosk Mode**: Replaces "asking via WeChat" with large, auto-updating shop floor monitors.
 *   **AI-Driven Insights**: A built-in AI assistant that analyzes risk and generates reports, replacing manual data crunching.
 
-![iProTraX Architecture](public/system_architecture.png)
+```mermaid
+graph TD
+    subgraph RigidERP ["Rigid ERP"]
+        SAP[SAP / ME POD]
+    end
+
+    subgraph DynamicShop ["Dynamic Shop"]
+        Worker[Worker / Digital Updates]
+    end
+
+    subgraph AgileCollaboration ["Agile Collaboration"]
+        Core[iProTraX Core]
+        DB[(Local Database)]
+        AI[AI Copilot]
+    end
+
+    Kiosk[Kiosk Mode]
+    Supervisor[Supervisor / Super Edit]
+
+    %% Connections
+    SAP -->|"1. Auto-Import (Excel)"| Core
+    Core -->|"2. Real-time Status"| Kiosk
+    Worker -->|"3. Digital Updates"| Core
+    Core -->|"Store"| DB
+    Core <--> AI
+    AI -->|"Risk Analysis"| Supervisor
+    Core -->|"4. Monitoring & Correction"| Supervisor
+    Core -->|"5. CSV Export"| Supervisor
+    Supervisor -.->|"6. Reconciliation"| SAP
+
+    %% Styling
+    classDef sap fill:#1e3a8a,stroke:#333,stroke-width:2px,color:white;
+    classDef core fill:#4f46e5,stroke:#333,stroke-width:2px,color:white;
+    classDef kiosk fill:#059669,stroke:#333,stroke-width:2px,color:white;
+    classDef super fill:#d97706,stroke:#333,stroke-width:2px,color:white;
+    classDef db fill:#fff,stroke:#333,stroke-width:2px;
+    classDef shop fill:#f59e0b,stroke:#333,stroke-width:2px,color:black;
+
+    class SAP sap;
+    class Core core;
+    class Kiosk kiosk;
+    class Supervisor super;
+    class DB db;
+    class Worker shop;
+```
 
 ---
 
@@ -120,7 +164,7 @@ Simplified, touch-friendly interface for operators on the floor.
 ---
 
 ### DEMO
-https://protracker.puppy101.dpdns.org/
+https://iprotrax.work
 Contact author for access: mailto: jkdb0g@whatifthenhow.com
 
 ---

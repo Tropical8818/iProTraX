@@ -38,7 +38,51 @@ iProTraX 不是要取代 SAP。它是连接重型 ERP 与敏捷团队之间的 *
 *   **电子看板 (Kiosk)**：用大屏幕、自动刷新的车间显示器取代"微信询问"。
 *   **AI 驱动洞察**：内置 AI 助手分析风险并生成日报，取代人工数据整理。
 
-![iProTraX Architecture](public/system_architecture.png)
+```mermaid
+graph TD
+    subgraph RigidERP ["Rigid ERP (僵化ERP)"]
+        SAP[SAP / ME POD]
+    end
+
+    subgraph DynamicShop ["Dynamic Shop (动态车间)"]
+        Worker[Worker / Digital Updates]
+    end
+
+    subgraph AgileCollaboration ["Agile Collaboration (敏捷协同)"]
+        Core[iProTraX Core]
+        DB[(Local Database)]
+        AI[AI Copilot]
+    end
+
+    Kiosk[Kiosk Mode (电子看板)]
+    Supervisor[Supervisor / Super Edit (主管/超级编辑)]
+
+    %% Connections
+    SAP -->|"1. Auto-Import (Excel)"| Core
+    Core -->|"2. Real-time Status"| Kiosk
+    Worker -->|"3. Digital Updates"| Core
+    Core -->|"Store"| DB
+    Core <--> AI
+    AI -->|"Risk Analysis"| Supervisor
+    Core -->|"4. Monitoring & Correction"| Supervisor
+    Core -->|"5. CSV Export"| Supervisor
+    Supervisor -.->|"6. Reconciliation"| SAP
+
+    %% Styling
+    classDef sap fill:#1e3a8a,stroke:#333,stroke-width:2px,color:white;
+    classDef core fill:#4f46e5,stroke:#333,stroke-width:2px,color:white;
+    classDef kiosk fill:#059669,stroke:#333,stroke-width:2px,color:white;
+    classDef super fill:#d97706,stroke:#333,stroke-width:2px,color:white;
+    classDef db fill:#fff,stroke:#333,stroke-width:2px;
+    classDef shop fill:#f59e0b,stroke:#333,stroke-width:2px,color:black;
+
+    class SAP sap;
+    class Core core;
+    class Kiosk kiosk;
+    class Supervisor super;
+    class DB db;
+    class Worker shop;
+```
 
 ---
 
@@ -121,7 +165,7 @@ npm run dev
 ---
 
 ### 演示 (DEMO)
-https://protracker.puppy101.dpdns.org/
+https://iprotrax.work
 联系作者获取访问权限: mailto: jkdb0g@whatifthenhow.com
 
 ---
