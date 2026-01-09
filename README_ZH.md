@@ -45,8 +45,8 @@ graph TD
     end
 
     subgraph DynamicShop ["Dynamic Shop (动态车间)"]
-        Worker[Worker / Digital Updates]
-        Kiosk[Kiosk Mode (电子看板)]
+        Worker["Worker / Digital Updates"]
+        Kiosk["Kiosk Mode (电子看板)"]
     end
 
     subgraph AgileCollaboration ["Agile Collaboration (敏捷协同)"]
@@ -55,7 +55,7 @@ graph TD
         AI[AI Copilot]
     end
 
-    Supervisor[Supervisor / Super Edit (主管/超级编辑)]
+    Supervisor["Supervisor / Super Edit (主管/超级编辑)"]
 
     %% Connections
     SAP -->|"1. Auto-Import (Excel)"| Core
