@@ -22,7 +22,7 @@ In modern high-mix manufacturing, relying solely on heavy ERP systems like **SAP
 After the initial deployment, use the following credentials to access the **SuperAdmin** account:
 
 *   **Employee ID (UserID)**: `SUPER001`
-*   **Default Password**: `superadmin123`
+*   **Default Password**: `superuser2025`
 
 > [!IMPORTANT]
 > For security, it is highly recommended to change this password immediately after your first login via the User Management settings.
