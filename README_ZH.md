@@ -75,8 +75,16 @@ graph TD
     Tech <-->|"Step Collaboration (工步级协同)"| Supervisor
 
     %% Layout Enforcement
+    %% 1. Top to Middle
     SAP ~~~ Tech
-    Supervisor ~~~ Admin
+    SAP ~~~ Core
+
+    %% 2. Middle to Bottom
+    Tech ~~~ Supervisor
+    Core ~~~ Admin
+
+    %% 3. Middle Horizontal Alignment
+    Tech ~~~ Core
 
     %% Styling
     classDef sap fill:#1e3a8a,stroke:#333,stroke-width:2px,color:white;
