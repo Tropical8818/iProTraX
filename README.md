@@ -16,18 +16,7 @@ In modern high-mix manufacturing, relying solely on heavy ERP systems like **SAP
 
 **Result**: You cannot precisely schedule manpower or machines because you don't know the *actual* state of the floor.
 
----
 
-## 🔐 Default Credentials
-After the initial deployment, use the following credentials to access the **SuperAdmin** account:
-
-*   **Employee ID (UserID)**: `SUPER001`
-*   **Default Password**: `superuser2025`
-
-> [!IMPORTANT]
-> For security, it is highly recommended to change this password immediately after your first login via the User Management settings.
-
----
 
 iProTraX is not a replacement for SAP. It is the **Agile Collaboration Layer** that sits between your heavy ERP and your agile teams.
 
@@ -106,6 +95,15 @@ OPENAI_API_KEY=sk-your-api-key-here
 npm run dev
 ```
 Visit http://localhost:3001
+
+### 4. Default Credentials
+After the initial deployment, use the following credentials to access the **SuperAdmin** account:
+
+*   **Employee ID (UserID)**: `SUPER001`
+*   **Default Password**: `superuser2025`
+
+> [!IMPORTANT]
+> For security, it is highly recommended to change this password immediately after your first login via the User Management settings.
 
 ---
 

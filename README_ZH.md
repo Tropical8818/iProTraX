@@ -16,18 +16,7 @@
 
 **结果**：因为不知道车间的*真实*状态，你根本无法精确地调度人员或设备。
 
----
 
-## 🔐 默认凭据 (Default Credentials)
-首次部署后，使用以下凭据登录 **SuperAdmin** 账户：
-
-*   **员工 ID (UserID)**: `SUPER001`
-*   **默认密码**: `superuser2025`
-
-> [!IMPORTANT]
-> 为确保安全，强烈建议您在首次登录后立即通过"用户管理"设置更改此密码。
-
----
 
 ## 💡 解决方案：iProTraX
 iProTraX 不是要取代 SAP。它是连接重型 ERP 与敏捷团队之间的 **敏捷协同层 (Agile Collaboration Layer)**。
@@ -107,6 +96,15 @@ OPENAI_API_KEY=sk-your-api-key-here
 npm run dev
 ```
 访问 http://localhost:3001
+
+### 4. 默认凭据 (Default Credentials)
+首次部署后，使用以下凭据登录 **SuperAdmin** 账户：
+
+*   **员工 ID (UserID)**: `SUPER001`
+*   **默认密码**: `superuser2025`
+
+> [!IMPORTANT]
+> 为确保安全，强烈建议您在首次登录后立即通过"用户管理"设置更改此密码。
 
 ---
 
