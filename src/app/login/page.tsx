@@ -80,11 +80,8 @@ export default function LoginPage() {
                         className="absolute top-6 right-6 z-50 px-3 py-2 rounded-lg transition-all shadow-lg text-white hover:text-indigo-300 hover:bg-white/20 border border-white/30 text-2xl"
                         title={currentLocale === 'en' ? '切换到中文' : 'Switch to English'}
                         aria-label="Switch Language"
-                        suppressHydrationWarning
                     >
-                        <span suppressHydrationWarning>
-                            {currentLocale === 'en' ? '🇨🇳' : '🇺🇸'}
-                        </span>
+                        {currentLocale === 'en' ? '🇨🇳' : '🇺🇸'}
                     </button>
 
                     <div className="flex flex-col items-center mb-8">
