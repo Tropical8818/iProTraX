@@ -137,6 +137,55 @@ Visit http://localhost:3001
 
 ---
 
+## 🛠️ Technology Stack
+
+```mermaid
+flowchart TB
+    subgraph Client ["Frontend (Next.js 16)"]
+        UI[React 19 UI]
+        TW[Tailwind CSS v4]
+        Icon[Lucide Icons]
+        Chart[Recharts]
+    end
+
+    subgraph Server ["Backend Services"]
+        API[Next.js API Routes]
+        Watcher[Chokidar File Watcher]
+        Prisma[Prisma ORM]
+    end
+
+    subgraph Data ["Data Persistence"]
+        SQLite[(SQLite Database)]
+        Excel[Excel Files (.xlsx)]
+    end
+
+    subgraph AI ["Intelligence"]
+        OpenAI[OpenAI / DeepSeek]
+    end
+
+    %% Connections
+    UI --> API
+    API --> Prisma
+    Prisma --> SQLite
+    Watcher -->|Auto-Import| Excel
+    Watcher -->|Write| Prisma
+    API -->|Context| OpenAI
+    OpenAI -->|Analysis| API
+
+    %% Styling
+    classDef fe fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e;
+    classDef be fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    classDef db fill:#f3e8ff,stroke:#9333ea,color:#581c87;
+    classDef ai fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
+
+    class UI,TW,Icon,Chart fe;
+    class API,Watcher,Prisma be;
+    class SQLite,Excel db;
+    class OpenAI ai;
+```
+
+---
+
 ## 🔒 Security & Management
 *   **Role-Based Access**: Strict separation between Admin, Supervisor, User, and Kiosk roles.
 *   **Log Management**: Full CSV export capabilities for post-mortem analysis.

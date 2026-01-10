@@ -136,6 +136,57 @@ npm run dev
     *   **类别分析**：分析针对特定类别的评论（如 QN、设备、物料），识别瓶颈。
     *   **智能评论**：按步骤追踪讨论，允许在生产流程中直接进行精准的问题解决。
 
+    *   **智能评论**：按步骤追踪讨论，允许在生产流程中直接进行精准的问题解决。
+
+---
+
+## 🛠️ 技术栈 (Technology Stack)
+
+```mermaid
+flowchart TB
+    subgraph Client ["Frontend (前端 - Next.js 16)"]
+        UI[React 19 UI]
+        TW[Tailwind CSS v4]
+        Icon[Lucide Icons]
+        Chart[Recharts]
+    end
+
+    subgraph Server ["Backend Services (后端服务)"]
+        API[Next.js API Routes]
+        Watcher[Chokidar File Watcher]
+        Prisma[Prisma ORM]
+    end
+
+    subgraph Data ["Data Persistence (数据持久化)"]
+        SQLite[(SQLite Database)]
+        Excel[Excel Files (.xlsx)]
+    end
+
+    subgraph AI ["Intelligence (智能)"]
+        OpenAI[OpenAI / DeepSeek]
+    end
+
+    %% Connections
+    UI --> API
+    API --> Prisma
+    Prisma --> SQLite
+    Watcher -->|Auto-Import| Excel
+    Watcher -->|Write| Prisma
+    API -->|Context| OpenAI
+    OpenAI -->|Analysis| API
+
+    %% Styling
+    classDef fe fill:#e0f2fe,stroke:#0284c7,color:#0c4a6e;
+    classDef be fill:#dcfce7,stroke:#16a34a,color:#14532d;
+    classDef db fill:#f3e8ff,stroke:#9333ea,color:#581c87;
+    classDef ai fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
+
+    class UI,TW,Icon,Chart fe;
+    class API,Watcher,Prisma be;
+    class SQLite,Excel db;
+    class OpenAI ai;
+```
+
 ---
 
 ## 🔒 安全与管理
