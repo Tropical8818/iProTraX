@@ -5,10 +5,9 @@ test('basic flow: login and navigate to dashboard', async ({ page }) => {
     await page.goto('/login');
 
     // 2. Fill login form
-    // Assuming default credentials from README: ID: user, Password: user
-    // However, I changed password logic in config but keeping it simple for default setup
-    await page.fill('input[type="text"]', 'user'); // Employee ID
-    await page.fill('input[type="password"]', 'user'); // Password
+    // Using admin credentials from seed.ts
+    await page.fill('input[type="text"]', 'admin'); // Employee ID
+    await page.fill('input[type="password"]', 'admin123'); // Password
 
     // 3. Submit
     await page.click('button[type="submit"]');
