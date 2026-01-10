@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Table2, HardHat, Settings, LogOut, Save, FileSpreadsheet, Lock, Plus, Trash2, Edit2, X, ChevronUp, ChevronDown, Package, RefreshCw, Check, Eye, EyeOff, Clock, FilePlus, Info, User, Key, Users, Database, Download, Bot, Sparkles, Monitor, Play } from 'lucide-react';
+import { useTranslations } from 'next-intl';
+import { Table2, HardHat, Settings, LogOut, Save, FileSpreadsheet, Lock, Plus, Trash2, Edit2, X, ChevronUp, ChevronDown, Package, RefreshCw, Check, Eye, EyeOff, Clock, FilePlus, Info, User, Key, Users, Database, Download, Bot, Sparkles, Monitor, Play, Upload, Globe } from 'lucide-react';
 import { APP_VERSION } from '@/lib/version';
 
 interface Product {
@@ -89,6 +90,10 @@ const NEW_PRODUCT_TEMPLATE: Omit<Product, 'id'> = {
 };
 
 export default function SettingsPage() {
+    const t = useTranslations('Settings');
+    const tCommon = useTranslations('Common');
+    const tDash = useTranslations('Dashboard');
+    const router = useRouter();
     const [config, setConfig] = useState<Config>({ products: [], activeProductId: '', USER_PASSWORD: '', SUPERVISOR_PASSWORD: '', ADMIN_PASSWORD: '' });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -136,7 +141,7 @@ export default function SettingsPage() {
     const [watcherPid, setWatcherPid] = useState<number | null>(null);
     const [watcherLoading, setWatcherLoading] = useState(false);
 
-    const router = useRouter();
+
 
     useEffect(() => {
         const fetchConfig = async () => {
@@ -459,7 +464,7 @@ export default function SettingsPage() {
                             className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
                         >
                             <Table2 className="w-4 h-4" />
-                            <span className="hidden sm:inline">Home</span>
+                            <span className="hidden sm:inline">{tDash('home')}</span>
                         </button>
 
                         <button
@@ -467,12 +472,12 @@ export default function SettingsPage() {
                             className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
                         >
                             <HardHat className="w-4 h-4" />
-                            <span className="hidden sm:inline">Operation</span>
+                            <span className="hidden sm:inline">{tDash('operation')}</span>
                         </button>
 
                         <button className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium">
                             <Settings className="w-4 h-4" />
-                            <span className="hidden sm:inline">Settings</span>
+                            <span className="hidden sm:inline">{tDash('settings')}</span>
                         </button>
 
                         <button
@@ -499,20 +504,20 @@ export default function SettingsPage() {
                                     <div className="flex items-center justify-between mb-4">
                                         <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                                             <Package className="w-5 h-5 text-indigo-600" />
-                                            Product Lines
+                                            {t('productLines')}
                                         </h2>
                                     </div>
 
                                     {/* Add Products Section */}
                                     <div className="mb-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                                        <p className="text-sm text-slate-700 mb-3 font-medium">Add Product Line:</p>
+                                        <p className="text-sm text-slate-700 mb-3 font-medium">{t('addProductLine')}:</p>
                                         <div className="flex flex-wrap gap-2">
                                             <button
                                                 onClick={addCustomProduct}
                                                 className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-500 transition-colors shadow-sm flex items-center gap-2"
                                             >
                                                 <Plus className="w-4 h-4" />
-                                                Add New Production Line
+                                                {t('addNewProductionLine')}
                                             </button>
                                         </div>
                                     </div>
@@ -533,7 +538,7 @@ export default function SettingsPage() {
                                                         <div className="font-semibold text-slate-900">{product.name}</div>
                                                         <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-2">
                                                             <span className={`px-1.5 py-0.5 rounded ${product.steps.length > 0 ? 'bg-slate-100 text-slate-600' : 'bg-amber-100 text-amber-700'}`}>
-                                                                {product.steps.length > 0 ? `${product.steps.length} steps` : 'No steps'}
+                                                                {product.steps.length > 0 ? `${product.steps.length} ${t('steps')}` : t('noSteps')}
                                                             </span>
                                                             {product.excelPath && (
                                                                 <span className="truncate max-w-[200px]" title={product.excelPath}>
@@ -547,14 +552,14 @@ export default function SettingsPage() {
                                                     <button
                                                         onClick={() => setEditingProduct(editingProduct?.id === product.id ? null : product)}
                                                         className={`p-2 rounded-lg transition-colors ${editingProduct?.id === product.id ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-500 hover:bg-white hover:shadow-sm hover:text-indigo-600'}`}
-                                                        title="Edit"
+                                                        title={tCommon('edit')}
                                                     >
                                                         <Edit2 className="w-4 h-4" />
                                                     </button>
                                                     <button
                                                         onClick={() => deleteProduct(product.id)}
                                                         className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                        title="Delete"
+                                                        title={tCommon('delete')}
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
@@ -567,7 +572,7 @@ export default function SettingsPage() {
                                     {editingProduct && (
                                         <div className="mt-6 p-6 bg-slate-50 rounded-xl border border-slate-200 animate-in fade-in slide-in-from-top-2">
                                             <div className="flex items-center justify-between mb-6">
-                                                <h3 className="font-semibold text-slate-900 text-lg">Configure Product</h3>
+                                                <h3 className="font-semibold text-slate-900 text-lg">{t('configureProduct')}</h3>
                                                 <button onClick={() => setEditingProduct(null)} className="p-1 text-slate-400 hover:text-slate-600 transition-colors">
                                                     <X className="w-5 h-5" />
                                                 </button>
@@ -576,7 +581,7 @@ export default function SettingsPage() {
                                             {/* Product Name (Editable) */}
                                             <div className="mb-6">
                                                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                                    Product Line Name
+                                                    {t('productLineName')}
                                                 </label>
                                                 <input
                                                     type="text"
@@ -587,7 +592,7 @@ export default function SettingsPage() {
                                                         updateProduct(updated);
                                                     }}
                                                     className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-black font-medium transition-shadow shadow-sm"
-                                                    placeholder="Enter product line name"
+                                                    placeholder={t('enterProductLineName')}
                                                 />
                                             </div>
 
@@ -595,7 +600,7 @@ export default function SettingsPage() {
                                             <div className="mb-6">
                                                 <label className="block text-sm font-medium text-slate-700 mb-1.5">
                                                     <FileSpreadsheet className="w-4 h-4 inline mr-1.5" />
-                                                    Upload Excel File
+                                                    {t('uploadExcelFile')}
                                                 </label>
                                                 <div className="flex gap-2">
                                                     <input
@@ -642,14 +647,14 @@ export default function SettingsPage() {
                                                     />
                                                 </div>
                                                 <p className="text-xs text-slate-500 mt-2">
-                                                    Upload Excel to auto-import new orders (existing WO IDs will be skipped)
+                                                    {t('excelUploadHelp')}
                                                 </p>
 
                                                 {/* Create Excel Template Button */}
                                                 {(editingProduct.steps.length > 0 || editingProduct.detailColumns.length > 0) && !editingProduct.excelPath && (
                                                     <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl shadow-sm">
                                                         <p className="text-sm text-green-800 mb-3 font-medium">
-                                                            {editingProduct.detailColumns.length} detail column(s) and {editingProduct.steps.length} step(s) defined.
+                                                            {t('detailStepsDefined', { countDetails: editingProduct.detailColumns.length, countSteps: editingProduct.steps.length })}
                                                         </p>
                                                         <button
                                                             onClick={async () => {
@@ -684,7 +689,7 @@ export default function SettingsPage() {
                                                             className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-500 disabled:opacity-50 flex items-centerjustify-center gap-2 shadow-sm transition-all hover:shadow-md hover:scale-[1.02]"
                                                         >
                                                             <FilePlus className={`w-4 h-4 ${creatingTemplate ? 'animate-pulse' : ''}`} />
-                                                            {creatingTemplate ? 'Creating...' : 'Create Excel Template File'}
+                                                            {creatingTemplate ? t('creating') : t('createExcelTemplateFile')}
                                                         </button>
                                                     </div>
                                                 )}
@@ -697,24 +702,24 @@ export default function SettingsPage() {
                                             <div className="mb-6">
                                                 <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
                                                     <Bot className="w-4 h-4 text-indigo-600" />
-                                                    AI Assistant Settings
+                                                    {t('aiAssistantSettings')}
                                                 </h4>
                                                 <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-100">
                                                     <label className="block text-sm font-medium text-slate-700 mb-1.5 flex justify-between">
-                                                        <span>AI Model</span>
+                                                        <span>{t('aiModel')}</span>
                                                         <button
                                                             onClick={(e) => { e.preventDefault(); fetchModels(); }}
                                                             className="text-indigo-600 text-xs hover:underline flex items-center gap-1"
                                                         >
                                                             <RefreshCw className={`w-3 h-3 ${loadingModels ? 'animate-spin' : ''}`} />
-                                                            Refresh List
+                                                            {t('refreshList')}
                                                         </button>
                                                     </label>
                                                     <div className="grid grid-cols-2 gap-4">
                                                         {/* Cloud Models */}
                                                         <div>
                                                             <div className="flex items-center justify-between mb-2">
-                                                                <h5 className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Cloud (OpenAI)</h5>
+                                                                <h5 className="text-xs font-semibold text-slate-700 uppercase tracking-wide">{t('cloudOpenAI')}</h5>
                                                                 <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">{cloudModels.length}</span>
                                                             </div>
                                                             <div className="h-48 overflow-y-auto border border-slate-200 rounded-lg bg-white p-1 space-y-1">
@@ -736,7 +741,7 @@ export default function SettingsPage() {
                                                                         {(editingProduct.aiModel === model.id && editingProduct.aiProvider !== 'ollama') && <Check className="w-3 h-3 text-indigo-600 flex-shrink-0 ml-2" />}
                                                                     </button>
                                                                 )) : (
-                                                                    <div className="p-3 text-center text-xs text-slate-400 italic">No cloud models found</div>
+                                                                    <div className="p-3 text-center text-xs text-slate-400 italic">{t('noCloudModelsFound')}</div>
                                                                 )}
                                                             </div>
                                                         </div>
@@ -744,7 +749,7 @@ export default function SettingsPage() {
                                                         {/* Local Models */}
                                                         <div>
                                                             <div className="flex items-center justify-between mb-2">
-                                                                <h5 className="text-xs font-semibold text-slate-700 uppercase tracking-wide">Local (Ollama)</h5>
+                                                                <h5 className="text-xs font-semibold text-slate-700 uppercase tracking-wide">{t('localOllama')}</h5>
                                                                 <span className="text-[10px] bg-slate-100 px-1.5 py-0.5 rounded text-slate-500">{localModels.length}</span>
                                                             </div>
                                                             <div className="h-48 overflow-y-auto border border-slate-200 rounded-lg bg-white p-1 space-y-1">
@@ -766,20 +771,21 @@ export default function SettingsPage() {
                                                                         {editingProduct.aiModel === model.id && editingProduct.aiProvider === 'ollama' && <Check className="w-3 h-3 text-purple-600 flex-shrink-0 ml-2" />}
                                                                     </button>
                                                                 )) : (
-                                                                    <div className="p-3 text-center text-xs text-slate-400 italic">No local models found</div>
+                                                                    <div className="p-3 text-center text-xs text-slate-400 italic">{t('noLocalModelsFound')}</div>
                                                                 )}
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <p className="text-xs text-slate-500 mt-2 mb-4">
-                                                        Select the model used for AI chat.
-                                                        {config.aiProvider === 'ollama'
-                                                            ? ' Selected from your local Ollama instance.'
-                                                            : ' Selected from available OpenAI models.'}
+                                                        {t('aiModelSelectionHelp', {
+                                                            provider: config.aiProvider === 'ollama'
+                                                                ? t('localOllamaInstance')
+                                                                : t('openAIModels')
+                                                        })}
                                                     </p>
 
                                                     <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                                        Product Knowledge & Custom Instructions
+                                                        {t('productKnowledgeInstructions')}
                                                     </label>
                                                     <textarea
                                                         value={editingProduct.customInstructions || ''}
@@ -788,22 +794,22 @@ export default function SettingsPage() {
                                                             setEditingProduct(updated);
                                                             updateProduct(updated);
                                                         }}
-                                                        placeholder="e.g. 'This line produces stators. The key bottleneck is usually Winding. If QN is High, check the copper wire quality.'"
+                                                        placeholder={t('customInstructionsPlaceholder')}
                                                         className="w-full px-4 py-2.5 border border-indigo-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm font-medium bg-white shadow-sm min-h-[100px] text-slate-900"
                                                     />
                                                     <p className="text-xs text-slate-500 mt-2">
-                                                        Teach the AI about this product line. Add specific context, jargon, or rules you want it to know.
+                                                        {t('customInstructionsHelp')}
                                                     </p>
                                                 </div>
                                             </div>
 
                                             <div className="mb-6">
-                                                <h4 className="text-sm font-bold text-slate-900 mb-3">ECD Calculation Settings</h4>
+                                                <h4 className="text-sm font-bold text-slate-900 mb-3">{t('ecdCalculationSettings')}</h4>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg">
                                                         <div>
-                                                            <p className="font-medium text-slate-900 text-sm">Include Saturday</p>
-                                                            <p className="text-xs text-slate-500">{editingProduct.includeSaturday ? 'Included' : 'Excluded'}</p>
+                                                            <p className="font-medium text-slate-900 text-sm">{t('includeSaturday')}</p>
+                                                            <p className="text-xs text-slate-500">{editingProduct.includeSaturday ? t('included') : t('excluded')}</p>
                                                         </div>
                                                         <button
                                                             onClick={() => {
@@ -818,8 +824,8 @@ export default function SettingsPage() {
                                                     </div>
                                                     <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg">
                                                         <div>
-                                                            <p className="font-medium text-slate-900 text-sm">Include Sunday</p>
-                                                            <p className="text-xs text-slate-500">{editingProduct.includeSunday ? 'Included' : 'Excluded'}</p>
+                                                            <p className="font-medium text-slate-900 text-sm">{t('includeSunday')}</p>
+                                                            <p className="text-xs text-slate-500">{editingProduct.includeSunday ? t('included') : t('excluded')}</p>
                                                         </div>
                                                         <button
                                                             onClick={() => {
@@ -839,11 +845,11 @@ export default function SettingsPage() {
                                             <div className="mb-6">
                                                 <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
                                                     <RefreshCw className="w-4 h-4 text-green-600" />
-                                                    Automatic Excel Import
+                                                    {t('automaticExcelImport')}
                                                 </h4>
                                                 <div className="bg-green-50 p-4 rounded-xl border border-green-200">
                                                     <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                                        Watch Folder Path
+                                                        {t('watchFolderPath')}
                                                     </label>
                                                     <input
                                                         type="text"
@@ -853,11 +859,11 @@ export default function SettingsPage() {
                                                             setEditingProduct(updated);
                                                             updateProduct(updated);
                                                         }}
-                                                        placeholder="/path/to/excel/folder (e.g., /Users/yourname/Downloads/iProTraX-Watch)"
+                                                        placeholder={t('watchFolderPlaceholder')}
                                                         className="w-full px-4 py-2.5 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-200 text-sm text-slate-800 font-mono bg-white shadow-sm"
                                                     />
                                                     <p className="text-xs text-green-700 mt-2 mb-3">
-                                                        When configured, the system will automatically detect and import Excel files placed in this folder.
+                                                        {t('watchFolderHelp')}
                                                     </p>
 
                                                     {/* Watcher Status and Controls */}
@@ -867,7 +873,7 @@ export default function SettingsPage() {
                                                                 <div className="flex items-center gap-2">
                                                                     <div className={`w-2.5 h-2.5 rounded-full ${watcherRunning ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`} />
                                                                     <span className="text-sm font-medium text-slate-700">
-                                                                        Status: {watcherRunning ? 'Running' : 'Stopped'}
+                                                                        {t('status')}: {watcherRunning ? t('running') : t('stopped')}
                                                                     </span>
                                                                 </div>
                                                                 {watcherPid && (
@@ -879,7 +885,7 @@ export default function SettingsPage() {
                                                                     onClick={fetchWatcherStatus}
                                                                     disabled={watcherLoading}
                                                                     className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors disabled:opacity-50"
-                                                                    title="Refresh status"
+                                                                    title={t('refreshStatus')}
                                                                 >
                                                                     <RefreshCw className={`w-4 h-4 ${watcherLoading ? 'animate-spin' : ''}`} />
                                                                 </button>
@@ -890,17 +896,17 @@ export default function SettingsPage() {
                                                                         className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 disabled:opacity-50 flex items-center gap-2 shadow-sm transition-all"
                                                                     >
                                                                         <X className="w-4 h-4" />
-                                                                        Stop Watcher
+                                                                        {t('stopWatcher')}
                                                                     </button>
                                                                 ) : (
                                                                     <button
                                                                         onClick={startWatcher}
                                                                         disabled={watcherLoading || !editingProduct?.watchFolder}
                                                                         className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-500 disabled:opacity-50 flex items-center gap-2 shadow-sm transition-all"
-                                                                        title={!editingProduct?.watchFolder ? 'Please set Watch Folder Path first' : ''}
+                                                                        title={!editingProduct?.watchFolder ? t('setWatchFolderPathFirst') : ''}
                                                                     >
                                                                         <Play className="w-4 h-4" />
-                                                                        Start Watcher
+                                                                        {t('startWatcher')}
                                                                     </button>
                                                                 )}
                                                             </div>
@@ -913,12 +919,12 @@ export default function SettingsPage() {
                                                 {/* Detail Columns Management */}
                                                 <div>
                                                     <label className="block text-sm font-bold text-slate-900 mb-2">
-                                                        Detail Columns
+                                                        {t('detailColumns')}
                                                     </label>
                                                     <p className="text-xs text-slate-500 mb-3">
-                                                        Order info (e.g., WO ID, Due Date).
+                                                        {t('detailColumnsHelp')}
                                                         <span className="block mt-1 text-[10px] text-slate-400">
-                                                            <Eye className="w-3 h-3 inline mr-1 text-green-600" />Visible to AI | <EyeOff className="w-3 h-3 inline mr-1 text-slate-400" />Hidden
+                                                            <Eye className="w-3 h-3 inline mr-1 text-green-600" />{t('visibleToAI')} | <EyeOff className="w-3 h-3 inline mr-1 text-slate-400" />{t('hidden')}
                                                         </span>
                                                     </p>
 
@@ -930,7 +936,7 @@ export default function SettingsPage() {
                                                             onChange={(e) => setNewDetailColumnName(e.target.value)}
                                                             onKeyDown={(e) => e.key === 'Enter' && addManualDetailColumn()}
                                                             className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm text-black font-medium"
-                                                            placeholder="Column name..."
+                                                            placeholder={t('columnNamePlaceholder')}
                                                         />
                                                         <button
                                                             onClick={addManualDetailColumn}
@@ -981,7 +987,7 @@ export default function SettingsPage() {
                                                                         updateProduct(updated);
                                                                     }}
                                                                     className="p-1 hover:bg-white rounded transition-colors"
-                                                                    title={(!editingProduct.aiVisibleColumns || editingProduct.aiVisibleColumns.includes(col)) ? 'Visible to AI' : 'Hidden from AI'}
+                                                                    title={(!editingProduct.aiVisibleColumns || editingProduct.aiVisibleColumns.includes(col)) ? t('visibleToAI') : t('hiddenFromAI')}
                                                                 >
                                                                     {(!editingProduct.aiVisibleColumns || editingProduct.aiVisibleColumns.includes(col))
                                                                         ? <Eye className="w-4 h-4 text-green-600" />
@@ -993,7 +999,7 @@ export default function SettingsPage() {
                                                             </div>
                                                         ))}
                                                         {editingProduct.detailColumns.length === 0 && (
-                                                            <div className="text-center py-8 text-slate-400 text-sm italic">No detail columns</div>
+                                                            <div className="text-center py-8 text-slate-400 text-sm italic">{t('noDetailColumns')}</div>
                                                         )}
                                                     </div>
                                                 </div>
@@ -1001,12 +1007,12 @@ export default function SettingsPage() {
                                                 {/* Process Steps Management */}
                                                 <div>
                                                     <label className="block text-sm font-bold text-slate-900 mb-2">
-                                                        Process Steps
+                                                        {t('processSteps')}
                                                     </label>
                                                     <p className="text-xs text-slate-500 mb-3">
-                                                        Production steps with durations.
+                                                        {t('processStepsHelp')}
                                                         <span className="block mt-1 text-[10px] text-slate-400">
-                                                            <Eye className="w-3 h-3 inline mr-1 text-green-600" />Visible to AI | <EyeOff className="w-3 h-3 inline mr-1 text-slate-400" />Hidden
+                                                            <Eye className="w-3 h-3 inline mr-1 text-green-600" />{t('visibleToAI')} | <EyeOff className="w-3 h-3 inline mr-1 text-slate-400" />{t('hidden')}
                                                         </span>
                                                     </p>
 
@@ -1018,7 +1024,7 @@ export default function SettingsPage() {
                                                             onChange={(e) => setNewStepName(e.target.value)}
                                                             onKeyDown={(e) => e.key === 'Enter' && addManualStep()}
                                                             className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm text-black font-medium"
-                                                            placeholder="Step name..."
+                                                            placeholder={t('stepNamePlaceholder')}
                                                         />
                                                         <button
                                                             onClick={addManualStep}
@@ -1052,9 +1058,9 @@ export default function SettingsPage() {
                                                                         updateProduct(updated);
                                                                     }}
                                                                     className="w-14 px-1 py-0.5 text-right text-xs text-black font-medium border border-slate-200 rounded bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-300"
-                                                                    title="Hours"
+                                                                    title={t('hours')}
                                                                 />
-                                                                <span className="text-[10px] text-slate-400">h</span>
+                                                                <span className="text-[10px] text-slate-400">{t('hoursShort')}</span>
 
                                                                 {/* AI Visibility Toggle */}
                                                                 <button
@@ -1075,7 +1081,7 @@ export default function SettingsPage() {
                                                                         updateProduct(updated);
                                                                     }}
                                                                     className="p-1 hover:bg-slate-100 rounded transition-colors ml-1"
-                                                                    title={(!editingProduct.aiVisibleSteps || editingProduct.aiVisibleSteps.includes(step)) ? 'Visible to AI' : 'Hidden from AI'}
+                                                                    title={(!editingProduct.aiVisibleSteps || editingProduct.aiVisibleSteps.includes(step)) ? t('visibleToAI') : t('hiddenFromAI')}
                                                                 >
                                                                     {(!editingProduct.aiVisibleSteps || editingProduct.aiVisibleSteps.includes(step))
                                                                         ? <Eye className="w-4 h-4 text-green-600" />
@@ -1087,7 +1093,7 @@ export default function SettingsPage() {
                                                             </div>
                                                         ))}
                                                         {editingProduct.steps.length === 0 && (
-                                                            <div className="text-center py-8 text-slate-400 text-sm italic">No steps defined</div>
+                                                            <div className="text-center py-8 text-slate-400 text-sm italic">{t('noStepsDefined')}</div>
                                                         )}
                                                     </div>
                                                 </div>
@@ -1103,7 +1109,7 @@ export default function SettingsPage() {
                                     className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium transition-colors flex items-center justify-center gap-2"
                                 >
                                     <Save className="w-4 h-4" />
-                                    {saving ? 'Saving...' : 'Save Settings'}
+                                    {saving ? t('saving') : t('saveSettings')}
                                 </button>
 
                                 {/* Save Status Message */}
@@ -1134,8 +1140,8 @@ export default function SettingsPage() {
                                             <Users className="w-6 h-6 text-purple-600" />
                                         </div>
                                         <div>
-                                            <h3 className="font-bold text-slate-900 group-hover:text-purple-700 transition-colors">User Management</h3>
-                                            <p className="text-sm text-slate-500">Manage accounts & approvals</p>
+                                            <h3 className="font-bold text-slate-900 group-hover:text-purple-700 transition-colors">{t('userManagement')}</h3>
+                                            <p className="text-sm text-slate-500">{t('manageAccountsApprovals')}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -1148,13 +1154,13 @@ export default function SettingsPage() {
                                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md">
                                     <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
                                         <Database className="w-5 h-5 text-indigo-600" />
-                                        Data Management
+                                        {t('dataManagement')}
                                     </h3>
                                     <div className="space-y-4">
 
                                         <div className="border-t border-slate-100 pt-4">
                                             <p className="text-xs text-slate-500 mb-3">
-                                                Retention Policy: Keep 3 months of data.
+                                                {t('retentionPolicy')}
                                             </p>
 
                                             <div className="space-y-2">
@@ -1164,16 +1170,14 @@ export default function SettingsPage() {
                                                     className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 font-medium transition-colors"
                                                 >
                                                     <Download className="w-4 h-4" />
-                                                    Download Archive (3+ months old data)
+                                                    {t('downloadArchive')}
                                                 </button>
 
                                                 {/* Step 2: Delete Old Data */}
                                                 <button
                                                     onClick={async () => {
                                                         if (!confirm(
-                                                            'WARNING: This will PERMANENTLY DELETE all data older than 3 months.\n\n' +
-                                                            'Make sure you have downloaded the archive first!\n\n' +
-                                                            'Continue?'
+                                                            t('deleteOldDataWarning')
                                                         )) return;
 
                                                         try {
@@ -1181,28 +1185,28 @@ export default function SettingsPage() {
                                                             const data = await res.json();
                                                             if (res.ok) {
                                                                 alert(
-                                                                    `✅ Cleanup Complete\n\n` +
-                                                                    `Deleted:\n` +
-                                                                    `• ${data.details.deletedOrders} orders\n` +
-                                                                    ` ${data.details.deletedOrphanLogs} orphan logs\n\n` +
-                                                                    `Cut-off date: ${data.details.cutOffDate}`
+                                                                    t('cleanupComplete', {
+                                                                        deletedOrders: data.details.deletedOrders,
+                                                                        deletedOrphanLogs: data.details.deletedOrphanLogs,
+                                                                        cutOffDate: data.details.cutOffDate
+                                                                    })
                                                                 );
                                                             } else {
-                                                                alert('Error: ' + data.error);
+                                                                alert(t('error') + ': ' + data.error);
                                                             }
                                                         } catch (e) {
-                                                            alert('Cleanup failed');
+                                                            alert(t('cleanupFailed'));
                                                         }
                                                     }}
                                                     className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 font-medium transition-colors"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
-                                                    Delete Old Data (3+ months)
+                                                    {t('deleteOldData')}
                                                 </button>
                                             </div>
 
                                             <p className="text-xs text-amber-600 mt-2">
-                                                ⚠️ Always download the archive before deleting!
+                                                {t('downloadArchiveBeforeDeletingWarning')}
                                             </p>
                                         </div>
                                     </div>
@@ -1214,7 +1218,7 @@ export default function SettingsPage() {
                                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md">
                                     <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
                                         <Sparkles className="w-5 h-5 text-purple-600" />
-                                        AI Settings
+                                        {t('aiSettings')}
                                     </h3>
 
                                     <div className="space-y-6">
@@ -1228,7 +1232,7 @@ export default function SettingsPage() {
                                                 }}
                                                 className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${config.aiProvider === 'openai' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                                             >
-                                                OpenAI (Cloud)
+                                                {t('openAICloud')}
                                             </button>
                                             <button
                                                 onClick={() => {
@@ -1238,14 +1242,14 @@ export default function SettingsPage() {
                                                 }}
                                                 className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${config.aiProvider === 'ollama' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                                             >
-                                                Ollama (Local)
+                                                {t('ollamaLocal')}
                                             </button>
                                         </div>
 
                                         {config.aiProvider === 'ollama' ? (
                                             <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-slate-700 mb-1">Ollama URL</label>
+                                                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('ollamaUrl')}</label>
                                                     <div className="flex gap-2">
                                                         <input
                                                             type="text"
@@ -1257,15 +1261,15 @@ export default function SettingsPage() {
                                                         <button
                                                             onClick={() => fetchModels('ollama')}
                                                             className="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-500"
-                                                            title="Test Connection & List Models"
+                                                            title={t('testConnectionListModels')}
                                                         >
                                                             <RefreshCw className={`w-4 h-4 ${loadingModels ? 'animate-spin' : ''}`} />
                                                         </button>
                                                     </div>
                                                     <p className="text-xs text-slate-500 mt-1">
-                                                        Found {localModels.length} models.
+                                                        {t('foundModels', { count: localModels.length })}
                                                         {localModels.length > 0 && (
-                                                            <span className="ml-1 text-green-600">Connection successful.</span>
+                                                            <span className="ml-1 text-green-600">{t('connectionSuccessful')}</span>
                                                         )}
                                                     </p>
                                                 </div>
@@ -1275,24 +1279,22 @@ export default function SettingsPage() {
                                                         onClick={async () => {
                                                             setSavingAiKey(true);
                                                             try {
-                                                                // Save config for Ollama
                                                                 const res = await fetch('/api/config', {
                                                                     method: 'POST',
                                                                     headers: { 'Content-Type': 'application/json' },
                                                                     body: JSON.stringify({
                                                                         aiProvider: 'ollama',
                                                                         ollamaUrl: config.ollamaUrl
-                                                                        // model is now selected per product
                                                                     })
                                                                 });
                                                                 if (res.ok) {
-                                                                    setAiTestResult({ status: 'success', message: 'Ollama settings saved!' });
-                                                                    fetchModels(); // Refresh after save
+                                                                    setAiTestResult({ status: 'success', message: t('ollamaSettingsSaved') });
+                                                                    fetchModels();
                                                                 } else {
-                                                                    setAiTestResult({ status: 'error', message: 'Failed to save settings' });
+                                                                    setAiTestResult({ status: 'error', message: t('failedToSaveSettings') });
                                                                 }
                                                             } catch (e) {
-                                                                setAiTestResult({ status: 'error', message: 'Error saving settings' });
+                                                                setAiTestResult({ status: 'error', message: t('errorSavingSettings') });
                                                             } finally {
                                                                 setSavingAiKey(false);
                                                             }
@@ -1301,14 +1303,14 @@ export default function SettingsPage() {
                                                         className="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                                                     >
                                                         <Save className="w-4 h-4" />
-                                                        Save & Connect
+                                                        {tCommon('save')} & {t('connect')}
                                                     </button>
                                                 </div>
                                             </div>
                                         ) : (
                                             <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-slate-700 mb-1">OpenAI API Key</label>
+                                                    <label className="block text-sm font-medium text-slate-700 mb-1">{t('openAIApiKey')}</label>
                                                     <div className="relative">
                                                         <input
                                                             type={aiApiKeyVisible ? 'text' : 'password'}
@@ -1325,36 +1327,35 @@ export default function SettingsPage() {
                                                             {aiApiKeyVisible ? <EyeOff size={16} /> : <Eye size={16} />}
                                                         </button>
                                                     </div>
-                                                    <p className="text-xs text-slate-500 mt-1">Required for AI chat. stored in env vars.</p>
+                                                    <p className="text-xs text-slate-500 mt-1">{t('apiKeyHelp')}</p>
                                                 </div>
 
                                                 <div className="flex gap-2">
                                                     <button
                                                         onClick={async () => {
-                                                            if (!aiApiKey.trim()) return setAiTestResult({ status: 'error', message: 'Enter API key' });
-                                                            setAiTestResult({ status: 'testing', message: 'Testing...' });
+                                                            if (!aiApiKey.trim()) return setAiTestResult({ status: 'error', message: t('enterApiKey') });
+                                                            setAiTestResult({ status: 'testing', message: t('testing') });
                                                             try {
                                                                 const res = await fetch('/api/ai/test', {
                                                                     method: 'POST',
                                                                     headers: { 'Content-Type': 'application/json' },
                                                                     body: JSON.stringify({ apiKey: aiApiKey })
                                                                 });
-                                                                if (res.ok) setAiTestResult({ status: 'success', message: 'Connected!' });
-                                                                else setAiTestResult({ status: 'error', message: 'Test failed' });
-                                                            } catch { setAiTestResult({ status: 'error', message: 'Connection failed' }); }
+                                                                if (res.ok) setAiTestResult({ status: 'success', message: t('connected') });
+                                                                else setAiTestResult({ status: 'error', message: t('testFailed') });
+                                                            } catch { setAiTestResult({ status: 'error', message: t('connectionFailed') }); }
                                                         }}
                                                         disabled={aiTestResult.status === 'testing'}
                                                         className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-purple-50 text-purple-700 rounded-lg hover:bg-purple-100 font-medium transition-colors disabled:opacity-50 text-sm"
                                                     >
                                                         <Bot className="w-4 h-4" />
-                                                        Test
+                                                        {t('test')}
                                                     </button>
                                                     <button
                                                         onClick={async () => {
                                                             if (!aiApiKey.trim()) return;
                                                             setSavingAiKey(true);
                                                             try {
-                                                                // Save Config for OpenAI Provider selection + Key
                                                                 await fetch('/api/config', {
                                                                     method: 'POST',
                                                                     headers: { 'Content-Type': 'application/json' },
@@ -1366,16 +1367,16 @@ export default function SettingsPage() {
                                                                     headers: { 'Content-Type': 'application/json' },
                                                                     body: JSON.stringify({ apiKey: aiApiKey })
                                                                 });
-                                                                if (res.ok) setAiTestResult({ status: 'success', message: 'Key saved!' });
-                                                                else setAiTestResult({ status: 'error', message: 'Save failed' });
-                                                            } catch { setAiTestResult({ status: 'error', message: 'Save failed' }); }
+                                                                if (res.ok) setAiTestResult({ status: 'success', message: t('keySaved') });
+                                                                else setAiTestResult({ status: 'error', message: t('saveFailed') });
+                                                            } catch { setAiTestResult({ status: 'error', message: t('saveFailed') }); }
                                                             finally { setSavingAiKey(false); }
                                                         }}
                                                         disabled={savingAiKey}
                                                         className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 font-medium transition-colors disabled:opacity-50 text-sm"
                                                     >
                                                         <Save className="w-4 h-4" />
-                                                        Save
+                                                        {tCommon('save')}
                                                     </button>
                                                 </div>
                                             </div>
@@ -1400,27 +1401,27 @@ export default function SettingsPage() {
                                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md mb-6">
                                     <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
                                         <Sparkles className="w-5 h-5 text-purple-600" />
-                                        AI Prompt Engineering (Advanced)
+                                        {t('aiPromptEngineering')}
                                     </h3>
                                     <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6 text-sm text-amber-800">
-                                        <strong>Caution:</strong> Modifying these prompts affects how the AI behaves for all users. Leave fields empty to use the system defaults (recommended).
+                                        {t('aiPromptCaution')}
                                     </div>
 
                                     <div className="space-y-6">
                                         <div>
                                             <div className="flex justify-between items-center mb-1.5">
-                                                <label className="block text-sm font-medium text-slate-700">System Prompt (Global)</label>
+                                                <label className="block text-sm font-medium text-slate-700">{t('systemPromptGlobal')}</label>
                                                 <button
                                                     onClick={() => setConfig({ ...config, systemPrompt: '' })}
                                                     className="text-xs text-slate-400 hover:text-red-500"
                                                 >
-                                                    Reset to Default
+                                                    {t('resetToDefault')}
                                                 </button>
                                             </div>
                                             <textarea
                                                 value={config.systemPrompt || ''}
                                                 onChange={(e) => setConfig({ ...config, systemPrompt: e.target.value })}
-                                                placeholder="Default system prompt..."
+                                                placeholder={t('defaultSystemPromptPlaceholder')}
                                                 className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200 font-mono text-sm h-32 text-slate-900"
                                             />
                                         </div>
@@ -1429,7 +1430,7 @@ export default function SettingsPage() {
                                             {['admin', 'supervisor', 'user'].map((role) => (
                                                 <div key={role}>
                                                     <div className="flex justify-between items-center mb-1.5">
-                                                        <label className="block text-sm font-medium text-slate-700 capitalize">{role} Persona</label>
+                                                        <label className="block text-sm font-medium text-slate-700 capitalize">{t('persona', { role })}</label>
                                                         <button
                                                             onClick={() => {
                                                                 const newRolePrompts = { ...(config.rolePrompts || {}) };
@@ -1438,7 +1439,7 @@ export default function SettingsPage() {
                                                             }}
                                                             className="text-xs text-slate-400 hover:text-red-500"
                                                         >
-                                                            Default
+                                                            {t('default')}
                                                         </button>
                                                     </div>
                                                     <textarea
@@ -1448,7 +1449,7 @@ export default function SettingsPage() {
                                                             newRolePrompts[role] = e.target.value;
                                                             setConfig({ ...config, rolePrompts: newRolePrompts });
                                                         }}
-                                                        placeholder={`Default ${role} instructions...`}
+                                                        placeholder={t('defaultRoleInstructionsPlaceholder', { role })}
                                                         className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200 font-mono text-xs h-32 text-slate-900"
                                                     />
                                                 </div>
@@ -1463,7 +1464,7 @@ export default function SettingsPage() {
                                                 className="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
                                             >
                                                 <Save className="w-4 h-4" />
-                                                {saving ? 'Saving...' : 'Save AI Prompts'}
+                                                {saving ? t('saving') : t('saveAiPrompts')}
                                             </button>
 
                                             {/* Save Status Message */}
@@ -1487,7 +1488,7 @@ export default function SettingsPage() {
                             <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md">
                                 <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
                                     <User className="w-5 h-5 text-indigo-600" />
-                                    Your Profile
+                                    {t('yourProfile')}
                                 </h3>
                                 {currentUser ? (
                                     <div className="space-y-6">
@@ -1504,41 +1505,41 @@ export default function SettingsPage() {
                                         <div className="border-t border-slate-100 pt-4">
                                             <h4 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
                                                 <Key className="w-4 h-4 text-slate-500" />
-                                                Change Password
+                                                {t('changePassword')}
                                             </h4>
                                             <div className="space-y-3">
                                                 <input
                                                     type="password"
                                                     value={currentPassword}
                                                     onChange={(e) => setCurrentPass(e.target.value)}
-                                                    placeholder="Current Password"
+                                                    placeholder={t('currentPassword')}
                                                     className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm text-black font-medium"
                                                 />
                                                 <input
                                                     type="password"
                                                     value={newPassword}
                                                     onChange={(e) => setNewPass(e.target.value)}
-                                                    placeholder="New Password"
+                                                    placeholder={t('newPassword')}
                                                     className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm text-black font-medium"
                                                 />
                                                 <input
                                                     type="password"
                                                     value={confirmNewPass}
                                                     onChange={(e) => setConfirmNewPass(e.target.value)}
-                                                    placeholder="Confirm New Password"
+                                                    placeholder={t('confirmNewPassword')}
                                                     className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm text-black font-medium"
                                                 />
                                                 <button
                                                     onClick={async () => {
                                                         if (!currentPassword) {
-                                                            setPassMsg('Current password required');
+                                                            setPassMsg(t('currentPasswordRequired'));
                                                             return;
                                                         }
                                                         if (!newPassword || newPassword !== confirmNewPass) {
-                                                            setPassMsg('New passwords do not match');
+                                                            setPassMsg(t('passwordsDoNotMatch'));
                                                             return;
                                                         }
-                                                        setPassMsg('Updating...');
+                                                        setPassMsg(tCommon('updating'));
                                                         try {
                                                             const res = await fetch(`/api/users/${currentUser.id}`, {
                                                                 method: 'PATCH',
@@ -1546,22 +1547,22 @@ export default function SettingsPage() {
                                                                 body: JSON.stringify({ password: newPassword, currentPassword })
                                                             });
                                                             if (res.ok) {
-                                                                setPassMsg('Password updated!');
+                                                                setPassMsg(t('passwordUpdated'));
                                                                 setCurrentPass('');
                                                                 setNewPass('');
                                                                 setConfirmNewPass('');
                                                             } else {
                                                                 const err = await res.json();
-                                                                setPassMsg(err.error || 'Failed to update');
+                                                                setPassMsg(err.error || t('saveFailed'));
                                                             }
                                                         } catch {
-                                                            setPassMsg('Error updating');
+                                                            setPassMsg(t('errorSavingSettings'));
                                                         }
                                                     }}
                                                     disabled={!newPassword || !currentPassword}
                                                     className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium transition-colors"
                                                 >
-                                                    Update Password
+                                                    {t('updatePassword')}
                                                 </button>
                                                 {passMsg && (
                                                     <p className={`text-xs text-center ${passMsg.includes('updated') ? 'text-green-600' : 'text-amber-600'}`}>
@@ -1572,7 +1573,7 @@ export default function SettingsPage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <p className="text-sm text-slate-500">Loading user profile...</p>
+                                    <p className="text-sm text-slate-500">{t('loadingUserProfile')}</p>
                                 )}
                             </div>
 
@@ -1587,9 +1588,9 @@ export default function SettingsPage() {
                 showColumnsConfirm && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                         <div className="bg-white rounded-xl p-6 max-w-lg mx-4 shadow-xl max-h-[80vh] overflow-hidden flex flex-col">
-                            <h3 className="text-lg font-bold text-slate-900 mb-2">Categorize Columns</h3>
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">{t('categorizeColumns')}</h3>
                             <p className="text-slate-500 mb-2 text-sm">
-                                Click to toggle each column as <span className="text-blue-600 font-medium">Detail</span> (order info) or <span className="text-green-600 font-medium">Step</span> (process):
+                                {t('categorizeColumnsHelp')}
                             </p>
                             <p className="text-xs text-slate-500 mb-4">
                                 Detail: {detectedColumns.filter(c => columnCategories[c] === 'detail').length} |
@@ -1625,18 +1626,18 @@ export default function SettingsPage() {
                                                     onClick={() => setColumnCategories({ ...columnCategories, [col]: 'detail' })}
                                                     className={`px-2 py-0.5 text-xs rounded ${columnCategories[col] === 'detail' ? 'bg-blue-500 text-white' : 'bg-slate-200 text-slate-600 hover:bg-blue-100'}`}
                                                 >
-                                                    Detail
+                                                    {t('detailColumns')}
                                                 </button>
                                                 <button
                                                     onClick={() => setColumnCategories({ ...columnCategories, [col]: 'step' })}
                                                     className={`px-2 py-0.5 text-xs rounded ${columnCategories[col] === 'step' ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-600 hover:bg-green-100'}`}
                                                 >
-                                                    Step
+                                                    {tDash('batch.plan')}
                                                 </button>
                                                 <button
                                                     onClick={() => setDetectedColumns(detectedColumns.filter((_: string, i: number) => i !== index))}
                                                     className="p-1 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                                                    title="Exclude this column"
+                                                    title={t('excludeThisColumn')}
                                                 >
                                                     <X className="w-3 h-3" />
                                                 </button>
@@ -1651,7 +1652,7 @@ export default function SettingsPage() {
                                     onClick={() => { setShowColumnsConfirm(false); setDetectedColumns([]); setColumnCategories({}); }}
                                     className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium"
                                 >
-                                    Cancel
+                                    {tCommon('cancel')}
                                 </button>
                                 <button
                                     onClick={confirmDetectedColumns}
@@ -1659,7 +1660,7 @@ export default function SettingsPage() {
                                     className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50"
                                 >
                                     <Check className="w-4 h-4" />
-                                    Import Columns
+                                    {t('importColumns')}
                                 </button>
                             </div>
                         </div>
@@ -1673,7 +1674,7 @@ export default function SettingsPage() {
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
                         <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
                             <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-                                <h2 className="text-xl font-bold text-slate-800">📊 Connect Excel Columns</h2>
+                                <h2 className="text-xl font-bold text-slate-800">{t('connectExcelColumns')}</h2>
                                 <button onClick={() => { setShowPreviewModal(false); setPreviewData(null); setPreviewFile(null); }} className="text-slate-400 hover:text-slate-600">
                                     <X className="w-6 h-6" />
                                 </button>
@@ -1683,15 +1684,14 @@ export default function SettingsPage() {
                                     <Table2 className="w-8 h-8 text-blue-600" />
                                 </div>
                                 <h3 className="text-lg font-semibold text-slate-900">
-                                    Excel File Analyzed Successfully
+                                    {t('excelAnalyzedSuccess')}
                                 </h3>
                                 <p className="text-slate-500 max-w-md mx-auto">
-                                    We found <strong>{previewData.detectedHeaders?.length || 0}</strong> columns in your file.
-                                    Click below to review and map these columns to your production tracking needs.
+                                    {t('foundColumnsHelp', { count: previewData.detectedHeaders?.length || 0 })}
                                 </p>
                             </div>
                             <div className="px-6 py-4 border-t flex justify-center gap-4 bg-slate-50">
-                                <button onClick={() => { setShowPreviewModal(false); setPreviewData(null); setPreviewFile(null); }} className="px-6 py-2.5 border border-slate-300 rounded-lg text-slate-700 font-medium hover:bg-white transition-colors">Cancel</button>
+                                <button onClick={() => { setShowPreviewModal(false); setPreviewData(null); setPreviewFile(null); }} className="px-6 py-2.5 border border-slate-300 rounded-lg text-slate-700 font-medium hover:bg-white transition-colors">{tCommon('cancel')}</button>
 
                                 {/* Option to just use columns for config */}
                                 {previewData.detectedHeaders && previewData.detectedHeaders.length > 0 && (
@@ -1711,7 +1711,7 @@ export default function SettingsPage() {
                                         className="px-8 py-2.5 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700 flex items-center justify-center gap-2 shadow-sm transition-all hover:shadow hover:scale-[1.02]"
                                     >
                                         <Table2 className="w-4 h-4" />
-                                        Review & Use Columns
+                                        {t('reviewUseColumns')}
                                     </button>
                                 )}
                             </div>

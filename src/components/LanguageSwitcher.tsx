@@ -3,7 +3,11 @@
 import { Globe } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-export function LanguageSwitcher() {
+interface Props {
+    className?: string;
+}
+
+export function LanguageSwitcher({ className = '' }: Props) {
     const router = useRouter();
 
     const toggleLanguage = () => {
@@ -14,21 +18,21 @@ export function LanguageSwitcher() {
 
         const newLocale = currentLocale === 'en' ? 'zh' : 'en';
 
-        // Set cookie
-        document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000`;
+        // Set cookie with explicit SameSite and path
+        document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
 
-        // Refresh to apply new locale
-        router.refresh(); // Soft refresh might not be enough for full context switch if providers don't update
-        window.location.reload(); // Force reload to ensure server-side request.ts runs again
+        // Use purely native reload to ensure full server re-render
+        window.location.reload();
     };
 
     return (
         <button
             onClick={toggleLanguage}
-            className="p-2 rounded-full hover:bg-gray-100 text-gray-600 transition-colors"
+            className={`p-2.5 rounded-lg transition-all shadow-lg ${className || 'text-slate-500 hover:bg-slate-100'}`}
             title="Switch Language (English/中文)"
+            aria-label="Switch Language"
         >
-            <Globe size={20} />
+            <Globe className="w-6 h-6" />
         </button>
     );
 }

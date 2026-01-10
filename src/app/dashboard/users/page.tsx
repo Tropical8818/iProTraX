@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-    Users, UserPlus, Shield, UserCog, Check, X, Ban,
+    Users as UsersIcon, UserPlus, Shield, UserCog, Check, X, Ban,
     Unlock, Lock, Loader2, RefreshCw, Key, ArrowLeft, Monitor
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface User {
     id: string;
@@ -17,6 +18,10 @@ interface User {
 }
 
 export default function UserManagementPage() {
+    const t = useTranslations('Users');
+    const tCommon = useTranslations('Common');
+    const tDash = useTranslations('Dashboard');
+
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentUserRole, setCurrentUserRole] = useState<string>('');
@@ -104,19 +109,19 @@ export default function UserManagementPage() {
                 setNewUserUsername('');
                 setNewUserEmployeeId('');
                 setNewUserPassword('');
-                setMsg({ type: 'success', text: `User ${data.user.username} created successfully` });
+                setMsg({ type: 'success', text: t('userCreatedSuccess', { username: data.user.username }) });
             } else {
-                setMsg({ type: 'error', text: data.error || 'Failed to create user' });
+                setMsg({ type: 'error', text: data.error || t('failedToCreateUser') });
             }
         } catch {
-            setMsg({ type: 'error', text: 'Error creating user' });
+            setMsg({ type: 'error', text: t('errorCreatingUser') });
         } finally {
             setActionLoading(false);
         }
     };
 
     const handleUpdateStatus = async (userId: string, status: string) => {
-        if (!confirm(`Are you sure you want to set status to ${status}?`)) return;
+        if (!confirm(t('confirmUpdateStatus', { status: t(`statuses.${status}` as any) }))) return;
 
         try {
             const res = await fetch(`/api/users/${userId}`, {
@@ -128,10 +133,10 @@ export default function UserManagementPage() {
             if (res.ok) {
                 setUsers(users.map(u => u.id === userId ? { ...u, status: status as any } : u));
             } else {
-                alert('Failed to update status');
+                alert(t('failedToUpdateStatus'));
             }
         } catch {
-            alert('Error updating status');
+            alert(t('errorUpdatingStatus'));
         }
     };
 
@@ -154,30 +159,30 @@ export default function UserManagementPage() {
                 setUsers(users.map(u => u.id === selectedUser.id ? { ...u, employeeId: editEmployeeId, role: editRole as any } : u));
                 setIsEditModalOpen(false);
                 setEditEmployeeId('');
-                setMsg({ type: 'success', text: 'User info updated successfully' });
+                setMsg({ type: 'success', text: t('userInfoUpdatedSuccess') });
             } else {
                 const data = await res.json();
-                alert(data.error || 'Failed to update user info');
+                alert(data.error || t('failedToUpdateUserInfo'));
             }
         } catch {
-            alert('Error updating user info');
+            alert(t('errorUpdatingUserInfo'));
         } finally {
             setActionLoading(false);
         }
     };
 
     const handleDeleteUser = async (user: User) => {
-        if (!confirm(`Are you sure you want to delete user ${user.username}?`)) return;
+        if (!confirm(t('confirmDeleteUser', { username: user.username }))) return;
 
         try {
             const res = await fetch(`/api/users/${user.id}`, { method: 'DELETE' });
             if (res.ok) {
                 setUsers(users.filter(u => u.id !== user.id));
             } else {
-                alert('Failed to delete user');
+                alert(t('failedToDeleteUser'));
             }
         } catch {
-            alert('Error deleting user');
+            alert(t('errorDeletingUser'));
         }
     };
 
@@ -196,16 +201,16 @@ export default function UserManagementPage() {
                     <button
                         onClick={() => router.back()}
                         className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 hover:text-slate-700 transition-colors"
-                        title="Go Back"
+                        title={t('goBack')}
                     >
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
                         <h1 className="text-2xl font-bold flex items-center gap-2">
-                            <Users className="w-8 h-8 text-purple-600" />
-                            User Management
+                            <UsersIcon className="w-8 h-8 text-purple-600" />
+                            {t('title')}
                         </h1>
-                        <p className="text-slate-500">Manage access and permissions</p>
+                        <p className="text-slate-500">{t('subtitle')}</p>
                     </div>
                 </div>
                 <button
@@ -213,7 +218,7 @@ export default function UserManagementPage() {
                     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium flex items-center gap-2"
                 >
                     <UserPlus className="w-4 h-4" />
-                    Add User
+                    {t('addUser')}
                 </button>
             </div>
 
@@ -229,12 +234,12 @@ export default function UserManagementPage() {
                     <table className="w-full text-left text-sm">
                         <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
-                                <th className="px-6 py-4 font-bold text-black">User</th>
-                                <th className="px-6 py-4 font-bold text-black">Employee ID</th>
-                                <th className="px-6 py-4 font-bold text-black">Role</th>
-                                <th className="px-6 py-4 font-bold text-black">Status</th>
-                                <th className="px-6 py-4 font-bold text-black">Created</th>
-                                <th className="px-6 py-4 font-bold text-black text-right">Actions</th>
+                                <th className="px-6 py-4 font-bold text-black">{t('user')}</th>
+                                <th className="px-6 py-4 font-bold text-black">{t('employeeId')}</th>
+                                <th className="px-6 py-4 font-bold text-black">{t('role')}</th>
+                                <th className="px-6 py-4 font-bold text-black">{t('status')}</th>
+                                <th className="px-6 py-4 font-bold text-black">{t('created')}</th>
+                                <th className="px-6 py-4 font-bold text-black text-right">{t('actions')}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -244,7 +249,7 @@ export default function UserManagementPage() {
                                         <div className="font-medium text-black">{user.username}</div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <div className="text-slate-500 font-mono text-xs">{user.employeeId || 'Not Set'}</div>
+                                        <div className="text-slate-500 font-mono text-xs">{user.employeeId || t('notSet')}</div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium
@@ -256,7 +261,7 @@ export default function UserManagementPage() {
                                             {user.role === 'admin' && <Shield className="w-3 h-3" />}
                                             {user.role === 'supervisor' && <UserCog className="w-3 h-3" />}
                                             {user.role === 'kiosk' && <Monitor className="w-3 h-3" />}
-                                            {user.username === 'superadmin' ? 'Super Admin' : user.role}
+                                            {user.username === 'superadmin' ? t('roles.superAdmin') : t(`roles.${user.role}` as any)}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
@@ -264,8 +269,7 @@ export default function UserManagementPage() {
                                             ${user.status === 'approved' ? 'bg-green-100 text-green-700' :
                                                 user.status === 'pending' ? 'bg-amber-100 text-amber-700' :
                                                     'bg-red-100 text-red-700'}`}>
-                                            {user.status === 'approved' ? 'Active' :
-                                                user.status === 'pending' ? 'Pending Approval' : 'Disabled'}
+                                            {t(`statuses.${user.status}` as any)}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4 text-slate-500">
@@ -277,14 +281,14 @@ export default function UserManagementPage() {
                                                 onClick={() => handleUpdateStatus(user.id, 'approved')}
                                                 className="text-green-600 hover:text-green-800 font-medium text-xs bg-green-50 px-2 py-1 rounded"
                                             >
-                                                Approve
+                                                {t('approve')}
                                             </button>
                                         )}
                                         {user.status !== 'disabled' ? (
                                             <button
                                                 onClick={() => handleUpdateStatus(user.id, 'disabled')}
                                                 className="text-slate-400 hover:text-red-600 p-1"
-                                                title="Disable Account"
+                                                title={t('disable')}
                                             >
                                                 <Ban className="w-4 h-4" />
                                             </button>
@@ -292,7 +296,7 @@ export default function UserManagementPage() {
                                             <button
                                                 onClick={() => handleUpdateStatus(user.id, 'approved')}
                                                 className="text-slate-400 hover:text-green-600 p-1"
-                                                title="Enable Account"
+                                                title={t('enable')}
                                             >
                                                 <Unlock className="w-4 h-4" />
                                             </button>
@@ -306,7 +310,7 @@ export default function UserManagementPage() {
                                                 setIsEditModalOpen(true);
                                             }}
                                             className="text-slate-400 hover:text-purple-600 p-1"
-                                            title="Edit User Info"
+                                            title={t('editInfo')}
                                         >
                                             <UserCog className="w-4 h-4" />
                                         </button>
@@ -314,7 +318,7 @@ export default function UserManagementPage() {
                                         <button
                                             onClick={() => { setSelectedUser(user); setIsPassModalOpen(true); }}
                                             className="text-slate-400 hover:text-blue-600 p-1"
-                                            title="Reset Password"
+                                            title={t('resetPass')}
                                         >
                                             <Key className="w-4 h-4" />
                                         </button>
@@ -323,7 +327,7 @@ export default function UserManagementPage() {
                                             <button
                                                 onClick={() => handleDeleteUser(user)}
                                                 className="text-slate-400 hover:text-red-700 p-1"
-                                                title="Delete User"
+                                                title={t('deleteUser')}
                                             >
                                                 <X className="w-4 h-4" />
                                             </button>
@@ -334,7 +338,7 @@ export default function UserManagementPage() {
                             {users.length === 0 && (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
-                                        No users found
+                                        {t('noUsers')}
                                     </td>
                                 </tr>
                             )}
@@ -347,21 +351,21 @@ export default function UserManagementPage() {
             {isAddModalOpen && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-                        <h2 className="text-xl font-bold mb-4">Add New User</h2>
+                        <h2 className="text-xl font-bold mb-4">{t('addUser')}</h2>
                         <form onSubmit={handleCreateUser} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Username</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('username')}</label>
                                 <input
                                     type="text"
                                     value={newUserUsername}
                                     onChange={e => setNewUserUsername(e.target.value)}
-                                    placeholder="Real name or login name"
+                                    placeholder={t('realNameLoginName')}
                                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-black font-medium"
                                     required
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Employee ID (for AI Privacy)</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('employeeId')} ({t('employeeIdHelp')})</label>
                                 <input
                                     type="text"
                                     value={newUserEmployeeId}
@@ -371,27 +375,27 @@ export default function UserManagementPage() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('password')}</label>
                                 <input
                                     type="text"
                                     value={newUserPassword}
                                     onChange={e => setNewUserPassword(e.target.value)}
                                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-black font-medium"
                                     required
-                                    placeholder="Initial password"
+                                    placeholder={t('initialPass')}
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('role')}</label>
                                 <select
                                     value={newUserRole}
                                     onChange={e => setNewUserRole(e.target.value)}
                                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-black font-medium"
                                 >
-                                    <option value="user">User</option>
-                                    <option value="kiosk">Kiosk</option>
-                                    {currentUserRole === 'admin' && <option value="supervisor">Supervisor</option>}
-                                    {currentUsername === 'superadmin' && <option value="admin">Admin</option>}
+                                    <option value="user">{t('roles.user')}</option>
+                                    <option value="kiosk">{t('roles.kiosk')}</option>
+                                    {currentUserRole === 'admin' && <option value="supervisor">{t('roles.supervisor')}</option>}
+                                    {currentUsername === 'superadmin' && <option value="admin">{t('roles.admin')}</option>}
                                 </select>
                             </div>
                             <div className="flex justify-end gap-2 mt-6">
@@ -400,14 +404,14 @@ export default function UserManagementPage() {
                                     onClick={() => setIsAddModalOpen(false)}
                                     className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
                                 >
-                                    Cancel
+                                    {tCommon('cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={actionLoading}
                                     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
                                 >
-                                    {actionLoading ? 'Creating...' : 'Create User'}
+                                    {actionLoading ? tCommon('creating') : t('createUser')}
                                 </button>
                             </div>
                         </form>
@@ -419,11 +423,11 @@ export default function UserManagementPage() {
             {isEditModalOpen && selectedUser && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-                        <h2 className="text-xl font-bold mb-4">Edit User Info</h2>
-                        <p className="text-slate-500 mb-4">Updating <b>{selectedUser.username}</b></p>
+                        <h2 className="text-xl font-bold mb-4">{t('editInfo')}</h2>
+                        <p className="text-slate-500 mb-4">{t('updatingUser', { username: selectedUser.username })}</p>
                         <form onSubmit={handleUpdateUserInfo} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Employee ID</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('employeeId')}</label>
                                 <input
                                     type="text"
                                     value={editEmployeeId}
@@ -431,19 +435,19 @@ export default function UserManagementPage() {
                                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-black font-medium"
                                     placeholder="e.g. EMP001"
                                 />
-                                <p className="text-[10px] text-slate-400 mt-1">This ID will be used by AI to protect privacy.</p>
+                                <p className="text-[10px] text-slate-400 mt-1">{t('employeeIdHelp')}</p>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('role')}</label>
                                 <select
                                     value={editRole}
                                     onChange={e => setEditRole(e.target.value)}
                                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-black font-medium"
                                 >
-                                    <option value="user">User</option>
-                                    <option value="kiosk">Kiosk</option>
-                                    {currentUserRole === 'admin' && <option value="supervisor">Supervisor</option>}
-                                    {currentUsername === 'superadmin' && <option value="admin">Admin</option>}
+                                    <option value="user">{t('roles.user')}</option>
+                                    <option value="kiosk">{t('roles.kiosk')}</option>
+                                    {currentUserRole === 'admin' && <option value="supervisor">{t('roles.supervisor')}</option>}
+                                    {currentUsername === 'superadmin' && <option value="admin">{t('roles.admin')}</option>}
                                 </select>
                             </div>
                             <div className="flex justify-end gap-2 mt-6">
@@ -452,14 +456,14 @@ export default function UserManagementPage() {
                                     onClick={() => setIsEditModalOpen(false)}
                                     className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
                                 >
-                                    Cancel
+                                    {tCommon('cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={actionLoading}
                                     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
                                 >
-                                    {actionLoading ? 'Saving...' : 'Save Changes'}
+                                    {actionLoading ? tCommon('saving') : t('saveChanges')}
                                 </button>
                             </div>
                         </form>
@@ -471,8 +475,8 @@ export default function UserManagementPage() {
             {isPassModalOpen && selectedUser && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                     <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-                        <h2 className="text-xl font-bold mb-4">Reset Password</h2>
-                        <p className="text-slate-500 mb-4">Set new password for <b>{selectedUser.username}</b></p>
+                        <h2 className="text-xl font-bold mb-4">{t('resetPassword')}</h2>
+                        <p className="text-slate-500 mb-4">{t('setNewPasswordFor', { username: selectedUser.username })}</p>
                         <form onSubmit={async (e) => {
                             e.preventDefault();
                             setActionLoading(true);
@@ -485,23 +489,23 @@ export default function UserManagementPage() {
                                 if (res.ok) {
                                     setIsPassModalOpen(false);
                                     setResetPassword('');
-                                    setMsg({ type: 'success', text: 'Password updated successfully' });
+                                    setMsg({ type: 'success', text: t('passwordUpdatedSuccess') });
                                 } else {
                                     const data = await res.json();
-                                    alert(data.error || 'Failed to reset password');
+                                    alert(data.error || t('failedToResetPassword'));
                                 }
-                            } catch { alert('Error resetting password'); }
+                            } catch { alert(t('errorResettingPassword')); }
                             finally { setActionLoading(false); }
                         }} className="space-y-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">New Password</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">{t('enterNewPassword')}</label>
                                 <input
                                     type="text"
                                     value={resetPassword}
                                     onChange={e => setResetPassword(e.target.value)}
                                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500 outline-none text-black font-medium"
                                     required
-                                    placeholder="Enter new password"
+                                    placeholder={t('enterNewPassword')}
                                 />
                             </div>
                             <div className="flex justify-end gap-2 mt-6">
@@ -510,14 +514,14 @@ export default function UserManagementPage() {
                                     onClick={() => setIsPassModalOpen(false)}
                                     className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg"
                                 >
-                                    Cancel
+                                    {tCommon('cancel')}
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={actionLoading}
                                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                                 >
-                                    {actionLoading ? 'Saving...' : 'Set Password'}
+                                    {actionLoading ? tCommon('saving') : t('setPassword')}
                                 </button>
                             </div>
                         </form>

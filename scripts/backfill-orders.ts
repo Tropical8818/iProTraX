@@ -28,13 +28,16 @@ async function main() {
             // In many systems, "Status" is explicitly tracked. If not, this backfill is a best-effort start.
             const status = data.Status || 'N/A';
 
-            if (order.priority !== priority || order.status !== status) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const currentOrder = order as any;
+
+            if (currentOrder.priority !== priority || currentOrder.status !== status) {
                 await prisma.order.update({
                     where: { id: order.id },
                     data: {
                         priority,
                         status
-                    }
+                    } as any
                 });
                 updatedCount++;
             }

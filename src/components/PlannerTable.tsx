@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { ArrowUp, ArrowDown, ArrowUpDown, Download, Lock, Unlock, Trash2 } from 'lucide-react';
 import { format, isValid, parseISO } from 'date-fns';
+
 import type { Order } from '@/lib/excel';
 
 interface Props {
@@ -104,6 +105,7 @@ export default function PlannerTable({
     onUpdateDetail,
     onDeleteOrder
 }: Props) {
+
     const [sortKey, setSortKey] = useState<string | null>(null);
     const [sortDir, setSortDir] = useState<SortDir>(null);
 
@@ -524,7 +526,9 @@ export default function PlannerTable({
                                 title={col}
                             >
                                 <div className="flex items-center gap-0.5 justify-center overflow-hidden">
-                                    <span className="truncate">{i >= 5 ? getStepAbbrev(col) : col}</span>
+                                    <span className="truncate">
+                                        {i >= 5 ? getStepAbbrev(col) : col}
+                                    </span>
                                     {sortKey === col ? (
                                         sortDir === 'asc' ? <ArrowUp className="w-2 h-2 shrink-0" /> : <ArrowDown className="w-2 h-2 shrink-0" />
                                     ) : (

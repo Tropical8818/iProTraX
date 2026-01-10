@@ -4,8 +4,11 @@ import { useState } from 'react';
 import { Lock, User, Loader2, UserPlus, ArrowLeft, Eye, EyeOff, CheckCircle, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function RegisterPage() {
+    const t = useTranslations('Register');
+    const tCommon = useTranslations('Common');
     const [username, setUsername] = useState('');
     const [employeeId, setEmployeeId] = useState('');
     const [password, setPassword] = useState('');
@@ -23,12 +26,12 @@ export default function RegisterPage() {
         setError('');
 
         if (password !== confirmPassword) {
-            setError('Passwords do not match');
+            setError(t('passwordsDoNotMatch'));
             return;
         }
 
         if (password.length < 6) {
-            setError('Password must be at least 6 characters');
+            setError(t('passwordAtLeast6')); // I need to add this key
             return;
         }
 
@@ -46,10 +49,10 @@ export default function RegisterPage() {
             if (data.success) {
                 setSuccess(true);
             } else {
-                setError(data.error || 'Registration failed');
+                setError(data.error || t('failed'));
             }
         } catch {
-            setError('Something went wrong. Please try again.');
+            setError(t('failed'));
         } finally {
             setLoading(false);
         }
@@ -62,16 +65,16 @@ export default function RegisterPage() {
                     <div className="inline-flex bg-green-500/20 p-4 rounded-full mb-6">
                         <CheckCircle className="w-12 h-12 text-green-400" />
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-2">Registration Successful</h2>
+                    <h2 className="text-2xl font-bold text-white mb-2">{t('success')}</h2>
                     <p className="text-slate-300 mb-8">
-                        Your account has been created and is pending approval. Please contact your administrator.
+                        {t('pendingApproval')}
                     </p>
                     <Link
                         href="/login"
                         className="inline-flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4" />
-                        Back to Login
+                        {tCommon('back')}
                     </Link>
                 </div>
             </div>
@@ -86,8 +89,8 @@ export default function RegisterPage() {
                         <div className="bg-purple-500/20 p-4 rounded-2xl mb-4">
                             <UserPlus className="w-10 h-10 text-purple-400" />
                         </div>
-                        <h1 className="text-3xl font-bold text-white">Create Account</h1>
-                        <p className="text-slate-400 mt-2">Join the iProTraX</p>
+                        <h1 className="text-3xl font-bold text-white">{t('title')}</h1>
+                        <p className="text-slate-400 mt-2">{t('subtitle')}</p>
                     </div>
 
                     <form onSubmit={handleSubmit} className="space-y-4">
@@ -97,7 +100,7 @@ export default function RegisterPage() {
                                 value={username}
                                 onChange={(e) => setUsername(e.target.value)}
                                 className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white pl-12 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all placeholder-slate-500"
-                                placeholder="Username"
+                                placeholder={t('username')}
                                 required
                             />
                             <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
@@ -109,7 +112,7 @@ export default function RegisterPage() {
                                 value={employeeId}
                                 onChange={(e) => setEmployeeId(e.target.value)}
                                 className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white pl-12 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all placeholder-slate-500"
-                                placeholder="Employee ID (e.g. EMP001)"
+                                placeholder={t('employeeId')}
                             />
                             <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
                         </div>
@@ -120,7 +123,7 @@ export default function RegisterPage() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white pl-12 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all pr-12 placeholder-slate-500"
-                                placeholder="Password"
+                                placeholder={t('password')}
                                 required
                             />
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
@@ -139,7 +142,7 @@ export default function RegisterPage() {
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 className="w-full px-4 py-4 bg-white/5 border border-white/10 rounded-xl text-white pl-12 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all pr-12 placeholder-slate-500"
-                                placeholder="Confirm Password"
+                                placeholder={t('confirmPassword')}
                                 required
                             />
                             <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-5 h-5" />
@@ -161,7 +164,7 @@ export default function RegisterPage() {
                             ) : (
                                 <>
                                     <UserPlus className="w-5 h-5" />
-                                    Sign Up
+                                    {t('register')}
                                 </>
                             )}
                         </button>
@@ -169,7 +172,7 @@ export default function RegisterPage() {
 
                     <div className="mt-6 text-center">
                         <Link href="/login" className="text-slate-400 hover:text-white transition-colors text-sm">
-                            Already have an account? Sign in
+                            {t('alreadyHaveAccount')}
                         </Link>
                     </div>
                 </div>
