@@ -158,7 +158,7 @@ flowchart TB
     end
 
     subgraph AI ["Intelligence"]
-        OpenAI[OpenAI / DeepSeek]
+        OpenAI[OpenAI / Ollama (Local AI)]
     end
 
     %% Connections
