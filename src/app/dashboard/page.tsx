@@ -15,6 +15,7 @@ import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
     LineChart, Line, AreaChart, Area
 } from 'recharts';
+import { useTranslations } from 'next-intl';
 import PlannerTable from '@/components/PlannerTable';
 import MobilePlannerCards from '@/components/MobilePlannerCards';
 import DraggableMenu from '@/components/DraggableMenu';
@@ -25,6 +26,7 @@ import dynamic from 'next/dynamic';
 import AIChatPanel from '@/components/AIChatPanel';
 import { MessageNotification } from '@/components/MessageNotification';
 import { calculateECD } from '@/lib/ecd';
+// LanguageSwitcher removed - using inline flag implementation
 
 // Dynamic import for barcode scanner (client-only)
 const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false });
@@ -57,7 +59,19 @@ interface Product {
 
 
 export default function DashboardPage() {
+    const t = useTranslations('Dashboard');
+    const tCommon = useTranslations('Common');
     const [currentDate, setCurrentDate] = useState('');
+    const [currentLocale, setCurrentLocale] = useState<string>('en');
+
+    useEffect(() => {
+        // Initialize current locale for flag display
+        const locale = document.cookie
+            .split('; ')
+            .find(row => row.startsWith('NEXT_LOCALE='))
+            ?.split('=')[1] || 'en';
+        setCurrentLocale(locale);
+    }, []);
 
     useEffect(() => {
         const updateDateTime = () => {
@@ -569,6 +583,8 @@ export default function DashboardPage() {
         document.body.removeChild(link);
     };
 
+    // Unused log functions removed for linting
+    /* 
     const clearLogs = () => {
         setConfirmingClear(true);
     };
@@ -593,6 +609,7 @@ export default function DashboardPage() {
             setTimeout(() => setLogsNotification(null), 5000);
         }
     };
+    */
 
     const handleImportFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -657,7 +674,7 @@ export default function DashboardPage() {
             } else {
                 setImportMsg({ type: 'error', text: data.error || 'Import failed' });
             }
-        } catch (error) {
+        } catch {
             setImportMsg({ type: 'error', text: 'Network error during import' });
         } finally {
             setIsImporting(false);
@@ -668,6 +685,7 @@ export default function DashboardPage() {
 
     // Sort orders by priority (Red first, then Yellow, then normal)
     const sortedOrders = [...orders].sort((a, b) => {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const getPriority = (order: any) => {
             if (order.priority === 'Red') return 3;
             if (order.priority === 'Yellow') return 2;
@@ -719,6 +737,7 @@ export default function DashboardPage() {
                         className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
                         title="Return to Home"
                     >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img src="/logo.png" alt="iProTraX" className="h-9 w-auto" />
                     </button>
 
@@ -730,7 +749,7 @@ export default function DashboardPage() {
                                 onClick={() => setProductMenuOpen(!productMenuOpen)}
                                 className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-200 bg-white"
                             >
-                                <span className="max-w-[150px] truncate">{selectedProduct?.name || 'Select Product'}</span>
+                                <span className="max-w-[150px] truncate">{selectedProduct?.name || t('selectProduct')}</span>
                                 <ChevronDown className={`w-4 h-4 transition-transform ${productMenuOpen ? 'rotate-180' : ''}`} />
                             </button>
 
@@ -766,10 +785,10 @@ export default function DashboardPage() {
                                     }}
                                     disabled={isImporting}
                                     className="flex items-center gap-2 px-3 py-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-blue-600 rounded-lg text-sm font-medium transition-colors shadow-sm"
-                                    title="Import Excel Orders for this Product Line"
+                                    title={t('import')}
                                 >
                                     <Upload className="w-4 h-4" />
-                                    Import
+                                    {t('import')}
                                 </button>
                             </div>
                         )}
@@ -781,7 +800,7 @@ export default function DashboardPage() {
 
                             <button className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium">
                                 <Table2 className="w-4 h-4" />
-                                <span className="hidden sm:inline">Home</span>
+                                <span className="hidden sm:inline">{t('home')}</span>
                             </button>
 
 
@@ -789,10 +808,10 @@ export default function DashboardPage() {
                             <button
                                 onClick={() => router.push(`/dashboard/operation?product=${selectedProductId}`)}
                                 className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
-                                title="Go to Operation View"
+                                title={t('operation')}
                             >
                                 <HardHat className="w-5 h-5 sm:w-4 sm:h-4" />
-                                <span className="hidden sm:inline">Operation</span>
+                                <span className="hidden sm:inline">{t('operation')}</span>
                             </button>
 
 
@@ -801,10 +820,10 @@ export default function DashboardPage() {
                                 onClick={() => setShowAnalytics(!showAnalytics)}
                                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${showAnalytics ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
                                     }`}
-                                title="Production Insights"
+                                title={t('insights')}
                             >
                                 <BarChart2 className="w-4 h-4" />
-                                <span className="hidden sm:inline">Insights</span>
+                                <span className="hidden sm:inline">{t('insights')}</span>
                             </button>
 
                             {/* Batch Operations Dropdown */}
@@ -819,7 +838,7 @@ export default function DashboardPage() {
                                     >
                                         <Layers className="w-4 h-4" />
                                         <span className="hidden sm:inline">
-                                            {pMode ? 'Plan' : naMode ? 'N/A' : holdMode ? 'Hold Mode' : qnMode ? 'QN Mode' : wipMode ? 'WIP Mode' : completeMode ? 'Complete' : eraseMode ? 'Erase' : 'Edit'}
+                                            {pMode ? t('batch.plan') : naMode ? t('batch.na') : holdMode ? t('batch.hold') : qnMode ? t('batch.qn') : wipMode ? t('batch.wip') : completeMode ? t('batch.complete') : eraseMode ? t('batch.erase') : t('batch.edit')}
                                         </span>
                                         <ChevronDown className={`w-3.5 h-3.5 transition-transform ${batchMenuOpen ? 'rotate-180' : ''}`} />
                                     </button>
@@ -886,7 +905,7 @@ export default function DashboardPage() {
                             <button
                                 onClick={openLogsModal}
                                 className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
-                                title="Operation Logs"
+                                title={t('modals.operationLogs')}
                             >
                                 <ClipboardList className="w-5 h-5" />
                             </button>
@@ -895,7 +914,7 @@ export default function DashboardPage() {
                                 onClick={fetchOrders}
                                 disabled={refreshing}
                                 className={`p-2 rounded-lg ${refreshing ? 'text-indigo-500 bg-indigo-50' : 'text-slate-500 hover:bg-slate-100'}`}
-                                title="Refresh"
+                                title={t('refresh')}
                             >
                                 <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
                             </button>
@@ -912,9 +931,28 @@ export default function DashboardPage() {
                             <button
                                 onClick={toggleFullscreen}
                                 className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
-                                title="Fullscreen"
+                                title={t('fullscreen')}
                             >
                                 {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+                            </button>
+
+                            {/* Dynamic Flag Language Switcher */}
+                            <button
+                                onClick={() => {
+                                    const locale = document.cookie
+                                        .split('; ')
+                                        .find(row => row.startsWith('NEXT_LOCALE='))
+                                        ?.split('=')[1] || 'en';
+                                    const newLocale = locale === 'en' ? 'zh' : 'en';
+                                    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
+                                    window.location.reload();
+                                }}
+                                className="flex items-center gap-1 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
+                                title={currentLocale === 'en' ? '切换到中文' : 'Switch to English'}
+                                suppressHydrationWarning
+                            >
+                                <span className="text-lg" suppressHydrationWarning>{currentLocale === 'en' ? '🇨🇳' : '🇺🇸'}</span>
+                                <span className="hidden sm:inline text-xs" suppressHydrationWarning>{currentLocale === 'en' ? 'CN' : 'EN'}</span>
                             </button>
 
                             <button
@@ -922,7 +960,7 @@ export default function DashboardPage() {
                                 className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
                             >
                                 <Settings className="w-4 h-4" />
-                                <span className="hidden sm:inline">Settings</span>
+                                <span className="hidden sm:inline">{t('settings')}</span>
                             </button>
                         </nav>
 
@@ -936,7 +974,7 @@ export default function DashboardPage() {
                             <button
                                 onClick={handleLogout}
                                 className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                                title="Logout"
+                                title={t('logout')}
                             >
                                 <LogOut className="w-5 h-5" />
                             </button>
@@ -989,7 +1027,7 @@ export default function DashboardPage() {
                                     {/* Step Productivity Chart */}
                                     <div className="bg-white p-5 rounded-xl border border-slate-200 h-[350px]">
                                         <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                                            <CheckCircle2 className="w-4 h-4 text-emerald-500" /> Output per Step
+                                            <CheckCircle2 className="w-4 h-4 text-emerald-500" /> {t('charts.outputPerStep')}
                                         </h3>
                                         <ResponsiveContainer width="100%" height="90%">
                                             <BarChart data={analyticsData.productivity}>
@@ -1008,7 +1046,7 @@ export default function DashboardPage() {
                                     {/* Bottleneck Chart */}
                                     <div className="bg-white p-5 rounded-xl border border-slate-200 h-[350px]">
                                         <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                                            <AlertTriangle className="w-4 h-4 text-orange-500" /> Work In Progress
+                                            <AlertTriangle className="w-4 h-4 text-orange-500" /> {t('charts.workInProgress')}
                                         </h3>
                                         <ResponsiveContainer width="100%" height="90%">
                                             <BarChart data={analyticsData.bottlenecks}>
@@ -1027,7 +1065,7 @@ export default function DashboardPage() {
                                     {/* Yield Trend Chart */}
                                     <div className="bg-white p-5 rounded-xl border border-slate-200 h-[350px]">
                                         <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                                            <TrendingUp className="w-4 h-4 text-indigo-500" /> Daily Production
+                                            <TrendingUp className="w-4 h-4 text-indigo-500" /> {t('charts.dailyProduction')}
                                         </h3>
                                         <ResponsiveContainer width="100%" height="90%">
                                             <AreaChart data={analyticsData.trend}>
@@ -1059,7 +1097,7 @@ export default function DashboardPage() {
                                 </div>
                             ) : (
                                 <div className="h-[300px] flex items-center justify-center text-slate-400">
-                                    No production data found for the last 7 days.
+                                    {t('noChartData')}
                                 </div>
                             )}
                         </div>
@@ -1070,7 +1108,7 @@ export default function DashboardPage() {
             {/* Main Content */}
             <main className="p-4">
                 {loading ? (
-                    <div className="text-center py-20 text-slate-500">Loading orders...</div>
+                    <div className="text-center py-20 text-slate-500">{t('loadingOrders')}</div>
                 ) : error ? (
                     <div className="text-center py-20 text-red-500">{error}</div>
                 ) : (
@@ -1078,7 +1116,7 @@ export default function DashboardPage() {
                         {/* Statistics Cards */}
                         <div className="grid grid-cols-4 gap-2 mb-4">
                             <div className="bg-white rounded-lg border border-slate-200 p-3">
-                                <div className="text-xs text-slate-500">Active WOs</div>
+                                <div className="text-xs text-slate-500">{t('stats.activeWOs')}</div>
                                 <div className="text-xl font-bold text-slate-900">{displayedOrders.length}</div>
                             </div>
                             <div className={`rounded-lg border p-3 ${displayedOrders.filter(o => {
@@ -1097,7 +1135,7 @@ export default function DashboardPage() {
                                 ? 'bg-red-50 border-red-200'
                                 : 'bg-white border-slate-200'
                                 }`}>
-                                <div className="text-xs text-slate-500">Overdue</div>
+                                <div className="text-xs text-slate-500">{t('stats.overdue')}</div>
                                 <div className={`text-xl font-bold ${displayedOrders.filter(o => {
                                     const due = o['WO DUE'];
                                     if (!due) return false;
@@ -1127,7 +1165,7 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                             <div className="bg-orange-50 rounded-lg border border-orange-200 p-3">
-                                <div className="text-xs text-slate-500">Due Today</div>
+                                <div className="text-xs text-slate-500">{t('stats.dueToday')}</div>
                                 <div className="text-xl font-bold text-orange-700">
                                     {displayedOrders.filter(o => {
                                         const due = o['WO DUE'];
@@ -1141,7 +1179,7 @@ export default function DashboardPage() {
                                 </div>
                             </div>
                             <div className="bg-blue-50 rounded-lg border border-blue-200 p-3">
-                                <div className="text-xs text-slate-500">Monthly Goal</div>
+                                <div className="text-xs text-slate-500">{t('stats.monthlyGoal')}</div>
                                 <div className="text-xl font-bold text-blue-700">
                                     {(() => {
                                         const today = new Date();
@@ -1399,13 +1437,13 @@ export default function DashboardPage() {
                 bulkConfirmState.isOpen && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                         <div className="bg-white rounded-xl p-6 max-w-sm mx-4 shadow-xl">
-                            <h3 className="text-lg font-bold text-slate-900 mb-2">Confirm Bulk Action</h3>
+                            <h3 className="text-lg font-bold text-slate-900 mb-2">{t('modals.confirmBulkAction')}</h3>
                             <p className="text-slate-600 mb-4">
-                                Are you sure you want to mark <strong>{bulkConfirmState.count}</strong> orders as
-                                <span className={`font-bold ml-1 ${bulkConfirmState.mode === 'P' ? 'text-blue-600' : bulkConfirmState.mode === 'Hold' ? 'text-orange-600' : bulkConfirmState.mode === 'QN' ? 'text-red-600' : bulkConfirmState.mode === 'WIP' ? 'text-yellow-600' : bulkConfirmState.mode === 'Complete' ? 'text-green-600' : 'text-slate-500'}`}>
-                                    {bulkConfirmState.mode === 'P' ? 'P' : bulkConfirmState.mode === 'Hold' ? 'Hold' : bulkConfirmState.mode === 'QN' ? 'QN' : bulkConfirmState.mode === 'WIP' ? 'WIP' : bulkConfirmState.mode === 'Complete' ? 'Complete (Today)' : 'N/A'}
-                                </span> for
-                                <span className="font-semibold ml-1">{bulkConfirmState.step}</span>?
+                                {t('modals.bulkConfirmMessage', {
+                                    count: bulkConfirmState.count,
+                                    status: bulkConfirmState.mode === 'P' ? 'P' : bulkConfirmState.mode === 'Hold' ? 'Hold' : bulkConfirmState.mode === 'QN' ? 'QN' : bulkConfirmState.mode === 'WIP' ? 'WIP' : bulkConfirmState.mode === 'Complete' ? 'Complete (Today)' : 'N/A',
+                                    step: bulkConfirmState.step
+                                })}
                             </p>
                             <div className="flex gap-2">
                                 <button
@@ -1424,6 +1462,7 @@ export default function DashboardPage() {
                                         else if (mode === 'WIP') status = 'WIP';
                                         else if (mode === 'Complete') status = format(new Date(), 'dd-MMM, HH:mm');
                                         try {
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                             const updates = targets.map((o: any) => ({
                                                 woId: o['WO ID'],
                                                 step,
@@ -1462,9 +1501,9 @@ export default function DashboardPage() {
                 erasePasswordModal && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                         <div className="bg-white rounded-xl p-6 max-w-sm mx-4 shadow-xl">
-                            <h3 className="text-lg font-bold text-red-600 mb-2">⚠️ Enable Erase Mode</h3>
+                            <h3 className="text-lg font-bold text-red-600 mb-2">⚠️ {t('modals.enableEraseMode')}</h3>
                             <p className="text-slate-600 mb-4 text-sm">
-                                Erase mode allows you to clear any cell content. Please enter your password to confirm.
+                                {t('modals.eraseModeDesc')}
                             </p>
 
 
@@ -1561,7 +1600,7 @@ export default function DashboardPage() {
                             <div className="flex items-center justify-between mb-6">
                                 <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
                                     <History className="w-6 h-6 text-indigo-600" />
-                                    Operation Logs
+                                    {t('modals.operationLogs')}
                                 </h3>
                                 <div className="flex items-center gap-2">
 
@@ -1668,6 +1707,7 @@ export default function DashboardPage() {
                     if (matchedOrder) {
                         // Play beep sound
                         try {
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
                             if (AudioContext) {
                                 const ctx = new AudioContext();
@@ -1738,7 +1778,7 @@ export default function DashboardPage() {
                             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                                 <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
                                     <FileSpreadsheet className="w-5 h-5 text-green-600" />
-                                    Import Orders
+                                    {t('modals.importOrders')}
                                 </h3>
                                 <button onClick={() => { setShowImportModal(false); setImportFile(null); }} className="text-slate-400 hover:text-slate-600">
                                     <X className="w-5 h-5" />
@@ -1749,15 +1789,15 @@ export default function DashboardPage() {
                                 <div className="grid grid-cols-3 gap-3 text-center">
                                     <div className="bg-green-50 rounded-lg p-3 border border-green-100">
                                         <div className="text-2xl font-bold text-green-700">{importPreview.newOrders}</div>
-                                        <div className="text-xs text-green-600 font-medium uppercase tracking-wide">New</div>
+                                        <div className="text-xs text-green-600 font-medium uppercase tracking-wide">{t('modals.new')}</div>
                                     </div>
                                     <div className="bg-blue-50 rounded-lg p-3 border border-blue-100">
                                         <div className="text-2xl font-bold text-blue-700">{importPreview.existingOrders}</div>
-                                        <div className="text-xs text-blue-600 font-medium uppercase tracking-wide">Skipped</div>
+                                        <div className="text-xs text-blue-600 font-medium uppercase tracking-wide">{t('modals.skipped')}</div>
                                     </div>
                                     <div className="bg-slate-50 rounded-lg p-3 border border-slate-100">
                                         <div className="text-2xl font-bold text-slate-700">{importPreview.totalRows}</div>
-                                        <div className="text-xs text-slate-500 font-medium uppercase tracking-wide">Total Rows</div>
+                                        <div className="text-xs text-slate-500 font-medium uppercase tracking-wide">{t('modals.totalRows')}</div>
                                     </div>
                                 </div>
 
@@ -1768,11 +1808,10 @@ export default function DashboardPage() {
                                             <Info className="w-5 h-5 text-amber-600 mt-0.5" />
                                             <div>
                                                 <div className="text-sm font-bold text-amber-800 mb-1">
-                                                    ⚠️ Missing Columns
+                                                    ⚠️ {t('modals.missingColumns')}
                                                 </div>
                                                 <div className="text-xs text-amber-700 mb-2">
-                                                    The following columns from your settings were not found in this Excel file.
-                                                    Data for these columns will be empty.
+                                                    {t('modals.missingColumnsDesc')}
                                                 </div>
                                                 <div className="flex flex-wrap gap-1">
                                                     {importPreview.missingColumns.map((col: string, i: number) => (
@@ -1797,6 +1836,7 @@ export default function DashboardPage() {
                                 {importPreview.validationErrors?.length > 0 && (
                                     <div className="bg-red-50 border border-red-200 rounded-lg p-3 max-h-32 overflow-y-auto">
                                         <div className="text-xs font-bold text-red-800 mb-1">Errors Found:</div>
+                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                         {importPreview.validationErrors.map((err: any, i: number) => (
                                             <div key={i} className="text-xs text-red-600">Row {err.row}: {err.error}</div>
                                         ))}
@@ -1828,7 +1868,7 @@ export default function DashboardPage() {
                                     className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
                                     {isImporting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                                    {isImporting ? 'Importing...' : 'Confirm Import'}
+                                    {isImporting ? t('saving') : t('confirm')}
                                 </button>
                             </div>
                         </div>

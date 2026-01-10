@@ -9,21 +9,26 @@ import {
 } from 'lucide-react';
 import type { Order } from '@/lib/excel';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
 import { MessageNotification } from '@/components/MessageNotification';
 
 // Dynamic import for barcode scanner
 const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false });
 
 // Comment categories
-const COMMENT_CATEGORIES = [
-    { key: 'material', label: 'Material Shortage', color: 'bg-purple-100 text-purple-700' },
-    { key: 'machine', label: 'Machine Issue', color: 'bg-red-100 text-red-700' },
-    { key: 'quality', label: 'Quality Issue', color: 'bg-orange-100 text-orange-700' },
-    { key: 'process', label: 'Process Issue', color: 'bg-blue-100 text-blue-700' },
-    { key: 'other', label: 'Other', color: 'bg-slate-100 text-slate-700' },
-];
-
 function OperationContent() {
+    const t = useTranslations('Operation');
+    const tCommon = useTranslations('Common');
+    const tDash = useTranslations('Dashboard');
+
+    // Comment categories
+    const COMMENT_CATEGORIES = [
+        { key: 'material', label: t('category_material', { defaultValue: 'Material Shortage' }), color: 'bg-purple-100 text-purple-700' },
+        { key: 'machine', label: t('category_machine', { defaultValue: 'Machine Issue' }), color: 'bg-red-100 text-red-700' },
+        { key: 'quality', label: t('category_quality', { defaultValue: 'Quality Issue' }), color: 'bg-orange-100 text-orange-700' },
+        { key: 'process', label: t('category_process', { defaultValue: 'Process Issue' }), color: 'bg-blue-100 text-blue-700' },
+        { key: 'other', label: t('category_other', { defaultValue: 'Other' }), color: 'bg-slate-100 text-slate-700' },
+    ];
     const [orders, setOrders] = useState<Order[]>([]);
     const [steps, setSteps] = useState<string[]>([]);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
@@ -333,7 +338,7 @@ function OperationContent() {
                     <button
                         onClick={() => router.push('/dashboard')}
                         className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity cursor-pointer"
-                        title="Return to Home"
+                        title={t('returnToHome')}
                     >
                         <img src="/logo.png" alt="iProTraX" className="h-9 w-auto" />
                     </button>
@@ -350,12 +355,12 @@ function OperationContent() {
                             className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
                         >
                             <Table2 className="w-4 h-4" />
-                            <span className="hidden sm:inline">Home</span>
+                            <span className="hidden sm:inline">{tDash('home')}</span>
                         </button>
 
                         <button className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium">
                             <HardHat className="w-4 h-4" />
-                            <span className="hidden sm:inline">Operation</span>
+                            <span className="hidden sm:inline">{tDash('operation')}</span>
                         </button>
 
                         {role === 'admin' && (
@@ -364,7 +369,7 @@ function OperationContent() {
                                 className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
                             >
                                 <Settings className="w-4 h-4" />
-                                <span className="hidden sm:inline">Settings</span>
+                                <span className="hidden sm:inline">{tDash('settings')}</span>
                             </button>
                         )}
 
@@ -390,23 +395,23 @@ function OperationContent() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                             <input
                                 type="text"
-                                placeholder="Search WO ID..."
+                                placeholder={t('searchPlaceholder')}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-black font-mediumPlaceholder:text-slate-400"
+                                className="w-full pl-10 pr-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-black font-medium placeholder:text-slate-400"
                             />
                         </div>
                         <button
                             onClick={handleSearch}
                             className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-500"
                         >
-                            Search
+                            {tCommon('search')}
                         </button>
                         <button
                             onClick={() => setScannerOpen(true)}
                             className="p-2 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200"
-                            title="Scan Barcode"
+                            title={t('scanBarcode')}
                         >
                             <ScanBarcode className="w-5 h-5" />
                         </button>
@@ -456,7 +461,7 @@ function OperationContent() {
                                                 className={`flex flex-col items-center justify-center p-3 rounded-lg text-xs font-medium transition-all active:scale-95 ${isLocked ? 'text-slate-300 bg-slate-100' : 'text-green-600 bg-green-50 hover:bg-green-100 active:bg-green-200'}`}
                                             >
                                                 <CheckCircle className="w-6 h-6 mb-1" />
-                                                Done
+                                                {t('status.done')}
                                             </button>
                                             <button
                                                 onClick={() => handleAction(step, 'WIP')}
@@ -464,7 +469,7 @@ function OperationContent() {
                                                 className={`flex flex-col items-center justify-center p-3 rounded-lg text-xs font-medium transition-all active:scale-95 ${isLocked ? 'text-slate-300 bg-slate-100' : 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100 active:bg-yellow-200'}`}
                                             >
                                                 <Clock className="w-6 h-6 mb-1" />
-                                                WIP
+                                                {t('status.wip')}
                                             </button>
                                             <button
                                                 onClick={() => handleAction(step, 'Hold')}
@@ -472,7 +477,7 @@ function OperationContent() {
                                                 className={`flex flex-col items-center justify-center p-3 rounded-lg text-xs font-medium transition-all active:scale-95 ${isLocked ? 'text-slate-300 bg-slate-100' : 'text-orange-600 bg-orange-50 hover:bg-orange-100 active:bg-orange-200'}`}
                                             >
                                                 <PauseCircle className="w-6 h-6 mb-1" />
-                                                Hold
+                                                {t('status.hold')}
                                             </button>
                                             <button
                                                 onClick={() => handleAction(step, 'QN')}
@@ -480,7 +485,7 @@ function OperationContent() {
                                                 className={`flex flex-col items-center justify-center p-3 rounded-lg text-xs font-medium transition-all active:scale-95 ${isLocked ? 'text-slate-300 bg-slate-100' : 'text-red-600 bg-red-50 hover:bg-red-100 active:bg-red-200'}`}
                                             >
                                                 <AlertTriangle className="w-6 h-6 mb-1" />
-                                                QN
+                                                {t('status.qn')}
                                             </button>
                                             <button
                                                 onClick={() => handleAction(step, 'N/A')}
@@ -488,7 +493,7 @@ function OperationContent() {
                                                 className={`flex flex-col items-center justify-center p-3 rounded-lg text-xs font-medium transition-all active:scale-95 ${isLocked ? 'text-slate-300 bg-slate-100' : 'text-slate-500 bg-slate-100 hover:bg-slate-200 active:bg-slate-300'}`}
                                             >
                                                 <Ban className="w-6 h-6 mb-1" />
-                                                N/A
+                                                {t('status.na')}
                                             </button>
                                             <button
                                                 onClick={() => handleAction(step, 'Reset')}
@@ -496,7 +501,7 @@ function OperationContent() {
                                                 className={`flex flex-col items-center justify-center p-3 rounded-lg text-xs font-medium transition-all active:scale-95 ${isLocked ? 'text-slate-300 bg-slate-100' : 'text-slate-400 bg-slate-100 hover:bg-slate-200 active:bg-slate-300'}`}
                                             >
                                                 <RotateCcw className="w-6 h-6 mb-1" />
-                                                Reset
+                                                {t('status.reset')}
                                             </button>
                                         </div>
 
@@ -511,7 +516,7 @@ function OperationContent() {
                                                     <span className="absolute -top-1.5 -right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-purple-50"></span>
                                                 )}
                                             </div>
-                                            Comment
+                                            {t('comments')}
                                             {(selectedOrder as any).commentStats?.[step]?.total > 0 && (
                                                 <span className="ml-1 text-[10px] bg-purple-200 text-purple-700 px-1.5 rounded-full">
                                                     {(selectedOrder as any).commentStats?.[step]?.total}
@@ -520,7 +525,7 @@ function OperationContent() {
                                         </button>
 
                                         {isLocked && (
-                                            <p className="text-[10px] text-slate-400 text-center mt-2">🔒 Locked</p>
+                                            <p className="text-[10px] text-slate-400 text-center mt-2">🔒 {t('stepLocked')}</p>
                                         )}
                                     </div>
                                 );
@@ -529,7 +534,7 @@ function OperationContent() {
                     </div>
                 ) : (
                     <div className="text-center py-20 text-slate-400">
-                        Search for a Work Order to get started
+                        {t('startSearch')}
                     </div>
                 )}
             </main>
@@ -540,23 +545,23 @@ function OperationContent() {
             {confirmModal && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-xl p-6 max-w-sm mx-4 shadow-xl">
-                        <h3 className="text-lg font-bold text-slate-900 mb-2">Confirm Action</h3>
+                        <h3 className="text-lg font-bold text-slate-900 mb-2">{t('confirmAction')}</h3>
                         <p className="text-slate-500 mb-4">
-                            Set <strong>{confirmModal.step}</strong> to <strong>{confirmModal.status}</strong>?
+                            {t('confirmDesc', { step: confirmModal.step, status: confirmModal.status })}
                         </p>
                         <div className="flex gap-2">
                             <button
                                 onClick={() => setConfirmModal(null)}
                                 className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium"
                             >
-                                Cancel
+                                {tCommon('cancel')}
                             </button>
                             <button
                                 onClick={confirmAction}
                                 disabled={updating}
                                 className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-medium"
                             >
-                                {updating ? 'Updating...' : 'Confirm'}
+                                {updating ? t('updating') : tCommon('confirm')}
                             </button>
                         </div>
                     </div>
@@ -567,9 +572,9 @@ function OperationContent() {
             {unplannedModal && pendingAction && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-xl p-6 max-w-sm mx-4 shadow-xl">
-                        <h3 className="text-lg font-bold text-amber-600 mb-2">⚠️ Unplanned Operation</h3>
+                        <h3 className="text-lg font-bold text-amber-600 mb-2">⚠️ {t('unplannedWarning')}</h3>
                         <p className="text-slate-600 mb-4">
-                            This step has not been planned yet. Are you sure you want to proceed with <strong>{pendingAction.status}</strong>?
+                            {t('unplannedDesc', { status: pendingAction.status })}
                         </p>
                         <div className="flex gap-2">
                             <button
@@ -579,7 +584,7 @@ function OperationContent() {
                                 }}
                                 className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium"
                             >
-                                Cancel
+                                {tCommon('cancel')}
                             </button>
                             <button
                                 onClick={() => {
@@ -589,7 +594,7 @@ function OperationContent() {
                                 }}
                                 className="flex-1 py-2 bg-amber-500 text-white rounded-lg font-medium"
                             >
-                                Proceed Anyway
+                                {t('proceedAnyway')}
                             </button>
                         </div>
                     </div>
@@ -605,17 +610,17 @@ function OperationContent() {
                                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
                                     <CheckCircle className="w-8 h-8 text-green-600" />
                                 </div>
-                                <h3 className="text-lg font-bold text-green-600">Message Sent!</h3>
+                                <h3 className="text-lg font-bold text-green-600">{t('messageSent')}</h3>
                             </div>
                         ) : (
                             <>
                                 <div className="flex justify-between items-center mb-4 border-b border-slate-100 pb-4">
                                     <div>
                                         <h3 className="text-lg font-bold text-slate-900">
-                                            💬 Comments - {commentModal.step}
+                                            💬 {t('comments')} - {commentModal.step}
                                         </h3>
                                         <p className="text-xs text-slate-500 mt-0.5">
-                                            {stepComments.length} comment{stepComments.length !== 1 ? 's' : ''}
+                                            {stepComments.length} {t('comments')}
                                         </p>
                                     </div>
                                     <button
@@ -636,7 +641,7 @@ function OperationContent() {
                                     {loadingComments ? (
                                         <div className="text-center py-4 text-slate-400">
                                             <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2" />
-                                            Loading history...
+                                            {t('loadingHistory')}
                                         </div>
                                     ) : stepComments.length > 0 ? (
                                         <div className="divide-y divide-slate-100">
@@ -675,7 +680,7 @@ function OperationContent() {
                                                         {(role === 'supervisor' || role === 'admin') && (
                                                             <button
                                                                 onClick={async () => {
-                                                                    if (confirm('Are you sure you want to delete this comment?')) {
+                                                                    if (confirm(t('confirmDeleteComment'))) {
                                                                         try {
                                                                             const res = await fetch(`/api/comments/${comment.id}`, {
                                                                                 method: 'DELETE'
@@ -701,16 +706,16 @@ function OperationContent() {
                                                                                     }
                                                                                 }
                                                                             } else {
-                                                                                alert('Failed to delete comment');
+                                                                                alert(t('failedToDeleteComment'));
                                                                             }
                                                                         } catch (error) {
                                                                             console.error('Delete error:', error);
-                                                                            alert('Failed to delete comment');
+                                                                            alert(t('failedToDeleteComment'));
                                                                         }
                                                                     }
                                                                 }}
                                                                 className="opacity-0 group-hover:opacity-100 ml-1 text-red-500 hover:text-red-700 transition-opacity"
-                                                                title="Delete comment"
+                                                                title={t('deleteComment')}
                                                             >
                                                                 <X className="w-3 h-3" />
                                                             </button>
@@ -731,9 +736,9 @@ function OperationContent() {
                                                                 textarea?.focus();
                                                             }}
                                                             className="flex-shrink-0 text-[10px] text-blue-500 hover:text-blue-700 hover:bg-blue-50 px-2 py-0.5 rounded transition-colors"
-                                                            title={`Reply to ${comment.user?.username}`}
+                                                            title={t('replyToUser', { username: comment.user?.username })}
                                                         >
-                                                            Reply
+                                                            {t('reply')}
                                                         </button>
                                                     </div>
                                                 </div>
@@ -741,7 +746,7 @@ function OperationContent() {
                                         </div>
                                     ) : (
                                         <div className="text-center py-4 text-slate-400 text-sm italic">
-                                            No comments yet.
+                                            {t('noComments')}
                                         </div>
                                     )}
                                 </div>
@@ -749,7 +754,7 @@ function OperationContent() {
                                 {/* Category Selection */}
                                 <div className="mb-4">
                                     <label className="block text-sm font-medium text-slate-700 mb-2">
-                                        Category {role === 'user' && <span className="text-red-500">*</span>}
+                                        {t('category')} {role === 'user' && <span className="text-red-500">*</span>}
                                     </label>
                                     <div className="grid grid-cols-2 gap-2">
                                         {COMMENT_CATEGORIES.map(cat => (
@@ -778,12 +783,12 @@ function OperationContent() {
                                     ) ? (
                                         <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 text-amber-700 text-sm flex items-center gap-2">
                                             <AlertTriangle className="w-4 h-4" />
-                                            This step is completed. Comments are closed.
+                                            {t('stepCompletedCommentsClosed')}
                                         </div>
                                     ) : (
                                         <>
                                             <div className="flex justify-between items-center mb-2">
-                                                <label className="block text-sm font-medium text-slate-700">Message</label>
+                                                <label className="block text-sm font-medium text-slate-700">{t('message')}</label>
 
                                                 {/* Mention Selector */}
                                                 <div className="relative">
@@ -794,16 +799,16 @@ function OperationContent() {
                                                             : 'bg-slate-50 text-slate-500 border-slate-200'
                                                             }`}
                                                     >
-                                                        {selectedMention ? (selectedMention.startsWith('@') ? `To: ${selectedMention}` : `To: ${supervisors.find(s => s.id === selectedMention)?.username || 'User'}`) : '@ Mention...'}
+                                                        {selectedMention ? (selectedMention.startsWith('@') ? `To: ${selectedMention}` : `To: ${supervisors.find(s => s.id === selectedMention)?.username || 'User'}`) : t('mentionPlaceholder')}
                                                     </button>
 
                                                     {mentionMenuOpen && (
                                                         <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 w-48 overflow-hidden max-h-60 overflow-y-auto">
-                                                            <div className="text-[10px] text-slate-400 px-3 py-1 bg-slate-50 border-b">Select Recipient</div>
+                                                            <div className="text-[10px] text-slate-400 px-3 py-1 bg-slate-50 border-b">{t('selectRecipient')}</div>
 
                                                             {role === 'user' ? (
                                                                 <>
-                                                                    <div className="px-2 py-1 text-[10px] text-slate-400 bg-slate-50 font-medium">Supervisors</div>
+                                                                    <div className="px-2 py-1 text-[10px] text-slate-400 bg-slate-50 font-medium">{t('supervisors')}</div>
                                                                     {supervisors
                                                                         .filter(s => s.role === 'supervisor') // Strict requirement: Only Supervisors, no Admins
                                                                         .map(s => (
@@ -818,7 +823,7 @@ function OperationContent() {
                                                                 </>
                                                             ) : (
                                                                 <>
-                                                                    <div className="px-2 py-1 text-[10px] text-slate-400 bg-slate-50 font-medium">Groups</div>
+                                                                    <div className="px-2 py-1 text-[10px] text-slate-400 bg-slate-50 font-medium">{t('groups')}</div>
                                                                     <button
                                                                         onClick={() => { setSelectedMention('@Everyone'); setMentionMenuOpen(false); }}
                                                                         className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 text-indigo-600 font-bold"
