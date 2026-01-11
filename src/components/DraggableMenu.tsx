@@ -233,7 +233,33 @@ export default function DraggableMenu({
                     )}
 
                     <div className="pt-2 border-t border-slate-100 flex justify-between items-center text-xs text-slate-400">
-                        <span>{APP_VERSION}</span>
+                        <div className="flex items-center gap-2">
+                            <span>{APP_VERSION}</span>
+                            {/* Language Switcher */}
+                            <button
+                                onClick={() => {
+                                    const locale = document.cookie
+                                        .split('; ')
+                                        .find(row => row.startsWith('NEXT_LOCALE='))
+                                        ?.split('=')[1] || 'en';
+                                    const newLocale = locale === 'en' ? 'zh' : 'en';
+                                    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
+                                    window.location.reload();
+                                }}
+                                className="flex items-center gap-1.5 px-2 py-1.5 bg-slate-50 text-slate-600 rounded-lg hover:bg-slate-100 transition-colors"
+                                title={typeof window !== 'undefined' && document.cookie.includes('NEXT_LOCALE=zh') ? t('switchToEnglish') : t('switchToChinese')}
+                            >
+                                {typeof window !== 'undefined' && document.cookie.includes('NEXT_LOCALE=zh') ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 741 390" className="w-5 h-3.5 rounded-sm shadow-sm">
+                                        <path fill="#b22234" d="M0 0h741v30H0zM0 60h741v30H0zM0 120h741v30H0zM0 180h741v30H0zM0 240h741v30H0zM0 300h741v30H0zM0 360h741v30H0z" /><path fill="#fff" d="M0 30h741v30H0zM0 90h741v30H0zM0 150h741v30H0zM0 210h741v30H0zM0 270h741v30H0zM0 330h741v30H0z" /><path fill="#3c3b6e" d="M0 0h296.4v210H0z" />
+                                    </svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" className="w-5 h-3.5 rounded-sm shadow-sm">
+                                        <rect width="30" height="20" fill="#de2910" /><path fill="#ffde00" d="M5 5l-1.123.816.429-1.321-1.123-.816h1.388L5 2.358l.429 1.321h1.388l-1.123.816.429 1.321L5 5z" /><circle fill="#ffde00" cx="10" cy="2" r="0.4" /><circle fill="#ffde00" cx="12" cy="4" r="0.4" /><circle fill="#ffde00" cx="12" cy="7" r="0.4" /><circle fill="#ffde00" cx="10" cy="9" r="0.4" />
+                                    </svg>
+                                )}
+                            </button>
+                        </div>
                         <button onClick={onLogout} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-medium">
                             <LogOut className="w-4 h-4" />
                             {t('logOut')}

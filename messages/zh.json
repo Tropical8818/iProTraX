@@ -103,7 +103,9 @@
             "naMode": "不适用",
             "holdMode": "暂停模式",
             "eraseMode": "擦除模式",
-            "logOut": "退出登录"
+            "logOut": "退出登录",
+            "switchToChinese": "切换到中文",
+            "switchToEnglish": "Switch to English"
         }
     },
     "Operation": {

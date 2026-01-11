@@ -103,7 +103,9 @@
             "naMode": "N/A Mode",
             "holdMode": "Hold Mode",
             "eraseMode": "Erase Mode",
-            "logOut": "Log Out"
+            "logOut": "Log Out",
+            "switchToChinese": "切换到中文",
+            "switchToEnglish": "Switch to English"
         }
     },
     "Operation": {
