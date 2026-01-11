@@ -14,6 +14,8 @@ services:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       # Timezone configuration (default: Asia/Singapore)
       - TZ=${TZ:-Asia/Singapore}
+      # SuperAdmin password (only used on first deployment)
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-superadmin123}
     volumes:
       # Persist the database and uploads
       - ./data:/app/data
