@@ -1840,11 +1840,10 @@ export default function DashboardPage() {
                                     </div>
                                 )}
 
-                                {importPreview.validationErrors?.length > 0 && (
+                                {(importPreview.validationErrors?.length ?? 0) > 0 && (
                                     <div className="bg-red-50 border border-red-200 rounded-lg p-3 max-h-32 overflow-y-auto">
                                         <div className="text-xs font-bold text-red-800 mb-1">Errors Found:</div>
-                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                                        {importPreview.validationErrors.map((err: any, i: number) => (
+                                        {importPreview.validationErrors?.map((err, i) => (
                                             <div key={i} className="text-xs text-red-600">Row {err.row}: {err.error}</div>
                                         ))}
                                     </div>
