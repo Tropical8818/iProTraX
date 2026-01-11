@@ -138,7 +138,7 @@ export default function DashboardPage() {
     // Import State
     const [isImporting, setIsImporting] = useState(false);
     const [importFile, setImportFile] = useState<File | null>(null);
-    const [importPreview, setImportPreview] = useState<unknown>(null);
+    const [importPreview, setImportPreview] = useState<ImportPreviewData | null>(null);
     const [showImportModal, setShowImportModal] = useState(false);
     const [importMsg, setImportMsg] = useState<{ type: string, text: string } | null>(null);
 
