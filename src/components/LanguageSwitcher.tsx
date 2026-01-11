@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLocaleDetection } from '@/hooks/useLocaleDetection';
 
 interface Props {
     className?: string;
@@ -18,18 +19,7 @@ const CNFlag = () => (
 );
 
 export function LanguageSwitcher({ className = '' }: Props) {
-    const [currentLocale, setCurrentLocale] = useState<string>('en');
-
-    useEffect(() => {
-        if (typeof document !== 'undefined') {
-            const locale = document.cookie
-                .split('; ')
-                .find(row => row.startsWith('NEXT_LOCALE='))
-                ?.split('=')[1] || 'en';
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setCurrentLocale(locale);
-        }
-    }, []);
+    const currentLocale = useLocaleDetection();
 
     const toggleLanguage = () => {
         const newLocale = currentLocale === 'en' ? 'zh' : 'en';

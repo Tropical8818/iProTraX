@@ -5,6 +5,7 @@ import { Lock, LogIn, Loader2, Eye, EyeOff, CreditCard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { APP_VERSION } from '@/lib/version';
 import { useTranslations } from 'next-intl';
+import { useLocaleDetection } from '@/hooks/useLocaleDetection';
 
 export default function LoginPage() {
     const t = useTranslations('Login');
@@ -17,19 +18,7 @@ export default function LoginPage() {
 
     const [successMsg, setSuccessMsg] = useState('');
 
-    const [currentLocale, setCurrentLocale] = useState<string>('en');
-
-    // Initialize locale after mount to avoid hydration mismatch
-    useEffect(() => {
-        if (typeof document !== 'undefined') {
-            const locale = document.cookie
-                .split('; ')
-                .find(row => row.startsWith('NEXT_LOCALE='))
-                ?.split('=')[1] || 'en';
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setCurrentLocale(locale);
-        }
-    }, []);
+    const currentLocale = useLocaleDetection();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
