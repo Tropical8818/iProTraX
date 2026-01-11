@@ -1856,7 +1856,7 @@ export default function DashboardPage() {
                                 )}
 
                                 <p className="text-sm text-slate-500 text-center">
-                                    {t('modals.importingTo', { product: selectedProduct?.name })}
+                                    {t('modals.importingTo', { product: selectedProduct?.name ?? '' })}
                                     <br />{t('modals.existingWillBeSkipped')}
                                 </p>
                             </div>
