@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Lock, LogIn, Loader2, Eye, EyeOff, CreditCard } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { APP_VERSION } from '@/lib/version';
@@ -17,19 +17,19 @@ export default function LoginPage() {
 
     const [successMsg, setSuccessMsg] = useState('');
 
-    // Track current locale for flag display
     const [currentLocale, setCurrentLocale] = useState<string>('en');
 
-    // Initialize locale on mount
-    useState(() => {
+    // Initialize locale after mount to avoid hydration mismatch
+    useEffect(() => {
         if (typeof document !== 'undefined') {
             const locale = document.cookie
                 .split('; ')
                 .find(row => row.startsWith('NEXT_LOCALE='))
                 ?.split('=')[1] || 'en';
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setCurrentLocale(locale);
         }
-    });
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -77,11 +77,23 @@ export default function LoginPage() {
                             document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
                             window.location.reload();
                         }}
-                        className="absolute top-6 right-6 z-50 px-3 py-2 rounded-lg transition-all shadow-lg text-white hover:text-indigo-300 hover:bg-white/20 border border-white/30 text-2xl"
+                        className="absolute top-6 right-6 z-50 px-3 py-2 rounded-lg transition-all shadow-lg text-white hover:text-indigo-300 hover:bg-white/20 border border-white/30 flex items-center justify-center min-w-[3.5rem]"
                         title={currentLocale === 'en' ? '切换到中文' : 'Switch to English'}
                         aria-label="Switch Language"
                     >
-                        {currentLocale === 'en' ? '🇨🇳' : '🇺🇸'}
+                        <div suppressHydrationWarning>
+                            {typeof window !== 'undefined' ? (
+                                currentLocale === 'en' ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" className="w-7 h-5 rounded-sm shadow-sm">
+                                        <rect width="30" height="20" fill="#de2910" /><path fill="#ffde00" d="M5 5l-1.123.816.429-1.321-1.123-.816h1.388L5 2.358l.429 1.321h1.388l-1.123.816.429 1.321L5 5z" /><circle fill="#ffde00" cx="10" cy="2" r="0.4" /><circle fill="#ffde00" cx="12" cy="4" r="0.4" /><circle fill="#ffde00" cx="12" cy="7" r="0.4" /><circle fill="#ffde00" cx="10" cy="9" r="0.4" />
+                                    </svg>
+                                ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 741 390" className="w-7 h-5 rounded-sm shadow-sm">
+                                        <path fill="#b22234" d="M0 0h741v30H0zM0 60h741v30H0zM0 120h741v30H0zM0 180h741v30H0zM0 240h741v30H0zM0 300h741v30H0zM0 360h741v30H0z" /><path fill="#fff" d="M0 30h741v30H0zM0 90h741v30H0zM0 150h741v30H0zM0 210h741v30H0zM0 270h741v30H0zM0 330h741v30H0z" /><path fill="#3c3b6e" d="M0 0h296.4v210H0z" /><g fill="#fff"><path d="M24.7 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M74.1 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M123.5 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M172.9 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M222.3 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M271.7 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /></g>
+                                    </svg>
+                                )
+                            ) : null}
+                        </div>
                     </button>
 
                     <div className="flex flex-col items-center mb-8">

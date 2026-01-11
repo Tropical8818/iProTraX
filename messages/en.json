@@ -219,6 +219,7 @@
         "connect": "Connect",
         "test": "Test",
         "aiPromptEngineering": "AI Prompt Engineering (Advanced)",
+        "aiSettings": "AI Settings",
         "aiPromptCaution": "Caution: Modifying these prompts affects how the AI behaves for all users. Leave fields empty to use the system defaults (recommended).",
         "systemPromptGlobal": "System Prompt (Global)",
         "resetToDefault": "Reset to Default",
