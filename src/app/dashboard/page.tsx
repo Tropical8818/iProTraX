@@ -56,7 +56,13 @@ interface Product {
     includeSunday?: boolean;
 }
 
-
+interface ImportPreviewData {
+    newOrders: number;
+    existingOrders: number;
+    totalRows: number;
+    missingColumns?: string[];
+    validationErrors?: Array<{ row: number; error: string }>;
+}
 
 export default function DashboardPage() {
     const t = useTranslations('Dashboard');
