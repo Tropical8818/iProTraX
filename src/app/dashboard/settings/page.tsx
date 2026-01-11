@@ -1697,10 +1697,11 @@ export default function SettingsPage() {
                                 {previewData.detectedHeaders && previewData.detectedHeaders.length > 0 && (
                                     <button
                                         onClick={() => {
-                                            setDetectedColumns(previewData.detectedHeaders);
+                                            const headers = previewData.detectedHeaders ?? [];
+                                            setDetectedColumns(headers);
                                             // Simple heuristic categorization
                                             const cats: Record<string, 'detail' | 'step'> = {};
-                                            previewData.detectedHeaders.forEach((h: string) => {
+                                            headers.forEach(() => {
                                                 // Assume defaults or unknown?
                                                 // Let user decide in next modal
                                             });
