@@ -89,6 +89,21 @@
             "importingTo": "正在导入到 {product}。",
             "existingWillBeSkipped": "已存在的订单（按工单 ID）将被跳过。",
             "confirmImport": "确认导入"
+        },
+        "mobileMenu": {
+            "menu": "菜单",
+            "operation": "作业视图",
+            "scanBarcode": "扫描条码",
+            "home": "首页",
+            "import": "导入",
+            "settings": "设置",
+            "refresh": "刷新",
+            "quickActions": "快捷操作",
+            "pMode": "批量完成",
+            "naMode": "不适用",
+            "holdMode": "暂停模式",
+            "eraseMode": "擦除模式",
+            "logOut": "退出登录"
         }
     },
     "Operation": {

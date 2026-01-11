@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Menu, X, HardHat, Table2, Pencil, Ban, PauseCircle, Eraser, Upload, ScanBarcode, RefreshCw, Settings, LogOut, Info, Users } from 'lucide-react';
+import { Menu, X, HardHat, Table2, Pencil, Ban, PauseCircle, Eraser, Upload, ScanBarcode, RefreshCw, Settings, LogOut } from 'lucide-react';
 import type { Product } from '@/lib/config';
 import { APP_VERSION } from '@/lib/version';
+import { useTranslations } from 'next-intl';
 
 interface DraggableMenuProps {
     products: Product[];
     selectedProductId: string;
-    onProductChange: (id: string) => void;
     role: string;
     onNavigate: (path: string) => void;
 
@@ -17,7 +17,7 @@ interface DraggableMenuProps {
     naMode: boolean; setNaMode: (v: boolean) => void;
     holdMode: boolean; setHoldMode: (v: boolean) => void;
     eraseMode: boolean; setEraseMode: (v: boolean) => void;
-    handleEraseRequest: () => void; // Handles admin check / modal
+    handleEraseRequest: () => void;
 
     // Actions
     onImport: () => void;
@@ -26,8 +26,16 @@ interface DraggableMenuProps {
     onLogout: () => void;
 }
 
+// Helper to get initial position (runs only once)
+function getInitialPosition() {
+    if (typeof window !== 'undefined') {
+        return { x: window.innerWidth - 70, y: 80 };
+    }
+    return { x: 300, y: 80 };
+}
+
 export default function DraggableMenu({
-    products, selectedProductId, onProductChange,
+    selectedProductId,
     role, onNavigate,
     pMode, setPMode,
     naMode, setNaMode,
@@ -36,23 +44,24 @@ export default function DraggableMenu({
     handleEraseRequest,
     onImport, onScan, onRefresh, onLogout
 }: DraggableMenuProps) {
+    const t = useTranslations('Dashboard.mobileMenu');
     const [isOpen, setIsOpen] = useState(false);
-    // Initialize with a safe default, will retain update after mount
-    const [position, setPosition] = useState({ x: 0, y: 80 });
+    // Use lazy initialization to avoid SSR/hydration mismatch
+    const [position, setPosition] = useState(getInitialPosition);
     const [isDragging, setIsDragging] = useState(false);
     const [mounted, setMounted] = useState(false);
     const dragStart = useRef({ x: 0, y: 0 });
     const initialPos = useRef({ x: 0, y: 0 });
-
-    // Prevent menu from opening if it was a drag
     const [hasMoved, setHasMoved] = useState(false);
 
+    // Mark as mounted for hydration handling
     useEffect(() => {
-        setMounted(true);
-        // Set initial position on client side
-        setPosition({ x: window.innerWidth - 70, y: 80 });
+        const timer = setTimeout(() => setMounted(true), 0);
+        return () => clearTimeout(timer);
+    }, []);
 
-        // Handle window resize to keep it on screen
+    // Handle window resize
+    useEffect(() => {
         const handleResize = () => {
             setPosition(p => ({
                 x: Math.min(p.x, window.innerWidth - 60),
@@ -63,6 +72,7 @@ export default function DraggableMenu({
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    // Don't render until mounted (avoids hydration mismatch)
     if (!mounted) return null;
 
     const handlePointerDown = (e: React.PointerEvent) => {
@@ -93,8 +103,6 @@ export default function DraggableMenu({
         setIsDragging(false);
         (e.target as HTMLElement).releasePointerCapture(e.pointerId);
 
-        // Snap to edges horizontally? Optional. keeping it free floating for now.
-        // Ensure within bounds
         const padding = 10;
         const buttonSize = 56;
         let newX = position.x;
@@ -114,8 +122,6 @@ export default function DraggableMenu({
         }
     };
 
-    const selectedProduct = products.find(p => p.id === selectedProductId);
-
     if (isOpen) {
         return (
             <div className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm" onClick={() => setIsOpen(false)}>
@@ -128,7 +134,7 @@ export default function DraggableMenu({
                     onClick={e => e.stopPropagation()}
                 >
                     <div className="flex items-center justify-between border-b border-slate-100 pb-2 mb-1">
-                        <span className="font-bold text-slate-800">Menu</span>
+                        <span className="font-bold text-slate-800">{t('menu')}</span>
                         <button onClick={() => setIsOpen(false)} className="p-1 hover:bg-slate-100 rounded-full">
                             <X className="w-5 h-5 text-slate-500" />
                         </button>
@@ -141,7 +147,7 @@ export default function DraggableMenu({
                             className="flex items-center gap-3 p-3 bg-slate-50 text-slate-700 rounded-xl hover:bg-slate-100 font-medium transition-colors border border-slate-100/50"
                         >
                             <HardHat className="w-5 h-5 text-slate-500" />
-                            <span className="text-sm">Operation</span>
+                            <span className="text-sm">{t('operation')}</span>
                         </button>
 
                         <button
@@ -149,7 +155,7 @@ export default function DraggableMenu({
                             className="flex items-center gap-3 p-3 bg-slate-50 text-slate-700 rounded-xl hover:bg-slate-100 font-medium transition-colors border border-slate-100/50"
                         >
                             <ScanBarcode className="w-5 h-5 text-slate-500" />
-                            <span className="text-sm">Scan Barcode</span>
+                            <span className="text-sm">{t('scanBarcode')}</span>
                         </button>
                     </div>
 
@@ -160,7 +166,7 @@ export default function DraggableMenu({
                             className="flex items-center gap-3 p-3 bg-slate-50 text-slate-700 rounded-xl hover:bg-slate-100 font-medium transition-colors border border-slate-100/50"
                         >
                             <Table2 className="w-5 h-5 text-slate-500" />
-                            <span>Home</span>
+                            <span>{t('home')}</span>
                         </button>
 
                         {(role === 'admin' || role === 'supervisor') && (
@@ -169,7 +175,7 @@ export default function DraggableMenu({
                                 className="flex items-center gap-3 p-3 bg-slate-50 text-slate-700 rounded-xl hover:bg-slate-100 font-medium transition-colors border border-slate-100/50"
                             >
                                 <Upload className="w-5 h-5 text-slate-500" />
-                                <span>Import</span>
+                                <span>{t('import')}</span>
                             </button>
                         )}
 
@@ -178,7 +184,7 @@ export default function DraggableMenu({
                             className="flex items-center gap-3 p-3 bg-slate-50 text-slate-700 rounded-xl hover:bg-slate-100 font-medium transition-colors border border-slate-100/50"
                         >
                             <Settings className="w-5 h-5 text-slate-500" />
-                            <span>Settings</span>
+                            <span>{t('settings')}</span>
                         </button>
 
                         <button
@@ -186,39 +192,39 @@ export default function DraggableMenu({
                             className="flex items-center gap-3 p-3 bg-slate-50 text-slate-700 rounded-xl hover:bg-slate-100 font-medium transition-colors border border-slate-100/50"
                         >
                             <RefreshCw className="w-5 h-5 text-slate-500" />
-                            <span>Refresh</span>
+                            <span>{t('refresh')}</span>
                         </button>
                     </div>
 
                     {(role === 'admin' || role === 'supervisor') && (
                         <div className="pt-2 border-t border-slate-100">
-                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">Quick Actions</label>
+                            <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">{t('quickActions')}</label>
                             <div className="grid grid-cols-4 gap-2">
                                 <button
                                     onClick={() => { setPMode(!pMode); if (!pMode) { setNaMode(false); setEraseMode(false); setHoldMode(false); } setIsOpen(false); }}
                                     className={`aspect-square rounded-xl flex items-center justify-center transition-all ${pMode ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-50 text-slate-600'}`}
-                                    title="P Mode"
+                                    title={t('pMode')}
                                 >
                                     <Pencil className="w-5 h-5" />
                                 </button>
                                 <button
                                     onClick={() => { setNaMode(!naMode); if (!naMode) { setPMode(false); setEraseMode(false); setHoldMode(false); } setIsOpen(false); }}
                                     className={`aspect-square rounded-xl flex items-center justify-center transition-all ${naMode ? 'bg-slate-600 text-white shadow-md' : 'bg-slate-50 text-slate-600'}`}
-                                    title="N/A Mode"
+                                    title={t('naMode')}
                                 >
                                     <Ban className="w-5 h-5" />
                                 </button>
                                 <button
                                     onClick={() => { setHoldMode(!holdMode); if (!holdMode) { setPMode(false); setNaMode(false); setEraseMode(false); } setIsOpen(false); }}
                                     className={`aspect-square rounded-xl flex items-center justify-center transition-all ${holdMode ? 'bg-orange-600 text-white shadow-md' : 'bg-slate-50 text-slate-600'}`}
-                                    title="Hold Mode"
+                                    title={t('holdMode')}
                                 >
                                     <PauseCircle className="w-5 h-5" />
                                 </button>
                                 <button
                                     onClick={() => { handleEraseRequest(); setIsOpen(false); }}
                                     className={`aspect-square rounded-xl flex items-center justify-center transition-all ${eraseMode ? 'bg-red-600 text-white shadow-md' : 'bg-slate-50 text-slate-600'}`}
-                                    title="Erase Mode"
+                                    title={t('eraseMode')}
                                 >
                                     <Eraser className="w-5 h-5" />
                                 </button>
@@ -230,7 +236,7 @@ export default function DraggableMenu({
                         <span>{APP_VERSION}</span>
                         <button onClick={onLogout} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg font-medium">
                             <LogOut className="w-4 h-4" />
-                            Log Out
+                            {t('logOut')}
                         </button>
                     </div>
                 </div>

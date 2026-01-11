@@ -89,6 +89,21 @@
             "importingTo": "Importing to {product}.",
             "existingWillBeSkipped": "Existing orders (by WO ID) will be skipped.",
             "confirmImport": "Confirm Import"
+        },
+        "mobileMenu": {
+            "menu": "Menu",
+            "operation": "Operation",
+            "scanBarcode": "Scan Barcode",
+            "home": "Home",
+            "import": "Import",
+            "settings": "Settings",
+            "refresh": "Refresh",
+            "quickActions": "Quick Actions",
+            "pMode": "P Mode",
+            "naMode": "N/A Mode",
+            "holdMode": "Hold Mode",
+            "eraseMode": "Erase Mode",
+            "logOut": "Log Out"
         }
     },
     "Operation": {
