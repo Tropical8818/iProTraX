@@ -159,39 +159,39 @@ export default function DraggableMenu({
                         </button>
                     </div>
 
-                    {/* Secondary Nav */}
-                    <div className="flex flex-col gap-2">
+                    {/* Secondary Nav - Compact Grid */}
+                    <div className="grid grid-cols-2 gap-2">
                         <button
                             onClick={() => { onNavigate(`/dashboard`); setIsOpen(false); }}
-                            className="flex items-center gap-3 p-3 bg-slate-50 text-slate-700 rounded-xl hover:bg-slate-100 font-medium transition-colors border border-slate-100/50"
+                            className="flex items-center gap-2 p-2.5 bg-slate-50 text-slate-700 rounded-xl hover:bg-slate-100 font-medium transition-colors border border-slate-100/50 text-sm"
                         >
-                            <Table2 className="w-5 h-5 text-slate-500" />
+                            <Table2 className="w-4 h-4 text-slate-500" />
                             <span>{t('home')}</span>
                         </button>
 
                         {(role === 'admin' || role === 'supervisor') && (
                             <button
                                 onClick={() => { onImport(); setIsOpen(false); }}
-                                className="flex items-center gap-3 p-3 bg-slate-50 text-slate-700 rounded-xl hover:bg-slate-100 font-medium transition-colors border border-slate-100/50"
+                                className="flex items-center gap-2 p-2.5 bg-slate-50 text-slate-700 rounded-xl hover:bg-slate-100 font-medium transition-colors border border-slate-100/50 text-sm"
                             >
-                                <Upload className="w-5 h-5 text-slate-500" />
+                                <Upload className="w-4 h-4 text-slate-500" />
                                 <span>{t('import')}</span>
                             </button>
                         )}
 
                         <button
                             onClick={() => { onNavigate('/dashboard/settings'); setIsOpen(false); }}
-                            className="flex items-center gap-3 p-3 bg-slate-50 text-slate-700 rounded-xl hover:bg-slate-100 font-medium transition-colors border border-slate-100/50"
+                            className="flex items-center gap-2 p-2.5 bg-slate-50 text-slate-700 rounded-xl hover:bg-slate-100 font-medium transition-colors border border-slate-100/50 text-sm"
                         >
-                            <Settings className="w-5 h-5 text-slate-500" />
+                            <Settings className="w-4 h-4 text-slate-500" />
                             <span>{t('settings')}</span>
                         </button>
 
                         <button
                             onClick={() => { onRefresh(); setIsOpen(false); }}
-                            className="flex items-center gap-3 p-3 bg-slate-50 text-slate-700 rounded-xl hover:bg-slate-100 font-medium transition-colors border border-slate-100/50"
+                            className="flex items-center gap-2 p-2.5 bg-slate-50 text-slate-700 rounded-xl hover:bg-slate-100 font-medium transition-colors border border-slate-100/50 text-sm"
                         >
-                            <RefreshCw className="w-5 h-5 text-slate-500" />
+                            <RefreshCw className="w-4 h-4 text-slate-500" />
                             <span>{t('refresh')}</span>
                         </button>
                     </div>
