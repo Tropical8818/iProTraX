@@ -1749,7 +1749,6 @@ export default function DashboardPage() {
                 <DraggableMenu
                     products={products}
                     selectedProductId={selectedProductId}
-                    onProductChange={handleProductChange}
                     role={role}
                     onNavigate={(path) => router.push(path)}
 
