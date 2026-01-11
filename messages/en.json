@@ -240,6 +240,8 @@
         "loadingUserProfile": "Loading user profile...",
         "categorizeColumns": "Categorize Columns",
         "categorizeColumnsHelp": "Click to toggle each column as Detail (order info) or Step (process):",
+        "detail": "Detail",
+        "step": "Step",
         "importColumns": "Import Columns",
         "excelAnalyzedSuccess": "Excel File Analyzed Successfully",
         "connectExcelColumns": "📊 Connect Excel Columns",

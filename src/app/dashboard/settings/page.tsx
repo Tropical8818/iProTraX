@@ -115,7 +115,7 @@ export default function SettingsPage() {
 
     // Import preview state
     const [showPreviewModal, setShowPreviewModal] = useState(false);
-    const [previewData, setPreviewData] = useState<any>(null);
+    const [previewData, setPreviewData] = useState<{ detectedHeaders?: string[] } | null>(null);
     const [previewFile, setPreviewFile] = useState<File | null>(null);
 
     // Current User State
@@ -1626,13 +1626,13 @@ export default function SettingsPage() {
                                                     onClick={() => setColumnCategories({ ...columnCategories, [col]: 'detail' })}
                                                     className={`px-2 py-0.5 text-xs rounded ${columnCategories[col] === 'detail' ? 'bg-blue-500 text-white' : 'bg-slate-200 text-slate-600 hover:bg-blue-100'}`}
                                                 >
-                                                    {t('detailColumns')}
+                                                    {t('detail')}
                                                 </button>
                                                 <button
                                                     onClick={() => setColumnCategories({ ...columnCategories, [col]: 'step' })}
                                                     className={`px-2 py-0.5 text-xs rounded ${columnCategories[col] === 'step' ? 'bg-green-500 text-white' : 'bg-slate-200 text-slate-600 hover:bg-green-100'}`}
                                                 >
-                                                    {tDash('batch.plan')}
+                                                    {t('step')}
                                                 </button>
                                                 <button
                                                     onClick={() => setDetectedColumns(detectedColumns.filter((_: string, i: number) => i !== index))}

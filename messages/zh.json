@@ -240,6 +240,8 @@
         "loadingUserProfile": "正在加载个人资料...",
         "categorizeColumns": "列分类",
         "categorizeColumnsHelp": "点击以切换每一列为详情列 (订单信息) 或工序列 (生产流程)：",
+        "detail": "详情",
+        "step": "工序",
         "importColumns": "导入列",
         "excelAnalyzedSuccess": "Excel 文件解析成功",
         "connectExcelColumns": "📊 连接 Excel 列",
