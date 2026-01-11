@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import * as XLSX from 'xlsx';
+// import * as XLSX from 'xlsx'; // Removing
+import { parseExcelBuffer } from '@/lib/excel';
 import getOpenAI from '@/lib/ai/client';
 import { getConfig } from '@/lib/config';
 
@@ -44,16 +45,16 @@ export async function POST(request: NextRequest) {
         // Read Excel
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-        const workbook = XLSX.read(buffer, { type: 'buffer' });
 
-        const sheetName = workbook.SheetNames.find(n =>
-            n.toLowerCase().includes('schedule') ||
-            n.toLowerCase().includes('master') ||
-            n.toLowerCase().includes('dashboard')
-        ) || workbook.SheetNames[0];
-
-        const sheet = workbook.Sheets[sheetName];
-        const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }) as unknown[][];
+        let sheetName = '';
+        let rawData: unknown[][] = [];
+        try {
+            const parsed = await parseExcelBuffer(buffer);
+            sheetName = parsed.sheetName;
+            rawData = parsed.rawData;
+        } catch (e) {
+            return NextResponse.json({ error: `Failed to parse Excel: ${e instanceof Error ? e.message : String(e)}` }, { status: 400 });
+        }
 
         if (rawData.length < 2) {
             return NextResponse.json({ error: 'Excel must have at least 2 rows' }, { status: 400 });

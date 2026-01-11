@@ -5,7 +5,7 @@
  */
 
 import { prisma } from '@/lib/prisma';
-import * as XLSX from 'xlsx';
+import { parseExcelBuffer } from '@/lib/excel';
 import * as fs from 'fs';
 import { normalizeHeaders, getDefaultMappings, validateRequiredColumns, type ColumnMappings } from '@/lib/columnMapping';
 import { validateOrderData, getDefaultValidationRules, type ValidationRules, type ValidationError } from '@/lib/validation';
@@ -51,25 +51,23 @@ export async function importFromBuffer(buffer: Buffer, options: ImportOptions): 
     const columnMappings: ColumnMappings = config.columnMappings || getDefaultMappings();
     const validationRules: ValidationRules = config.validationRules || getDefaultValidationRules();
 
-    // Read the Excel file
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    // Read the Excel file using shared helper
+    let sheetName = '';
+    let rawData: unknown[][] = [];
 
-    // Find the main sheet
-    const sheetName = workbook.SheetNames.find(n =>
-        n.toLowerCase().includes('schedule') ||
-        n.toLowerCase().includes('master') ||
-        n.toLowerCase().includes('dashboard')
-    ) || workbook.SheetNames[0];
-
-    const sheet = workbook.Sheets[sheetName];
-
-    // Read headers from row 2 (index 1)
-    const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }) as unknown[][];
+    try {
+        const parsed = await parseExcelBuffer(buffer);
+        sheetName = parsed.sheetName;
+        rawData = parsed.rawData;
+    } catch (e) {
+        return createErrorResult(`Failed to parse Excel: ${e instanceof Error ? e.message : String(e)}`);
+    }
 
     if (rawData.length < 2) {
         return createErrorResult('Excel file must have at least 2 rows');
     }
 
+    // Row 2 (index 1) contains headers
     const detectedHeaders = (rawData[1] as (string | null)[])
         .map(h => h ? String(h).trim() : '')
         .filter(h => h && h.length > 0 && !h.includes('null') && !h.toLowerCase().includes('unnamed'));

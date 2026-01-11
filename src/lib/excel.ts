@@ -1,4 +1,4 @@
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import * as fs from 'fs';
 import { getConfig, getProductById, Product } from './config';
 import { formatToExcelTimestamp, getNow } from './date-utils';
@@ -28,9 +28,52 @@ export interface ExcelData {
     detailColumns?: string[];
 }
 
+// Helper to find the correct worksheet
+function findWorksheet(workbook: ExcelJS.Workbook): ExcelJS.Worksheet {
+    const sheetName = workbook.worksheets.find(ws => {
+        const name = ws.name.toLowerCase();
+        return name.includes('schedule') || name.includes('master') || name.includes('dashboard');
+    })?.name || workbook.worksheets[0].name;
+
+    return workbook.getWorksheet(sheetName)!;
+}
+
+// Reusable helper to parse Excel buffer -> raw array of arrays (like sheet_to_json header:1)
+export async function parseExcelBuffer(buffer: Buffer): Promise<{ sheetName: string; rawData: unknown[][] }> {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer as any);
+
+    const sheet = findWorksheet(workbook);
+    const rawData: unknown[][] = [];
+
+    // ExcelJS is 1-based. We want to return 0-indexed array where index 0 = Row 1
+    sheet.eachRow({ includeEmpty: true }, (row, _rowNumber) => {
+        const rowValues = row.values;
+        if (Array.isArray(rowValues)) {
+            // row.values has a dummy item at index 0, so slice(1) gets correct columns A, B, C...
+            rawData.push(rowValues.slice(1));
+        } else if (typeof rowValues === 'object') {
+            rawData.push(Object.values(rowValues));
+        }
+    });
+
+    // Handle case where eachRow might miss if sheet is weird?
+    // Usually eachRow is fine.
+    // If rawData is empty try manual fetch of first few rows?
+    if (rawData.length === 0 && sheet.rowCount > 0) {
+        // Try brute force first 10 rows
+        for (let i = 1; i <= Math.min(sheet.rowCount, 10); i++) {
+            const val = sheet.getRow(i).values;
+            if (Array.isArray(val)) rawData.push(val.slice(1));
+        }
+    }
+
+    return { sheetName: sheet.name, rawData };
+}
+
 // Read orders for a specific product (or active product if not specified)
-export function readOrders(productId?: string): ExcelData {
-    const config = getConfig();
+export async function readOrders(productId?: string): Promise<ExcelData> {
+    const config = getConfig(); // Config is sync
 
     // Get product config
     let product: Product | null;
@@ -53,31 +96,39 @@ export function readOrders(productId?: string): ExcelData {
     }
 
     try {
-        const buffer = fs.readFileSync(product.excelPath);
-        const workbook = XLSX.read(buffer, { type: 'buffer' });
+        const workbook = new ExcelJS.Workbook();
+        await workbook.xlsx.readFile(product.excelPath);
 
-        const sheetName = workbook.SheetNames.find(n =>
-            n.toLowerCase().includes('schedule') ||
-            n.toLowerCase().includes('master') ||
-            n.toLowerCase().includes('dashboard')
-        ) || workbook.SheetNames[0];
+        const sheet = findWorksheet(workbook);
 
-        const sheet = workbook.Sheets[sheetName];
+        // Convert sheet to array of arrays to mimic sheet_to_json({header: 1})
+        const rawData: unknown[][] = [];
+        sheet.eachRow({ includeEmpty: true }, (row, _rowNumber) => {
+            const rowValues = row.values;
+            if (Array.isArray(rowValues)) {
+                // slice(1) because exceljs row.values has a dummy item at index 0
+                rawData.push(rowValues.slice(1));
+            } else if (typeof rowValues === 'object') {
+                rawData.push(Object.values(rowValues));
+            }
+        });
 
-        // Read as array of arrays to handle row 0 as title, row 1 as headers
-        const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }) as unknown[][];
-
-        if (rawData.length < 2) {
-            return { orders: [], steps: product.steps };
+        // Fallback for empty sheet reading
+        if (rawData.length === 0 && sheet.rowCount >= 1) {
+            const r1 = sheet.getRow(1).values as unknown[];
+            if (Array.isArray(r1)) rawData.push(r1.slice(1));
         }
 
-        // Row 1 (index 1) contains headers
+        if (rawData.length < 2) {
+            return { orders: [], steps: product.steps || [] };
+        }
+
+        // Row 2 (index 1 in rawData) contains headers
         const headers = (rawData[1] as (string | null)[]).map(h => h ? String(h).trim() : '');
 
         // Use product-configured steps if available, otherwise auto-detect
         let steps: string[];
         if (product.steps && product.steps.length > 0) {
-            // Filter to only include steps that actually exist in the Excel headers
             steps = product.steps.filter(s => headers.includes(s));
         } else {
             // Auto-detect steps from headers
@@ -94,37 +145,44 @@ export function readOrders(productId?: string): ExcelData {
             ? product.detailColumns.filter(c => headers.includes(c))
             : NON_STEP_COLUMNS.filter(c => headers.includes(c));
 
-        // Map row data to objects (starting from row 2, index 2)
+        // Map row data to objects
         const orders: Order[] = [];
         for (let i = 2; i < rawData.length; i++) {
             const row = rawData[i] as (string | number | null)[];
             if (!row || row.length === 0) continue;
 
-            const woId = row[headers.indexOf('WO ID')] ?? '';
+            const woIdIdx = headers.indexOf('WO ID');
+            const woId = row[woIdIdx] ?? '';
+
             if (!woId) continue; // Skip rows without WO ID
+
+            const getColVal = (name: string) => {
+                const idx = headers.indexOf(name);
+                return idx >= 0 ? row[idx] : undefined;
+            };
 
             const order: Order = {
                 id: String(woId),
                 'WO ID': String(woId),
-                'PN': String(row[headers.indexOf('PN')] ?? ''),
-                'Description': String(row[headers.indexOf('Description')] ?? ''),
-                'WO DUE': formatExcelDate(row[headers.indexOf('WO DUE')]),
-                'Priority': String(row[headers.indexOf(' Priority')] ?? row[headers.indexOf('Priority')] ?? ''),
+                'PN': String(getColVal('PN') ?? ''),
+                'Description': String(getColVal('Description') ?? ''),
+                'WO DUE': formatExcelDate(getColVal('WO DUE')),
+                'Priority': String(getColVal(' Priority') ?? getColVal('Priority') ?? ''),
             };
 
             // Add all detail columns from config
             detailColumns.forEach(col => {
-                const colIdx = headers.indexOf(col);
-                if (colIdx >= 0 && !order[col]) { // Only add if not already set
-                    order[col] = formatCellValue(row[colIdx]);
+                const val = getColVal(col);
+                if (val !== undefined && !order[col]) {
+                    order[col] = formatCellValue(val);
                 }
             });
 
             // Add all step columns
             steps.forEach(step => {
-                const colIdx = headers.indexOf(step);
-                if (colIdx >= 0) {
-                    order[step] = formatCellValue(row[colIdx]);
+                const val = getColVal(step);
+                if (val !== undefined) {
+                    order[step] = formatCellValue(val);
                 }
             });
 
@@ -140,8 +198,10 @@ export function readOrders(productId?: string): ExcelData {
 // Convert Excel serial date to readable string
 function formatExcelDate(value: unknown): string {
     if (!value) return '';
+    if (value instanceof Date) {
+        return value.toISOString().slice(0, 10);
+    }
     if (typeof value === 'number') {
-        // Excel serial date
         const date = new Date((value - 25569) * 86400 * 1000);
         if (!isNaN(date.getTime())) {
             return date.toISOString().slice(0, 10);
@@ -153,8 +213,10 @@ function formatExcelDate(value: unknown): string {
 // Format cell value - handle dates and strings
 function formatCellValue(value: unknown): string {
     if (value === null || value === undefined) return '';
+    if (value instanceof Date) {
+        return value.toISOString().slice(0, 16).replace('T', ' ');
+    }
     if (typeof value === 'number') {
-        // Check if it looks like an Excel date (serial number > 40000)
         if (value > 40000 && value < 60000) {
             const date = new Date((value - 25569) * 86400 * 1000);
             if (!isNaN(date.getTime())) {
@@ -163,14 +225,19 @@ function formatCellValue(value: unknown): string {
         }
         return String(value);
     }
+    if (typeof value === 'object' && 'richText' in value) {
+        return (value as any).richText.map((t: any) => t.text).join('');
+    }
+    if (typeof value === 'object' && 'text' in value) {
+        return (value as any).text;
+    }
     return String(value);
 }
 
 // Update order step for a specific product
-export function updateOrderStep(woId: string, step: string, status: string, operatorId?: string, productId?: string): Order | null {
+export async function updateOrderStep(woId: string, step: string, status: string, operatorId?: string, productId?: string): Promise<Order | null> {
     const config = getConfig();
 
-    // Get product config
     let product: Product | null;
     if (productId) {
         product = getProductById(productId);
@@ -178,50 +245,35 @@ export function updateOrderStep(woId: string, step: string, status: string, oper
         product = config.products.find(p => p.id === config.activeProductId) || config.products[0];
     }
 
-    if (!product) {
-        throw new Error('No product configured');
-    }
+    if (!product || !product.excelPath) throw new Error('No product configured');
 
-    if (!product.excelPath) {
-        throw new Error(`Excel file path not configured for product: ${product.name} `);
-    }
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(product.excelPath);
+    const sheet = findWorksheet(workbook);
 
-    const buffer = fs.readFileSync(product.excelPath);
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-
-    const sheetName = workbook.SheetNames.find(n =>
-        n.toLowerCase().includes('schedule') ||
-        n.toLowerCase().includes('master')
-    ) || workbook.SheetNames[0];
-
-    const sheet = workbook.Sheets[sheetName];
-
-    // Get headers from row 1 (index 1)
-    const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+    const headerRow = sheet.getRow(1);
     const headers: { [key: string]: number } = {};
-    for (let c = range.s.c; c <= range.e.c; c++) {
-        const cell = sheet[XLSX.utils.encode_cell({ r: 1, c })]; // Row 1 for headers
-        if (cell) {
-            headers[String(cell.v).trim()] = c;
-        }
-    }
+    headerRow.eachCell((cell, colNumber) => {
+        headers[String(cell.text || cell.value).trim()] = colNumber;
+    });
 
-    // Find the row (starting from row 2, index 2)
-    let targetRow = -1;
-    const woIdCol = headers['WO ID'] ?? 0;
-    for (let r = 2; r <= range.e.r; r++) {
-        const cell = sheet[XLSX.utils.encode_cell({ r, c: woIdCol })];
-        if (cell && String(cell.v) === woId) {
-            targetRow = r;
-            break;
-        }
-    }
+    let targetRowNumber = -1;
+    const woIdCol = headers['WO ID'];
 
-    if (targetRow === -1) {
+    if (!woIdCol) throw new Error('WO ID columns not found');
+
+    sheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return;
+        const cell = row.getCell(woIdCol);
+        if (String(cell.value) === woId) {
+            targetRowNumber = rowNumber;
+        }
+    });
+
+    if (targetRowNumber === -1) {
         throw new Error(`Order ${woId} not found`);
     }
 
-    // Determine cell value
     let cellValue: string;
     if (status === 'Done') {
         const now = getNow();
@@ -233,25 +285,20 @@ export function updateOrderStep(woId: string, step: string, status: string, oper
         cellValue = status;
     }
 
-    // Update the cell
     const stepCol = headers[step];
-    if (stepCol === undefined) {
-        throw new Error(`Step ${step} not found in headers`);
-    }
+    if (stepCol === undefined) throw new Error(`Step ${step} not found`);
 
-    const cellRef = XLSX.utils.encode_cell({ r: targetRow, c: stepCol });
-    sheet[cellRef] = { t: 's', v: cellValue };
+    const targetRow = sheet.getRow(targetRowNumber);
+    const targetCell = targetRow.getCell(stepCol);
+    targetCell.value = cellValue;
 
-    // Write back using fs.writeFileSync for Next.js compatibility
-    const outBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-    fs.writeFileSync(product.excelPath, outBuffer);
+    await workbook.xlsx.writeFile(product.excelPath);
 
-    // Return updated order
-    const { orders } = readOrders(productId);
+    const { orders } = await readOrders(productId);
     return orders.find(o => o['WO ID'] === woId) || null;
 }
 
-export function updateOrderStepsBatch(updates: StepUpdate[], operatorId?: string, productId?: string): void {
+export async function updateOrderStepsBatch(updates: StepUpdate[], operatorId?: string, productId?: string): Promise<void> {
     const config = getConfig();
     let product: Product | null;
     if (productId) {
@@ -262,29 +309,25 @@ export function updateOrderStepsBatch(updates: StepUpdate[], operatorId?: string
 
     if (!product || !product.excelPath) throw new Error('Product not configured');
 
-    // Read workbook ONCE
-    const buffer = fs.readFileSync(product.excelPath);
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames.find(n => n.toLowerCase().includes('schedule') || n.toLowerCase().includes('master')) || workbook.SheetNames[0];
-    const sheet = workbook.Sheets[sheetName];
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(product.excelPath);
+    const sheet = findWorksheet(workbook);
 
-    // Parse headers
-    const range = XLSX.utils.decode_range(sheet['!ref'] || 'A1');
+    const headerRow = sheet.getRow(1);
     const headers: { [key: string]: number } = {};
-    for (let c = range.s.c; c <= range.e.c; c++) {
-        const cell = sheet[XLSX.utils.encode_cell({ r: 1, c })];
-        if (cell) headers[String(cell.v).trim()] = c;
-    }
+    headerRow.eachCell((cell, colNumber) => {
+        headers[String(cell.text || cell.value).trim()] = colNumber;
+    });
 
-    // Map WO IDs to Rows
     const woIdCol = headers['WO ID'] ?? 0;
     const woRowMap: Record<string, number> = {};
-    for (let r = 2; r <= range.e.r; r++) {
-        const cell = sheet[XLSX.utils.encode_cell({ r, c: woIdCol })];
-        if (cell) woRowMap[String(cell.v)] = r;
-    }
 
-    // Apply updates
+    sheet.eachRow((row, rowNumber) => {
+        if (rowNumber <= 1) return;
+        const cell = row.getCell(woIdCol);
+        woRowMap[String(cell.value)] = rowNumber;
+    });
+
     updates.forEach(update => {
         const r = woRowMap[update.woId];
         const c = headers[update.step];
@@ -293,13 +336,11 @@ export function updateOrderStepsBatch(updates: StepUpdate[], operatorId?: string
             if (update.status === 'Reset') {
                 cellValue = '';
             }
-            // Update cell
-            const cellAddr = XLSX.utils.encode_cell({ r, c });
-            sheet[cellAddr] = { v: cellValue, t: 's' };
+            const row = sheet.getRow(r);
+            const cell = row.getCell(c);
+            cell.value = cellValue;
         }
     });
 
-    // Write back ONCE
-    const outBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
-    fs.writeFileSync(product.excelPath, outBuffer);
+    await workbook.xlsx.writeFile(product.excelPath);
 }

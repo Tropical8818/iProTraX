@@ -2,7 +2,8 @@
 
 import chokidar from 'chokidar';
 import { PrismaClient } from '@prisma/client';
-import * as XLSX from 'xlsx';
+// import * as XLSX from 'xlsx'; // Removing
+import { parseExcelBuffer } from '../src/lib/excel';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -17,25 +18,24 @@ async function importExcelFile(filePath: string, productId: string) {
     try {
         // Read the Excel file
         const buffer = fs.readFileSync(filePath);
-        const workbook = XLSX.read(buffer, { type: 'buffer' });
 
-        // Find the main sheet
-        const sheetName = workbook.SheetNames.find(n =>
-            n.toLowerCase().includes('schedule') ||
-            n.toLowerCase().includes('master') ||
-            n.toLowerCase().includes('dashboard')
-        ) || workbook.SheetNames[0];
-
-        const sheet = workbook.Sheets[sheetName];
-
-        // Read headers from row 2 (index 1)
-        const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' }) as unknown[][];
+        let sheetName = '';
+        let rawData: unknown[][] = [];
+        try {
+            const parsed = await parseExcelBuffer(buffer);
+            sheetName = parsed.sheetName;
+            rawData = parsed.rawData;
+        } catch (e) {
+            console.error(`❌ Failed to parse Excel: ${e instanceof Error ? e.message : String(e)}`);
+            return;
+        }
 
         if (rawData.length < 2) {
             console.error(`❌ File must have at least 2 rows`);
             return;
         }
 
+        // Row 2 (index 1) contains headers
         const headers = (rawData[1] as (string | null)[])
             .map(h => h ? String(h).trim() : '')
             .filter(h => h && h.length > 0 && !h.includes('null') && !h.toLowerCase().includes('unnamed'));

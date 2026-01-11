@@ -1,7 +1,7 @@
 'use server';
 
 import { NextRequest, NextResponse } from 'next/server';
-import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 import * as fs from 'fs';
 import * as path from 'path';
 import { getSession } from '@/lib/auth';
@@ -42,26 +42,24 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'No columns defined for this product' }, { status: 400 });
         }
 
-        // Create workbook with proper structure
-        const wb = XLSX.utils.book_new();
+        // Create workbook with proper structure using ExcelJS
+        const workbook = new ExcelJS.Workbook();
+        const sheet = workbook.addWorksheet('Schedule');
 
-        // Row 0: Title row (product name)
-        // Row 1: Headers
-        // Row 2+: Data rows (empty for template)
-        const wsData = [
-            [dbProduct.name + ' - Production Schedule'], // Title row
-            allColumns, // Header row
-            Array(allColumns.length).fill(''), // Empty data row (placeholder)
-        ];
+        // Row 1: Title row (product name)
+        sheet.addRow([dbProduct.name + ' - Production Schedule']);
 
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        // Row 2: Headers
+        const headerRow = sheet.addRow(allColumns);
 
-        // Set column widths for better readability
-        const colWidths = allColumns.map(col => ({ wch: Math.max(col.length + 2, 12) }));
-        ws['!cols'] = colWidths;
+        // Row 3: Empty data row (placeholder)
+        sheet.addRow(Array(allColumns.length).fill(''));
 
-        // Add sheet to workbook
-        XLSX.utils.book_append_sheet(wb, ws, 'Schedule');
+        // Set column widths
+        allColumns.forEach((col, index) => {
+            const width = Math.max(col.length + 2, 12);
+            sheet.getColumn(index + 1).width = width;
+        });
 
         // Determine output path
         let finalPath = outputPath;
@@ -79,8 +77,8 @@ export async function POST(request: NextRequest) {
         }
 
         // Write Excel file
-        const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
-        fs.writeFileSync(finalPath, buffer);
+        const buffer = await workbook.xlsx.writeBuffer();
+        fs.writeFileSync(finalPath, buffer as any);
 
         // Update product config in Prisma database with the new excelPath
         const updatedConfig = { ...productConfig, excelPath: finalPath };
