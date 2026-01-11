@@ -31,7 +31,7 @@ async function checkAndSeed() {
     const prisma = new PrismaClient();
     try {
         // SIMPLIFICATION: SuperAdmin identity is FIXED to ensure permissions work.
-        // User can only configure the password.
+        // User can only configure the password via ADMIN_PASSWORD env var.
         const adminPassword = process.env.ADMIN_PASSWORD || 'superadmin123';
         
         const username = 'superadmin';
@@ -40,9 +40,16 @@ async function checkAndSeed() {
         const existingUser = await prisma.user.findUnique({ where: { username } });
         
         if (!existingUser) {
-            console.log(`📝 Initializing System SuperAdmin...`);
-            console.log(`   Username: ${username}`);
-            console.log(`   Employee ID: ${employeeId} (REQUIRED FOR LOGIN)`);
+            console.log('');
+            console.log('╔══════════════════════════════════════════════════════════╗');
+            console.log('║           🔐 SUPERADMIN ACCOUNT CREATED                  ║');
+            console.log('╠══════════════════════════════════════════════════════════╣');
+            console.log('║  Login ID (Employee ID):  SUPER001                       ║');
+            console.log('║  Password:                ' + adminPassword.padEnd(31) + '║');
+            console.log('╠══════════════════════════════════════════════════════════╣');
+            console.log('║  ⚠️  IMPORTANT: Change password after first login!       ║');
+            console.log('╚══════════════════════════════════════════════════════════╝');
+            console.log('');
             
             const hash = await bcrypt.hash(adminPassword, 10);
             await prisma.user.create({
@@ -54,9 +61,8 @@ async function checkAndSeed() {
                     status: 'approved'
                 }
             });
-            console.log(`✅ SuperAdmin created! Login ID: ${employeeId}`);
         } else {
-            console.log(`✅ Admin user "${adminUsername}" already exists.`);
+            console.log('✅ SuperAdmin user already exists.');
         }
     } finally {
         await prisma.\$disconnect();
