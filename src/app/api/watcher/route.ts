@@ -2,10 +2,17 @@ import { NextResponse } from 'next/server';
 import { spawn, ChildProcess } from 'child_process';
 import path from 'path';
 
+import { getSession } from '@/lib/auth';
+
 // Global watcher process reference
 let watcherProcess: ChildProcess | null = null;
 
 export async function GET() {
+    const session = await getSession();
+    if (!session || session.role !== 'admin') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const isRunning = watcherProcess !== null && !watcherProcess.killed;
     return NextResponse.json({
         running: isRunning,
@@ -14,6 +21,11 @@ export async function GET() {
 }
 
 export async function POST() {
+    const session = await getSession();
+    if (!session || session.role !== 'admin') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     // Check if already running
     if (watcherProcess && !watcherProcess.killed) {
         return NextResponse.json({
@@ -64,6 +76,11 @@ export async function POST() {
 }
 
 export async function DELETE() {
+    const session = await getSession();
+    if (!session || session.role !== 'admin') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     if (!watcherProcess || watcherProcess.killed) {
         return NextResponse.json({
             success: false,

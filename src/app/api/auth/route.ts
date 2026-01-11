@@ -8,10 +8,6 @@ export async function POST(request: Request) {
     try {
         const { employeeId, password } = await request.json();
         console.log('Login attempt ID:', employeeId);
-        console.log('CWD:', process.cwd());
-        // @ts-ignore
-        console.log('DB URL:', process.env.DATABASE_URL);
-
         if (!employeeId || !password) {
             return NextResponse.json(
                 { success: false, error: 'Employee ID and password required' },

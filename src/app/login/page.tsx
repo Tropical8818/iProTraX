@@ -155,10 +155,15 @@ export default function LoginPage() {
                         </button>
                     </form>
 
-                    <div className="mt-6 text-center">
+                    <div className="mt-6 flex flex-col items-center gap-3">
                         <a href="/register" className="text-slate-400 hover:text-white transition-colors text-sm">
                             {t('noAccount')}
                         </a>
+                        <div className="flex items-center gap-4 text-xs text-slate-500">
+                            <a href="/privacy" className="hover:text-slate-400 underline decoration-slate-700">Privacy Policy</a>
+                            <span>•</span>
+                            <a href="/terms" className="hover:text-slate-400 underline decoration-slate-700">Terms of Service</a>
+                        </div>
                     </div>
                 </div>
             </div>
