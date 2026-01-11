@@ -83,7 +83,12 @@
             "skipped": "Skipped",
             "totalRows": "Total Rows",
             "missingColumns": "Missing Columns",
-            "missingColumnsDesc": "The following columns from your settings were not found in this Excel file. Data for these columns will be empty."
+            "missingColumnsDesc": "The following columns from your settings were not found in this Excel file. Data for these columns will be empty.",
+            "allColumnsFound": "All configured columns found!",
+            "errorsFound": "Errors Found:",
+            "importingTo": "Importing to {product}.",
+            "existingWillBeSkipped": "Existing orders (by WO ID) will be skipped.",
+            "confirmImport": "Confirm Import"
         }
     },
     "Operation": {

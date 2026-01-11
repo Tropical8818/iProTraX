@@ -1836,13 +1836,13 @@ export default function DashboardPage() {
                                 {(!importPreview.missingColumns || importPreview.missingColumns.length === 0) && (!importPreview.validationErrors || importPreview.validationErrors.length === 0) && (
                                     <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
                                         <Check className="w-5 h-5 text-green-600" />
-                                        <span className="text-sm text-green-700 font-medium">All configured columns found!</span>
+                                        <span className="text-sm text-green-700 font-medium">{t('modals.allColumnsFound')}</span>
                                     </div>
                                 )}
 
                                 {(importPreview.validationErrors?.length ?? 0) > 0 && (
                                     <div className="bg-red-50 border border-red-200 rounded-lg p-3 max-h-32 overflow-y-auto">
-                                        <div className="text-xs font-bold text-red-800 mb-1">Errors Found:</div>
+                                        <div className="text-xs font-bold text-red-800 mb-1">{t('modals.errorsFound')}</div>
                                         {importPreview.validationErrors?.map((err, i) => (
                                             <div key={i} className="text-xs text-red-600">Row {err.row}: {err.error}</div>
                                         ))}
@@ -1856,8 +1856,8 @@ export default function DashboardPage() {
                                 )}
 
                                 <p className="text-sm text-slate-500 text-center">
-                                    Importing to <b>{selectedProduct?.name}</b>.
-                                    <br />Existing orders (by WO ID) will be skipped.
+                                    {t('modals.importingTo', { product: selectedProduct?.name })}
+                                    <br />{t('modals.existingWillBeSkipped')}
                                 </p>
                             </div>
 
@@ -1866,7 +1866,7 @@ export default function DashboardPage() {
                                     onClick={() => { setShowImportModal(false); setImportFile(null); }}
                                     className="flex-1 py-2.5 bg-white border border-slate-300 text-slate-700 rounded-lg font-medium hover:bg-slate-50"
                                 >
-                                    Cancel
+                                    {tCommon('cancel')}
                                 </button>
                                 <button
                                     onClick={confirmImport}
@@ -1874,7 +1874,7 @@ export default function DashboardPage() {
                                     className="flex-1 py-2.5 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                 >
                                     {isImporting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                                    {isImporting ? t('saving') : t('confirm')}
+                                    {isImporting ? tCommon('loading') : t('modals.confirmImport')}
                                 </button>
                             </div>
                         </div>

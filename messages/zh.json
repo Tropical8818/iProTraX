@@ -83,7 +83,12 @@
             "skipped": "已跳过",
             "totalRows": "总行数",
             "missingColumns": "缺失列",
-            "missingColumnsDesc": "Excel 文件中未找到以下设置中的列。这些列的数据将为空。"
+            "missingColumnsDesc": "Excel 文件中未找到以下设置中的列。这些列的数据将为空。",
+            "allColumnsFound": "所有配置的列已找到！",
+            "errorsFound": "发现错误：",
+            "importingTo": "正在导入到 {product}。",
+            "existingWillBeSkipped": "已存在的订单（按工单 ID）将被跳过。",
+            "confirmImport": "确认导入"
         }
     },
     "Operation": {
