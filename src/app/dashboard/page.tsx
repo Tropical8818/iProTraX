@@ -26,7 +26,7 @@ import dynamic from 'next/dynamic';
 import AIChatPanel from '@/components/AIChatPanel';
 import { MessageNotification } from '@/components/MessageNotification';
 import { calculateECD } from '@/lib/ecd';
-// LanguageSwitcher removed - using inline flag implementation
+import { useLocaleDetection } from '@/hooks/useLocaleDetection';
 
 // Dynamic import for barcode scanner (client-only)
 const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false });
@@ -62,16 +62,7 @@ export default function DashboardPage() {
     const t = useTranslations('Dashboard');
     const tCommon = useTranslations('Common');
     const [currentDate, setCurrentDate] = useState('');
-    const [currentLocale, setCurrentLocale] = useState<string>('en');
-
-    useEffect(() => {
-        // Initialize current locale for flag display
-        const locale = document.cookie
-            .split('; ')
-            .find(row => row.startsWith('NEXT_LOCALE='))
-            ?.split('=')[1] || 'en';
-        setCurrentLocale(locale);
-    }, []);
+    const currentLocale = useLocaleDetection();
 
     useEffect(() => {
         const updateDateTime = () => {
@@ -147,7 +138,7 @@ export default function DashboardPage() {
     // Import State
     const [isImporting, setIsImporting] = useState(false);
     const [importFile, setImportFile] = useState<File | null>(null);
-    const [importPreview, setImportPreview] = useState<any>(null);
+    const [importPreview, setImportPreview] = useState<unknown>(null);
     const [showImportModal, setShowImportModal] = useState(false);
     const [importMsg, setImportMsg] = useState<{ type: string, text: string } | null>(null);
 
@@ -936,7 +927,7 @@ export default function DashboardPage() {
                                 {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
                             </button>
 
-                            {/* Dynamic Flag Language Switcher */}
+                            {/* SVG Flag Language Switcher - Matching Login Page */}
                             <button
                                 onClick={() => {
                                     const locale = document.cookie
@@ -947,12 +938,22 @@ export default function DashboardPage() {
                                     document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
                                     window.location.reload();
                                 }}
-                                className="flex items-center gap-1 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
+                                className="flex items-center gap-1 px-2.5 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
                                 title={currentLocale === 'en' ? '切换到中文' : 'Switch to English'}
-                                suppressHydrationWarning
                             >
-                                <span className="text-lg" suppressHydrationWarning>{currentLocale === 'en' ? '🇨🇳' : '🇺🇸'}</span>
-                                <span className="hidden sm:inline text-xs" suppressHydrationWarning>{currentLocale === 'en' ? 'CN' : 'EN'}</span>
+                                <div className="w-7 h-5 flex items-center justify-center" suppressHydrationWarning>
+                                    {typeof window !== 'undefined' ? (
+                                        currentLocale === 'en' ? (
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" className="w-7 h-5 rounded-sm shadow-sm">
+                                                <rect width="30" height="20" fill="#de2910" /><path fill="#ffde00" d="M5 5l-1.123.816.429-1.321-1.123-.816h1.388L5 2.358l.429 1.321h1.388l-1.123.816.429 1.321L5 5z" /><circle fill="#ffde00" cx="10" cy="2" r="0.4" /><circle fill="#ffde00" cx="12" cy="4" r="0.4" /><circle fill="#ffde00" cx="12" cy="7" r="0.4" /><circle fill="#ffde00" cx="10" cy="9" r="0.4" />
+                                            </svg>
+                                        ) : (
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 741 390" className="w-7 h-5 rounded-sm shadow-sm">
+                                                <path fill="#b22234" d="M0 0h741v30H0zM0 60h741v30H0zM0 120h741v30H0zM0 180h741v30H0zM0 240h741v30H0zM0 300h741v30H0zM0 360h741v30H0z" /><path fill="#fff" d="M0 30h741v30H0zM0 90h741v30H0zM0 150h741v30H0zM0 210h741v30H0zM0 270h741v30H0zM0 330h741v30H0z" /><path fill="#3c3b6e" d="M0 0h296.4v210H0z" /><g fill="#fff"><path d="M24.7 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M74.1 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M123.5 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M172.9 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M222.3 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M271.7 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /></g>
+                                            </svg>
+                                        )
+                                    ) : null}
+                                </div>
                             </button>
 
                             <button

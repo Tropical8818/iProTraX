@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
     // Reset SUPERADMIN account password
     const username = 'superadmin';
-    const newPassword = 'superuser2025'; // Reset to the original default password
+    const newPassword = 'superadmin123'; // Reset to the original default password
 
     const user = await prisma.user.findUnique({
         where: { username }

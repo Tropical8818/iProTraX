@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
     // Find user by Employee ID
     const employeeId = 'SUPER001';
-    const newPassword = 'superuser2025'; // Reset password
+    const newPassword = 'superadmin123'; // Reset password
 
     const user = await prisma.user.findUnique({
         where: { employeeId }

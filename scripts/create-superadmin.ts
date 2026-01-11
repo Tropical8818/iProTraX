@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 async function main() {
     const username = 'superadmin';
-    const password = 'superuser2025'; // Default strong password
+    const password = 'superadmin123'; // Default strong password
     const employeeId = 'SUPER001';
 
     const existing = await prisma.user.findUnique({

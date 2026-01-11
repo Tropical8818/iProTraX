@@ -100,7 +100,7 @@ Visit http://localhost:3001
 After the initial deployment, use the following credentials to access the **SuperAdmin** account:
 
 *   **Employee ID (UserID)**: `SUPER001`
-*   **Default Password**: `superuser2025`
+*   **Default Password**: `superadmin123`
 
 > [!IMPORTANT]
 > For security, it is highly recommended to change this password immediately after your first login via the User Management settings.
