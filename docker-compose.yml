@@ -1,6 +1,7 @@
 services:
   app:
-    container_name: protracker
+    container_name: iprotrax
+    image: hzhang9/iprotrax:latest # Add this line with YOUR Docker Hub username
     build:
       context: .
       dockerfile: Dockerfile
