@@ -1,22 +1,24 @@
 
 # Stage 1: Dependencies
-FROM node:22-slim AS deps
+FROM node:22-alpine AS deps
+# Check https://github.com/nodejs/docker-node/tree/b4117f9333da4138b03a546ec926ef50a31506c3#nodealpine to understand why libc6-compat might be needed.
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Upgrade system npm to fix CVEs
+# Upgrade npm to latest
 RUN npm install -g npm@latest
 
 COPY package.json package-lock.json* ./
 RUN npm ci
 
 # Stage 2: Builder
-FROM node:22-slim AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Install OpenSSL for Prisma
-RUN apt-get update -y && apt-get install -y openssl
+# Install OpenSSL for Prisma (needed in builder too for generation)
+RUN apk add --no-cache openssl
 
 # Generate Prisma Client
 RUN npx prisma generate
@@ -31,48 +33,28 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # Stage 3: Runner
-FROM node:22-slim AS runner
+FROM node:22-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Create a non-root user
-RUN groupadd -r -g 1001 nodejs
-RUN useradd -r -u 1001 -g nodejs nextjs
+# Alpine syntax: addgroup, adduser
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
 
 # Install dependencies
-# openssl for prisma, tzdata for time
-# Upgrade all packages to latest to catch zlib fixes if any
-# Deep Security Fix: Force refresh of repositories and explicit upgrade of all vulnerable packages
-# CVE Targets: tar, glibc, systemd, coreutils, libgcrypt, perl, shadow, util-linux, apt, gcc-12, gnupg2, gnutls28
-RUN echo "deb http://deb.debian.org/debian bookworm main contrib non-free" > /etc/apt/sources.list && \
-    echo "deb http://deb.debian.org/debian-security bookworm-security main contrib non-free" >> /etc/apt/sources.list && \
-    echo "deb http://deb.debian.org/debian bookworm-updates main contrib non-free" >> /etc/apt/sources.list && \
-    apt-get update -y && \
-    apt-get dist-upgrade -y && \
-    apt-get install -y --no-install-recommends \
+# libc6-compat for Next.js, openssl for prisma, tzdata for time
+# Upgrade all packages to latest alpine versions to ensure security
+RUN apk add --no-cache \
+    libc6-compat \
     openssl \
-    ca-certificates \
     tzdata \
-    tar \
-    libc6 \
-    libc-bin \
-    libsystemd0 \
-    coreutils \
-    libgcrypt20 \
-    perl \
-    passwd \
-    util-linux \
-    apt \
-    libgcc-s1 \
-    libstdc++6 \
-    gnupg \
-    libgnutls30 && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* && \
-    npm install -g npm@latest && \
-    echo "--- Security Verification (Deep Fix) ---" && \
-    dpkg -l | grep -E "tar|libc6|libsystemd0|coreutils|libgcrypt20|perl|openssl|passwd|util-linux|apt|libgcc-s1|gnupg|libgnutls30"
+    ca-certificates \
+    curl && \
+    apk upgrade --no-cache && \
+    npm install -g npm@latest
 
 # Copy necessary files
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
