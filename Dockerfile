@@ -44,18 +44,18 @@ RUN useradd -r -u 1001 -g nodejs nextjs
 # Install dependencies
 # openssl for prisma, tzdata for time
 # Upgrade all packages to latest to catch zlib fixes if any
-# explicitly install tar, glibc, systemd, coreutils, libgcrypt, perl to fix multiple CVEs
+# explicitly install tar, glibc, systemd, coreutils, libgcrypt, perl, shadow (passwd), util-linux for all CVEs
 # using dist-upgrade to ensure all security patches are applied even if they require new dependencies
 RUN apt-get update -y && \
-    apt-cache policy tar libc6 libsystemd0 coreutils libgcrypt20 perl openssl && \
-    apt-get install -y openssl tzdata ca-certificates tar libc6 libc-bin libsystemd0 coreutils libgcrypt20 perl && \
+    apt-cache policy tar libc6 libsystemd0 coreutils libgcrypt20 perl openssl passwd util-linux && \
+    apt-get install -y openssl tzdata ca-certificates tar libc6 libc-bin libsystemd0 coreutils libgcrypt20 perl passwd util-linux && \
     apt-get dist-upgrade -y && \
     apt-get clean && rm -rf /var/lib/apt/lists/* && \
     npm install -g npm@latest && \
     echo "--- Security Verification ---" && \
     tar --version && \
     ldd --version && \
-    dpkg -s libsystemd0 coreutils libgcrypt20 perl openssl | grep -E "Package:|Version:"
+    dpkg -s libsystemd0 coreutils libgcrypt20 perl openssl passwd util-linux | grep -E "Package:|Version:"
 
 # Copy necessary files
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
