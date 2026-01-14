@@ -46,8 +46,11 @@ RUN adduser --system --uid 1001 nextjs
 
 # Install dependencies
 # libc6-compat for Next.js, openssl for prisma, tzdata for time
-# Explicitly install zlib, busybox, curl to fix CVE-2026-22184, CVE-2025-60876, CVE-2025-14819 etc.
-RUN apk add --no-cache \
+# Enable Alpine Edge repos for bleeding-edge security fixes (CVE-2026-22184, CVE-2025-60876, CVE-2025-14819)
+RUN echo "https://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositories && \
+    echo "https://dl-cdn.alpinelinux.org/alpine/edge/community" >> /etc/apk/repositories && \
+    apk update && \
+    apk add --no-cache \
     libc6-compat \
     openssl \
     tzdata \
@@ -57,7 +60,7 @@ RUN apk add --no-cache \
     busybox && \
     apk upgrade --no-cache && \
     npm install -g npm@latest && \
-    echo "--- Security Verification (Alpine) ---" && \
+    echo "--- Security Verification (Alpine Edge) ---" && \
     apk info -v zlib busybox curl
 
 # Copy necessary files
