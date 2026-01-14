@@ -44,8 +44,9 @@ RUN useradd -r -u 1001 -g nodejs nextjs
 # Install dependencies
 # openssl for prisma, tzdata for time
 # Upgrade all packages to latest to catch zlib fixes if any
+# explicitly install tar to fix CVE-2025-45582
 RUN apt-get update -y && \
-    apt-get install -y openssl tzdata ca-certificates && \
+    apt-get install -y openssl tzdata ca-certificates tar && \
     apt-get upgrade -y && \
     apt-get clean && rm -rf /var/lib/apt/lists/* && \
     npm install -g npm@latest
