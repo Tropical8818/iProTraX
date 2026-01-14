@@ -44,18 +44,35 @@ RUN useradd -r -u 1001 -g nodejs nextjs
 # Install dependencies
 # openssl for prisma, tzdata for time
 # Upgrade all packages to latest to catch zlib fixes if any
-# explicitly install tar, glibc, systemd, coreutils, libgcrypt, perl, shadow (passwd), util-linux for all CVEs
-# using dist-upgrade to ensure all security patches are applied even if they require new dependencies
-RUN apt-get update -y && \
-    apt-cache policy tar libc6 libsystemd0 coreutils libgcrypt20 perl openssl passwd util-linux && \
-    apt-get install -y openssl tzdata ca-certificates tar libc6 libc-bin libsystemd0 coreutils libgcrypt20 perl passwd util-linux && \
+# Deep Security Fix: Force refresh of repositories and explicit upgrade of all vulnerable packages
+# CVE Targets: tar, glibc, systemd, coreutils, libgcrypt, perl, shadow, util-linux, apt, gcc-12, gnupg2, gnutls28
+RUN echo "deb http://deb.debian.org/debian bookworm main contrib non-free" > /etc/apt/sources.list && \
+    echo "deb http://deb.debian.org/debian-security bookworm-security main contrib non-free" >> /etc/apt/sources.list && \
+    echo "deb http://deb.debian.org/debian bookworm-updates main contrib non-free" >> /etc/apt/sources.list && \
+    apt-get update -y && \
     apt-get dist-upgrade -y && \
+    apt-get install -y --no-install-recommends \
+    openssl \
+    ca-certificates \
+    tzdata \
+    tar \
+    libc6 \
+    libc-bin \
+    libsystemd0 \
+    coreutils \
+    libgcrypt20 \
+    perl \
+    passwd \
+    util-linux \
+    apt \
+    libgcc-s1 \
+    libstdc++6 \
+    gnupg \
+    libgnutls30 && \
     apt-get clean && rm -rf /var/lib/apt/lists/* && \
     npm install -g npm@latest && \
-    echo "--- Security Verification ---" && \
-    tar --version && \
-    ldd --version && \
-    dpkg -s libsystemd0 coreutils libgcrypt20 perl openssl passwd util-linux | grep -E "Package:|Version:"
+    echo "--- Security Verification (Deep Fix) ---" && \
+    dpkg -l | grep -E "tar|libc6|libsystemd0|coreutils|libgcrypt20|perl|openssl|passwd|util-linux|apt|libgcc-s1|gnupg|libgnutls30"
 
 # Copy necessary files
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
