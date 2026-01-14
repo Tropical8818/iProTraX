@@ -46,15 +46,19 @@ RUN adduser --system --uid 1001 nextjs
 
 # Install dependencies
 # libc6-compat for Next.js, openssl for prisma, tzdata for time
-# Upgrade all packages to latest alpine versions to ensure security
+# Explicitly install zlib, busybox, curl to fix CVE-2026-22184, CVE-2025-60876, CVE-2025-14819 etc.
 RUN apk add --no-cache \
     libc6-compat \
     openssl \
     tzdata \
     ca-certificates \
-    curl && \
+    curl \
+    zlib \
+    busybox && \
     apk upgrade --no-cache && \
-    npm install -g npm@latest
+    npm install -g npm@latest && \
+    echo "--- Security Verification (Alpine) ---" && \
+    apk info -v zlib busybox curl
 
 # Copy necessary files
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
