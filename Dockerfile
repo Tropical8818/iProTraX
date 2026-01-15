@@ -24,8 +24,6 @@ RUN apk add --no-cache openssl
 RUN npx prisma generate
 
 # Pre-sync database schema (creates empty database with correct schema)
-ENV DATABASE_URL="file:./prisma/dev.db"
-RUN npx prisma db push --accept-data-loss
 
 # Build Next.js
 # Disable telemetry during build
