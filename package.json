@@ -59,5 +59,8 @@
     "*.{js,ts,jsx,tsx}": [
       "eslint --fix"
     ]
+  },
+  "overrides": {
+    "diff": "8.0.3"
   }
 }
