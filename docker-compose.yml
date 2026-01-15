@@ -11,7 +11,7 @@ services:
     environment:
       - PORT=3001
       # Connect to the 'db' service defined below
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/protracker?schema=public
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/iprotrax?schema=public
       # Add your OpenAI Key here or in a .env file next to this compose file
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       # Timezone configuration (default: Asia/Singapore)
@@ -29,13 +29,13 @@ services:
       - tracker-network
 
   db:
-    container_name: protracker-db
+    container_name: iprotrax-db
     image: postgres:15-alpine
     restart: always
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: protracker
+      POSTGRES_DB: iprotrax
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
