@@ -128,17 +128,20 @@ export default function AIChatPanel({ productId, role = 'user', onNavigate }: AI
             const data = await res.json();
 
             if (res.ok) {
-                let content = data.response;
+                const content = data.response;
                 let isAnalysis = false;
                 let parsedRx = null;
 
                 if (mode === 'analysis' && typeof content === 'string') {
                     try {
-                        const cleanJson = content.replace(/```json/g, '').replace(/```/g, '').trim();
-                        parsedRx = JSON.parse(cleanJson);
-                        isAnalysis = true;
+                        // More robust JSON extraction
+                        const jsonMatch = content.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            parsedRx = JSON.parse(jsonMatch[0]);
+                            isAnalysis = true;
+                        }
                     } catch (e) {
-                        // Fallback if not JSON
+                        console.warn('Failed to parse analysis JSON:', e);
                     }
                 }
 
