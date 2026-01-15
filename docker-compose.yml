@@ -10,20 +10,40 @@ services:
       - "3001:3001"
     environment:
       - PORT=3001
-      - DATABASE_URL=file:/app/data/db/prod.db
+      # Connect to the 'db' service defined below
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/protracker?schema=public
       # Add your OpenAI Key here or in a .env file next to this compose file
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       # Timezone configuration (default: Asia/Singapore)
       - TZ=${TZ:-Asia/Singapore}
       # SuperAdmin password (only used on first deployment)
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-superadmin123}
+    depends_on:
+      - db
     volumes:
-      # Persist the database and uploads
+      # Persist config.json and legacy data
       - ./data:/app/data
+      # Persist uploads
       - ./public/uploads:/app/public/uploads
+    networks:
+      - tracker-network
+
+  db:
+    container_name: protracker-db
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: protracker
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - tracker-network
 
 networks:
   tracker-network:
     driver: bridge
+
+volumes:
+  postgres_data:
