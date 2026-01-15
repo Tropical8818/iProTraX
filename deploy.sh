@@ -43,6 +43,13 @@ docker-compose up -d --build
 echo "🧹 Cleaning up unused Docker images..."
 docker image prune -f
 
+# 4. Verify deployment
+echo "🔍 Verifying deployment..."
+    if ! docker ps | grep -q "iprotrax"; then
+        echo "❌ Deployment failed! 'iprotrax' container not found running."
+        exit 1
+    fi
+    
 echo ""
 echo "✅ Deployment complete!"
 echo "   - App running at: http://localhost:3001"

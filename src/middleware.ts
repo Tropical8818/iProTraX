@@ -4,7 +4,7 @@ import type { NextRequest } from 'next/server';
 import { decrypt } from '@/lib/session';
 
 export async function middleware(request: NextRequest) {
-    const sessionCookie = request.cookies.get('protracker_sess');
+    const sessionCookie = request.cookies.get('iprotrax_sess');
 
     if (!sessionCookie) {
         return NextResponse.next();
@@ -25,7 +25,7 @@ export async function middleware(request: NextRequest) {
         // Invalid session cookie - optionally clear it or redirect to login
         // For now, treat as no session
         const response = NextResponse.next();
-        response.cookies.delete('protracker_sess');
+        response.cookies.delete('iprotrax_sess');
         return response;
     }
 

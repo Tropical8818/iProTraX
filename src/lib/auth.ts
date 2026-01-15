@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { encrypt, decrypt } from './session';
 
-const SESSION_COOKIE = 'protracker_sess';
+const SESSION_COOKIE = 'iprotrax_sess';
 const SESSION_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 const KIOSK_SESSION_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days
 

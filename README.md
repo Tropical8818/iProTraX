@@ -1,5 +1,7 @@
-# iProTraX - The Agile Manufacturing Collaboration Platform
-> Bridging the gap between rigid ERP systems and the dynamic shop floor.
+# iProTraX (formerly ProTracker)
+
+## 🚀 Introduction
+**iProTraX** is an AI-powered production tracking system that bridges the gap between rigid ERP systems and the dynamic shop floor.
 
 [🇺🇸 English](README.md) | [🇨🇳 简体中文](README_ZH.md)
 
@@ -232,7 +234,7 @@ Contact author for access: contact@iprotrax.work
 
 ## 🛡️ License & Community
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![GitHub Stars](https://img.shields.io/github/stars/Tropical8818/ProTracker?style=social)](https://github.com/Tropical8818/ProTracker)
+[![GitHub Stars](https://img.shields.io/github/stars/Tropical8818/iProTraX?style=social)](https://github.com/Tropical8818/iProTraX)
 
 ## 📈 Git Trend
-[![Star History Chart](https://api.star-history.com/svg?repos=Tropical8818/ProTracker&type=Date)](https://star-history.com/#Tropical8818/ProTracker&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=Tropical8818/iProTraX&type=Date)](https://star-history.com/#Tropical8818/iProTraX&Date)

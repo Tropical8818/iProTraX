@@ -235,7 +235,10 @@ https://iprotrax.work
 
 ## 🛡️ 许可与社区
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![GitHub Stars](https://img.shields.io/github/stars/Tropical8818/ProTracker?style=social)](https://github.com/Tropical8818/ProTracker)
+[![GitHub Stars](https://img.shields.io/github/stars/Tropical8818/iProTraX?style=social)](https://github.com/Tropical8818/iProTraX)
+
+## 🚀 简介
+**iProTraX** 是一个基于 AI 的生产追踪系统，旨在通过实时数据洞察、智能自动化和直观的用户界面，彻底改变传统车间管理。它将生产流程数字化，提升效率，减少人为错误，并为决策者提供前所未有的可见性。
 
 ## 📈 Git 趋势 (Git Trend)
-[![Star History Chart](https://api.star-history.com/svg?repos=Tropical8818/ProTracker&type=Date)](https://star-history.com/#Tropical8818/ProTracker&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=Tropical8818/iProTraX&type=Date)](https://star-history.com/#Tropical8818/iProTraX&Date)
