@@ -167,9 +167,9 @@ export async function buildAIContext(productId?: string, queriedWoId?: string, q
                 select: { name: true, config: true }
             }
         },
-        // Limit default context to recent orders for performance
-        // Deep history is accessed via Intelligent Query (recursion)
-        take: 60,
+
+        // Limit default context based on product config
+        take: productId ? ((productData.find(p => p.id === productId) as any)?.aiContextLimit || 60) : 60,
         orderBy: { updatedAt: 'desc' } // Sort by most recently updated
     });
 

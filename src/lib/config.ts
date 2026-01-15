@@ -16,6 +16,8 @@ export interface Product {
     monthlyTarget?: number; // Target quantity for the current month
     customInstructions?: string; // Custom instructions for AI to understand this product line
     aiProvider?: 'openai' | 'ollama'; // AI Provider for this specific product
+    aiContextLimit?: number; // How many recent orders to fetch for context (default: 60)
+    aiMaxTokens?: number; // Max tokens for AI response (default: 4000)
 }
 
 export interface Config {
@@ -47,7 +49,9 @@ const DEFAULT_PRODUCT: Product = {
     excelPath: '',
     detailColumns: DEFAULT_DETAIL_COLUMNS,
     steps: DEFAULT_STEPS,
-    monthlyTarget: 100 // Default target
+    monthlyTarget: 100, // Default target
+    aiContextLimit: 60,
+    aiMaxTokens: 4000
 };
 
 const DEFAULT_CONFIG: Config = {
@@ -83,7 +87,9 @@ function migrateConfig(parsed: Record<string, unknown>): Config {
         excelPath: (parsed.EXCEL_FILE_PATH as string) || '',
         detailColumns: DEFAULT_DETAIL_COLUMNS,
         steps: DEFAULT_STEPS,
-        monthlyTarget: 100
+        monthlyTarget: 100,
+        aiContextLimit: 60,
+        aiMaxTokens: 4000
     };
 
     return {

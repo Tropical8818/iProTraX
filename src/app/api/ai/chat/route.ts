@@ -138,12 +138,16 @@ export async function POST(request: Request) {
             });
         }
 
+        // Get active Max Tokens setting
+        const activeProduct = context.products.find(p => p.id === productId);
+        const maxTokens = (activeProduct as any)?.aiMaxTokens || 4000;
+
         // Get AI response
         const response = await chat(messages, {
             model: context.activeModel || 'gpt-4o-mini',
             provider: context.activeProvider,
             temperature: 0.7,
-            maxTokens: 1000
+            maxTokens: maxTokens
         });
 
         return NextResponse.json({

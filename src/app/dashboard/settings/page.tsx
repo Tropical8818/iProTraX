@@ -22,6 +22,8 @@ interface Product {
     aiProvider?: 'openai' | 'ollama';
     aiVisibleColumns?: string[];
     aiVisibleSteps?: string[];
+    aiContextLimit?: number;
+    aiMaxTokens?: number;
 }
 
 interface Config {
@@ -800,6 +802,43 @@ export default function SettingsPage() {
                                                     <p className="text-xs text-slate-500 mt-2">
                                                         {t('customInstructionsHelp')}
                                                     </p>
+
+                                                    <div className="grid grid-cols-2 gap-4 mt-4">
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                                                Context Order Limit
+                                                            </label>
+                                                            <input
+                                                                type="number"
+                                                                value={editingProduct.aiContextLimit || 60}
+                                                                onChange={(e) => {
+                                                                    const val = parseInt(e.target.value) || 60;
+                                                                    const updated = { ...editingProduct, aiContextLimit: val };
+                                                                    setEditingProduct(updated);
+                                                                    updateProduct(updated);
+                                                                }}
+                                                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                                            />
+                                                            <p className="text-xs text-slate-500 mt-1">Default: 60 orders</p>
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                                                Max Response Tokens
+                                                            </label>
+                                                            <input
+                                                                type="number"
+                                                                value={editingProduct.aiMaxTokens || 4000}
+                                                                onChange={(e) => {
+                                                                    const val = parseInt(e.target.value) || 4000;
+                                                                    const updated = { ...editingProduct, aiMaxTokens: val };
+                                                                    setEditingProduct(updated);
+                                                                    updateProduct(updated);
+                                                                }}
+                                                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                                            />
+                                                            <p className="text-xs text-slate-500 mt-1">Default: 4000 tokens</p>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
 
@@ -1098,32 +1137,34 @@ export default function SettingsPage() {
                                                     </div>
                                                 </div>
                                             </div>
+
+
+
+
+                                            <button
+                                                onClick={handleSave}
+                                                disabled={saving}
+                                                className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                                            >
+                                                <Save className="w-4 h-4" />
+                                                {saving ? t('saving') : t('saveSettings')}
+                                            </button>
+
+                                            {/* Save Status Message */}
+                                            {message && (
+                                                <div className={`mt-3 text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                                                    }`}>
+                                                    {message.type === 'success' ? (
+                                                        <Check className="w-4 h-4 flex-shrink-0" />
+                                                    ) : (
+                                                        <X className="w-4 h-4 flex-shrink-0" />
+                                                    )}
+                                                    <span>{message.text}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
-
-
                                 </div>
-                                <button
-                                    onClick={handleSave}
-                                    disabled={saving}
-                                    className="w-full py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 text-sm font-medium transition-colors flex items-center justify-center gap-2"
-                                >
-                                    <Save className="w-4 h-4" />
-                                    {saving ? t('saving') : t('saveSettings')}
-                                </button>
-
-                                {/* Save Status Message */}
-                                {message && (
-                                    <div className={`mt-3 text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                                        }`}>
-                                        {message.type === 'success' ? (
-                                            <Check className="w-4 h-4 flex-shrink-0" />
-                                        ) : (
-                                            <X className="w-4 h-4 flex-shrink-0" />
-                                        )}
-                                        <span>{message.text}</span>
-                                    </div>
-                                )}
                             </div>
                         )}
 
@@ -1580,7 +1621,8 @@ export default function SettingsPage() {
 
                         </div>
                     </div >
-                )}
+                )
+                }
             </main >
 
             {/* Column Categorization Modal */}

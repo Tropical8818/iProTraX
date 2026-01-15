@@ -185,6 +185,11 @@ Your goal is to analyze the current production state and identify orders at risk
 - **Priority Swap**: Suggest prioritizing this order over others with later ECDs.
 - **Micro-Management**: If stuck in a step > 48h, suggest immediate supervisor intervention.
 
+## CRITICAL: Output Limit
+- **Only return the TOP 10 most critical risks.**
+- Do not list every single delayed order if there are many.
+- Sort by severity (High first).
+
 ## Output Format (JSON ONLY)
 Return a JSON object with a list of risks:
 {
