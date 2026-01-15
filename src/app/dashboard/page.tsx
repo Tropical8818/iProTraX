@@ -97,11 +97,6 @@ export default function DashboardPage() {
     const [wipMode, setWipMode] = useState(false);
     const [completeMode, setCompleteMode] = useState(false);
     const [eraseMode, setEraseMode] = useState(false);
-    const [erasePasswordModal, setErasePasswordModal] = useState(false);
-
-    const [erasePassword, setErasePassword] = useState('');
-    const [erasePasswordVisible, setErasePasswordVisible] = useState(false);
-    const [erasePasswordError, setErasePasswordError] = useState('');
     const [refreshing, setRefreshing] = useState(false);
 
     // Bulk Confirm Modal State
@@ -682,7 +677,7 @@ export default function DashboardPage() {
 
     // Sort orders by priority (Red first, then Yellow, then normal)
     const sortedOrders = [...orders].sort((a, b) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         const getPriority = (order: any) => {
             if (order.priority === 'Red') return 3;
             if (order.priority === 'Yellow') return 2;
@@ -734,7 +729,7 @@ export default function DashboardPage() {
                         className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
                         title="Return to Home"
                     >
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        { }
                         <img src="/logo.png" alt="iProTraX" className="h-9 w-auto" />
                     </button>
 
@@ -861,7 +856,7 @@ export default function DashboardPage() {
                                                 <CheckCircle2 className="w-4 h-4" /> Complete
                                             </button>
                                             <div className="border-t border-slate-100 my-1" />
-                                            <button onClick={() => { if (eraseMode) { setEraseMode(false); } else if (role === 'admin') { setEraseMode(true); setPMode(false); setNaMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } else { setErasePasswordModal(true); setErasePassword(''); setErasePasswordError(''); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${eraseMode ? 'bg-red-50 text-red-700' : 'text-red-500 hover:bg-red-50'}`}>
+                                            <button onClick={() => { if (eraseMode) { setEraseMode(false); } else { if (window.confirm(t('modals.eraseModeDesc'))) { setEraseMode(true); setPMode(false); setNaMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${eraseMode ? 'bg-red-50 text-red-700' : 'text-red-500 hover:bg-red-50'}`}>
                                                 <Eraser className="w-4 h-4" /> Erase
                                             </button>
                                         </div>
@@ -1469,7 +1464,7 @@ export default function DashboardPage() {
                                         else if (mode === 'WIP') status = 'WIP';
                                         else if (mode === 'Complete') status = format(new Date(), 'dd-MMM, HH:mm');
                                         try {
-                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                             
                                             const updates = targets.map((o: any) => ({
                                                 woId: o['WO ID'],
                                                 step,
@@ -1503,91 +1498,6 @@ export default function DashboardPage() {
                 )
             }
 
-            {/* Erase Mode Password Confirmation Modal */}
-            {
-                erasePasswordModal && (
-                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-xl p-6 max-w-sm mx-4 shadow-xl">
-                            <h3 className="text-lg font-bold text-red-600 mb-2">⚠️ {t('modals.enableEraseMode')}</h3>
-                            <p className="text-slate-600 mb-4 text-sm">
-                                {t('modals.eraseModeDesc')}
-                            </p>
-
-
-                            <div className="relative mb-4">
-                                <input
-                                    type={erasePasswordVisible ? 'text' : 'password'}
-                                    value={erasePassword}
-                                    onChange={(e) => setErasePassword(e.target.value)}
-                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-200 pr-10 text-slate-800"
-                                    placeholder={role === 'supervisor' ? 'Supervisor Password' : 'Admin Password'}
-                                    autoFocus
-                                    onKeyDown={async (e) => {
-                                        if (e.key === 'Enter' && erasePassword) {
-                                            const res = await fetch('/api/auth', {
-                                                method: 'POST',
-                                                headers: { 'Content-Type': 'application/json' },
-                                                body: JSON.stringify({ password: erasePassword })
-                                            });
-                                            const data = await res.json();
-                                            if (data.role === role) {
-                                                setErasePasswordModal(false);
-                                                setEraseMode(true);
-                                                setPMode(false);
-                                                setNaMode(false);
-                                                setHoldMode(false);
-                                            } else {
-                                                setErasePasswordError('Invalid password');
-                                            }
-                                        }
-                                    }}
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setErasePasswordVisible(!erasePasswordVisible)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                                >
-                                    {erasePasswordVisible ? <EyeOff size={18} /> : <Eye size={18} />}
-                                </button>
-                            </div>
-                            {erasePasswordError && (
-                                <p className="text-red-500 text-sm mb-2">{erasePasswordError}</p>
-                            )}
-
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setErasePasswordModal(false)}
-                                    className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={async () => {
-                                        const res = await fetch('/api/auth', {
-                                            method: 'POST',
-                                            headers: { 'Content-Type': 'application/json' },
-                                            body: JSON.stringify({ password: erasePassword })
-                                        });
-                                        const data = await res.json();
-                                        if (data.role === role) {
-                                            setErasePasswordModal(false);
-                                            setEraseMode(true);
-                                            setPMode(false);
-                                            setNaMode(false);
-                                        } else {
-                                            setErasePasswordError('Invalid password');
-                                        }
-                                    }}
-                                    disabled={!erasePassword}
-                                    className="flex-1 py-2 bg-red-600 text-white rounded-lg font-medium disabled:opacity-50"
-                                >
-                                    Enable
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                )
-            }
 
             {/* Click outside to close product menu */}
             {
@@ -1714,7 +1624,7 @@ export default function DashboardPage() {
                     if (matchedOrder) {
                         // Play beep sound
                         try {
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                             
                             const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
                             if (AudioContext) {
                                 const ctx = new AudioContext();
@@ -1758,11 +1668,10 @@ export default function DashboardPage() {
                     eraseMode={eraseMode} setEraseMode={setEraseMode}
                     handleEraseRequest={() => {
                         if (eraseMode) setEraseMode(false);
-                        else if (role === 'admin') setEraseMode(true);
                         else {
-                            setErasePasswordModal(true);
-                            setErasePassword('');
-                            setErasePasswordError('');
+                            if (window.confirm(t('modals.eraseModeDesc'))) {
+                                setEraseMode(true);
+                            }
                         }
                     }}
 
