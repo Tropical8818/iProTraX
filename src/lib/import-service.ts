@@ -102,7 +102,10 @@ export async function importFromBuffer(buffer: Buffer, options: ImportOptions): 
             }
 
             // Check if value is a number that might be a date (Excel stores dates as numbers)
-            if (typeof value === 'number' && value > 1) {
+            // Skip heuristic for columns known to be numeric/integers
+            const isNumericColumn = ['priority', 'qty', 'quantity', 'count', 'amount', 'target'].includes(header.toLowerCase());
+
+            if (typeof value === 'number' && value > 1 && !isNumericColumn) {
                 // Excel dates: serial 1 = 1/1/1900, 45000 ≈ 2023
                 // Reasonable date range: 1 (1900) to 100000 (2173)
                 if (value > 1 && value < 100000) {
