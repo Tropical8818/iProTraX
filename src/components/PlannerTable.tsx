@@ -36,6 +36,7 @@ interface Props {
     role?: string;
     onUpdateDetail?: (woId: string, field: string, value: string) => Promise<void>;
     onDeleteOrder?: (woId: string) => Promise<void>;
+    fontSizeScale?: number;
 }
 
 type SortDir = 'asc' | 'desc' | null;
@@ -103,7 +104,8 @@ export default function PlannerTable({
 
 
     onUpdateDetail,
-    onDeleteOrder
+    onDeleteOrder,
+    fontSizeScale = 1
 }: Props) {
 
     const [sortKey, setSortKey] = useState<string | null>(null);
@@ -454,7 +456,7 @@ export default function PlannerTable({
 
     return (
         <div className="overflow-auto bg-white rounded-xl shadow-sm border border-slate-200 max-h-[calc(100vh-200px)]">
-            <table className="text-xs border-collapse w-full table-fixed">
+            <table className="border-collapse w-full table-fixed" style={{ fontSize: `${12 * fontSizeScale}px` }}>
                 <colgroup>
                     {/* Detail Columns */}
                     {effectiveDetailColumns.map((col) => (
@@ -521,7 +523,7 @@ export default function PlannerTable({
                                     maxWidth: columnWidths[col] // Force max width
                                 }}
                                 className={`px-0.5 py-1 font-semibold text-slate-700 cursor-pointer hover:bg-slate-200 border-r border-slate-200 bg-slate-100 relative group ${i === 0 ? 'sticky left-0 z-30' : ''
-                                    } ${i >= 5 ? 'text-center text-[9px]' : 'text-left text-[10px]'}`}
+                                    } ${i >= 5 ? 'text-center' : 'text-left'}`}
                                 onClick={() => handleSort(col)}
                                 title={col}
                             >
@@ -561,8 +563,8 @@ export default function PlannerTable({
                             return (
                                 <th
                                     key={step}
-                                    style={{ width: columnWidths[step] }}
-                                    className={`px-0.5 py-1 text-[10px] font-semibold text-slate-600 bg-slate-50 border-r border-slate-200 relative group
+                                    style={{ width: columnWidths[step], fontSize: `${10 * fontSizeScale}px` }}
+                                    className={`px-0.5 py-1 font-semibold text-slate-600 bg-slate-50 border-r border-slate-200 relative group
                                         ${isBulkP ? 'cursor-pointer hover:bg-blue-100 ring-inset hover:ring-2 hover:ring-blue-300' : ''}
                                         ${isBulkNA ? 'cursor-pointer hover:bg-slate-200 ring-inset hover:ring-2 hover:ring-slate-400' : ''}
                                         ${isBulkHold ? 'cursor-pointer hover:bg-orange-100 ring-inset hover:ring-2 hover:ring-orange-300' : ''}
@@ -633,8 +635,8 @@ export default function PlannerTable({
 
                                         <td
                                             key={col}
-                                            style={{ width: columnWidths[col] }}
-                                            className="px-1 py-0.5 sticky left-0 bg-inherit z-10 font-medium text-[10px] border-r border-slate-200 group/cell"
+                                            style={{ width: columnWidths[col], fontSize: `${10 * fontSizeScale}px` }}
+                                            className="px-1 py-0.5 sticky left-0 bg-inherit z-10 font-medium border-r border-slate-200 group/cell"
                                         >
                                             <div className="flex items-center justify-between gap-1">
                                                 <span
@@ -669,8 +671,8 @@ export default function PlannerTable({
                                     return (
                                         <td
                                             key={col}
-                                            className="px-1 py-0.5 whitespace-nowrap text-[9px] border-r border-slate-200 text-center"
-                                            style={{ ...style, width: columnWidths[col] }}
+                                            className="px-1 py-0.5 whitespace-nowrap border-r border-slate-200 text-center"
+                                            style={{ ...style, width: columnWidths[col], fontSize: `${9 * fontSizeScale}px` }}
                                         >
                                             {isSuperEditing && onUpdateDetail ? (
                                                 <input
@@ -696,7 +698,7 @@ export default function PlannerTable({
                                 // Priority - Fuzzy match "PRIORITY"
                                 if (colUpper.includes('PRIORITY')) {
                                     return (
-                                        <td key={col} className="px-1 py-0.5 text-center text-[9px] border-r border-slate-200" style={{ ...getPriorityStyle(value), width: columnWidths[col] }}>
+                                        <td key={col} className="px-1 py-0.5 text-center border-r border-slate-200" style={{ ...getPriorityStyle(value), width: columnWidths[col], fontSize: `${9 * fontSizeScale}px` }}>
                                             {isSuperEditing && onUpdateDetail ? (
                                                 <input
                                                     type="text"
@@ -721,7 +723,7 @@ export default function PlannerTable({
                                 // Description - With tooltip
                                 if (col === 'Description') {
                                     return (
-                                        <td key={col} style={{ width: columnWidths[col] }} className="px-1 py-0.5 truncate text-slate-700 text-[9px] border-r border-slate-200" title={value}>
+                                        <td key={col} style={{ width: columnWidths[col], fontSize: `${9 * fontSizeScale}px` }} className="px-1 py-0.5 truncate text-slate-700 border-r border-slate-200" title={value}>
                                             {isSuperEditing && onUpdateDetail ? (
                                                 <input
                                                     type="text"
@@ -747,8 +749,8 @@ export default function PlannerTable({
                                 return (
                                     <td
                                         key={col}
-                                        style={{ width: columnWidths[col] }}
-                                        className={`px-1 py-0.5 text-slate-700 text-[9px] border-r border-slate-200 ${colIdx === 0 ? 'sticky left-0 bg-inherit z-10' : 'truncate'}`}
+                                        style={{ width: columnWidths[col], fontSize: `${9 * fontSizeScale}px` }}
+                                        className={`px-1 py-0.5 text-slate-700 border-r border-slate-200 ${colIdx === 0 ? 'sticky left-0 bg-inherit z-10' : 'truncate'}`}
                                         title={value}
                                     >
                                         {isSuperEditing && onUpdateDetail && col !== 'ECD' ? (

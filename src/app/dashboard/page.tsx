@@ -9,7 +9,7 @@ import {
     Play, Ban, PauseCircle, Eraser, Info, HardHat, Upload, Users,
     ChevronDown, Table2, Pencil, Eye, EyeOff, ClipboardList,
     RefreshCw, X, FileSpreadsheet, Check, Clock, CheckCircle2, Layers, AlertTriangle, Sparkles, Megaphone,
-    History, Loader2, Download, Trash2, BarChart2, TrendingUp, Monitor, ChevronUp
+    History, Loader2, Download, Trash2, BarChart2, TrendingUp, Monitor, ChevronUp, ZoomIn, ZoomOut
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -98,6 +98,21 @@ export default function DashboardPage() {
     const [completeMode, setCompleteMode] = useState(false);
     const [eraseMode, setEraseMode] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [fontSizeScale, setFontSizeScale] = useState(1);
+
+    // Load font size preference
+    useEffect(() => {
+        const savedScale = localStorage.getItem('plannerFontSizeScale');
+        if (savedScale) {
+            setFontSizeScale(parseFloat(savedScale));
+        }
+    }, []);
+
+    const updateFontSize = (delta: number) => {
+        const newScale = Math.max(0.8, Math.min(2.0, fontSizeScale + delta));
+        setFontSizeScale(newScale);
+        localStorage.setItem('plannerFontSizeScale', newScale.toString());
+    };
 
     // Bulk Confirm Modal State
     const [bulkConfirmState, setBulkConfirmState] = useState<{
@@ -677,7 +692,7 @@ export default function DashboardPage() {
 
     // Sort orders by priority (Red first, then Yellow, then normal)
     const sortedOrders = [...orders].sort((a, b) => {
-         
+
         const getPriority = (order: any) => {
             if (order.priority === 'Red') return 3;
             if (order.priority === 'Yellow') return 2;
@@ -927,6 +942,24 @@ export default function DashboardPage() {
                             >
                                 {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
                             </button>
+
+                            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                                <button
+                                    onClick={() => updateFontSize(-0.1)}
+                                    className="p-1 text-slate-500 hover:bg-white hover:text-indigo-600 rounded"
+                                    title="Zoom Out"
+                                >
+                                    <ZoomOut className="w-4 h-4" />
+                                </button>
+                                <span className="text-xs font-mono w-8 text-center text-slate-500">{Math.round(fontSizeScale * 100)}%</span>
+                                <button
+                                    onClick={() => updateFontSize(0.1)}
+                                    className="p-1 text-slate-500 hover:bg-white hover:text-indigo-600 rounded"
+                                    title="Zoom In"
+                                >
+                                    <ZoomIn className="w-4 h-4" />
+                                </button>
+                            </div>
 
                             {/* SVG Flag Language Switcher - Matching Login Page */}
                             <button
@@ -1407,6 +1440,7 @@ export default function DashboardPage() {
                                             }}
 
                                             onDeleteOrder={handleDeleteOrder}
+                                            fontSizeScale={fontSizeScale}
                                         />
                                     </div>
                                 </>
@@ -1464,7 +1498,7 @@ export default function DashboardPage() {
                                         else if (mode === 'WIP') status = 'WIP';
                                         else if (mode === 'Complete') status = format(new Date(), 'dd-MMM, HH:mm');
                                         try {
-                                             
+
                                             const updates = targets.map((o: any) => ({
                                                 woId: o['WO ID'],
                                                 step,
@@ -1624,7 +1658,7 @@ export default function DashboardPage() {
                     if (matchedOrder) {
                         // Play beep sound
                         try {
-                             
+
                             const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
                             if (AudioContext) {
                                 const ctx = new AudioContext();
