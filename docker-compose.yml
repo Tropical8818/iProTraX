@@ -1,7 +1,14 @@
 services:
   app:
     container_name: iprotrax
-    image: hzhang9/iprotrax:latest # Add this line with YOUR Docker Hub username
+    # -----------------------------------------------------------------------
+    # PLATFORM / ARCHITECTURE SETTINGS
+    # -----------------------------------------------------------------------
+    # Default: Auto-detects the host system's architecture (ARM64 for Mac M-chips, AMD64 for Intel/Linux)
+    # If users are on a different chip architecture than this host (e.g. building on Mac M1 for Intel Server),
+    # uncomment the line below to force a specific platform (usually linux/amd64):
+    # platform: linux/amd64
+    # -----------------------------------------------------------------------
     build:
       context: .
       dockerfile: Dockerfile
