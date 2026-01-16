@@ -767,7 +767,9 @@ export default function DashboardPage() {
                                         <button
                                             key={product.id}
                                             onClick={() => handleProductChange(product.id)}
-                                            className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 ${product.id === selectedProductId ? 'bg-indigo-50 text-indigo-700 font-medium' : 'text-slate-700'
+                                            className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${product.id === selectedProductId
+                                                ? 'bg-indigo-50 text-indigo-700 font-medium border-r-4 border-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-400'
+                                                : 'text-slate-700 dark:text-slate-400'
                                                 }`}
                                         >
                                             {product.name}
@@ -826,7 +828,9 @@ export default function DashboardPage() {
 
                             <button
                                 onClick={() => setShowAnalytics(!showAnalytics)}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${showAnalytics ? 'bg-indigo-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${showAnalytics
+                                    ? 'bg-indigo-600 text-white shadow-sm dark:bg-indigo-500'
+                                    : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800'
                                     }`}
                                 title={t('insights')}
                             >
@@ -852,27 +856,27 @@ export default function DashboardPage() {
                                     </button>
 
                                     {batchMenuOpen && (
-                                        <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-lg border border-slate-200 py-1 min-w-[140px] z-[100]">
-                                            <button onClick={() => { setPMode(!pMode); if (!pMode) { setNaMode(false); setEraseMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${pMode ? 'bg-blue-50 text-blue-700' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                        <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 min-w-[140px] z-[100]">
+                                            <button onClick={() => { setPMode(!pMode); if (!pMode) { setNaMode(false); setEraseMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${pMode ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
                                                 <Pencil className="w-4 h-4" /> Plan
                                             </button>
-                                            <button onClick={() => { setNaMode(!naMode); if (!naMode) { setPMode(false); setEraseMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${naMode ? 'bg-slate-100 text-slate-700' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                            <button onClick={() => { setNaMode(!naMode); if (!naMode) { setPMode(false); setEraseMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${naMode ? 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
                                                 <Ban className="w-4 h-4" /> N/A
                                             </button>
-                                            <button onClick={() => { setHoldMode(!holdMode); if (!holdMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${holdMode ? 'bg-orange-50 text-orange-700' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                            <button onClick={() => { setHoldMode(!holdMode); if (!holdMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${holdMode ? 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
                                                 <PauseCircle className="w-4 h-4" /> Hold
                                             </button>
-                                            <button onClick={() => { setQnMode(!qnMode); if (!qnMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setHoldMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${qnMode ? 'bg-red-50 text-red-700' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                            <button onClick={() => { setQnMode(!qnMode); if (!qnMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setHoldMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${qnMode ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
                                                 <AlertTriangle className="w-4 h-4" /> QN
                                             </button>
-                                            <button onClick={() => { setWipMode(!wipMode); if (!wipMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setHoldMode(false); setQnMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${wipMode ? 'bg-yellow-50 text-yellow-700' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                            <button onClick={() => { setWipMode(!wipMode); if (!wipMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setHoldMode(false); setQnMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${wipMode ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
                                                 <Clock className="w-4 h-4" /> WIP
                                             </button>
-                                            <button onClick={() => { setCompleteMode(!completeMode); if (!completeMode) { setPMode(false); setNaMode(false); setHoldMode(false); setQnMode(false); setEraseMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${completeMode ? 'bg-green-50 text-green-700' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}>
+                                            <button onClick={() => { setCompleteMode(!completeMode); if (!completeMode) { setPMode(false); setNaMode(false); setEraseMode(false); setHoldMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${completeMode ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
                                                 <CheckCircle2 className="w-4 h-4" /> Complete
                                             </button>
-                                            <div className="border-t border-slate-100 my-1" />
-                                            <button onClick={() => { if (eraseMode) { setEraseMode(false); } else { if (window.confirm(t('modals.eraseModeDesc'))) { setEraseMode(true); setPMode(false); setNaMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left ${eraseMode ? 'bg-red-50 text-red-700' : 'text-red-500 hover:bg-red-50'}`}>
+                                            <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                                            <button onClick={() => { if (eraseMode) { setEraseMode(false); } else { if (window.confirm(t('modals.eraseModeDesc'))) { setEraseMode(true); setPMode(false); setNaMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${eraseMode ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-red-500 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30 dark:hover:text-red-200'}`}>
                                                 <Eraser className="w-4 h-4" /> Erase
                                             </button>
                                         </div>
@@ -921,7 +925,10 @@ export default function DashboardPage() {
                             <button
                                 onClick={fetchOrders}
                                 disabled={refreshing}
-                                className={`p-2 rounded-lg ${refreshing ? 'text-indigo-500 bg-indigo-50' : 'text-slate-500 hover:bg-slate-100'}`}
+                                className={`p-2 rounded-lg transition-colors ${refreshing
+                                    ? 'text-indigo-500 bg-indigo-50 dark:text-indigo-300 dark:bg-indigo-900/30'
+                                    : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
+                                    }`}
                                 title={t('refresh')}
                             >
                                 <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />

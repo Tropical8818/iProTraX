@@ -84,37 +84,37 @@ export function MessageNotification() {
                         onClick={() => setIsOpen(false)}
                     />
 
-                    <div className="absolute right-0 top-12 w-96 bg-white rounded-lg shadow-xl border z-[101]">
-                        <div className="p-4 border-b flex justify-between items-center">
-                            <h3 className="font-bold text-gray-900">💬 Messages</h3>
-                            <span className="text-sm text-gray-500">{unreadCount} unread</span>
+                    <div className="absolute right-0 top-12 w-96 bg-white dark:bg-slate-800 rounded-lg shadow-xl border dark:border-slate-700 z-[101]">
+                        <div className="p-4 border-b dark:border-slate-700 flex justify-between items-center">
+                            <h3 className="font-bold text-gray-900 dark:text-white">💬 Messages</h3>
+                            <span className="text-sm text-gray-500 dark:text-slate-400">{unreadCount} unread</span>
                         </div>
 
                         <div className="max-h-96 overflow-y-auto">
                             {loading ? (
-                                <div className="p-8 text-center text-gray-400">Loading...</div>
+                                <div className="p-8 text-center text-gray-400 dark:text-slate-500">Loading...</div>
                             ) : messages.length === 0 ? (
-                                <div className="p-8 text-center text-gray-400">No messages</div>
+                                <div className="p-8 text-center text-gray-400 dark:text-slate-500">No messages</div>
                             ) : (
                                 messages.slice(0, 10).map((msg: any) => (
                                     <div
                                         key={msg.id}
                                         onClick={() => handleMessageClick(msg)}
-                                        className={`p-3 border-b cursor-pointer hover:bg-slate-50 transition-colors ${msg.isUnread ? 'bg-blue-50' : ''
+                                        className={`p-3 border-b dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${msg.isUnread ? 'bg-blue-50 dark:bg-blue-900/20' : ''
                                             }`}
                                     >
                                         <div className="flex items-start gap-2">
                                             {msg.isUnread && (
-                                                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0" />
+                                                <div className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full mt-2 flex-shrink-0" />
                                             )}
                                             <div className="flex-1 min-w-0">
-                                                <div className="text-xs text-gray-500 mb-1 truncate">
+                                                <div className="text-xs text-gray-500 dark:text-slate-400 mb-1 truncate">
                                                     [{msg.order?.product?.name}] [{msg.order?.woId}] - {msg.stepName}
                                                 </div>
-                                                <div className="text-sm text-gray-900">
-                                                    <strong>{msg.user.username}:</strong> {msg.content || msg.note || '(Structured Message)'}
+                                                <div className="text-sm text-gray-900 dark:text-slate-200">
+                                                    <strong className="dark:text-white">{msg.user.username}:</strong> {msg.content || msg.note || '(Structured Message)'}
                                                 </div>
-                                                <div className="text-xs text-gray-400 mt-1">
+                                                <div className="text-xs text-gray-400 dark:text-slate-500 mt-1">
                                                     {formatTime(msg.createdAt)}
                                                 </div>
                                             </div>
@@ -125,8 +125,8 @@ export function MessageNotification() {
                         </div>
 
                         {messages.length > 10 && (
-                            <div className="p-2 border-t text-center">
-                                <span className="text-xs text-gray-500">Showing last 10 messages</span>
+                            <div className="p-2 border-t dark:border-slate-700 text-center">
+                                <span className="text-xs text-gray-500 dark:text-slate-400">Showing last 10 messages</span>
                             </div>
                         )}
                     </div>
