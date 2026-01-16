@@ -49,6 +49,10 @@ echo "🔍 Verifying deployment..."
         echo "❌ Deployment failed! 'iprotrax' container not found running."
         exit 1
     fi
+
+    if ! docker ps | grep -q "iprotrax-redis"; then
+        echo "⚠️  Warning: 'iprotrax-redis' container not found running. Real-time features may fail."
+    fi
     
 echo ""
 echo "✅ Deployment complete!"

@@ -93,6 +93,20 @@ export async function PATCH(request: Request) {
             }
         }
 
+        // Publish event (fire and forget)
+        (async () => {
+            try {
+                const { redis } = await import('@/lib/redis');
+                await redis.publish('system-updates', JSON.stringify({
+                    type: 'ORDER_UPDATE',
+                    productId,
+                    batch: true
+                }));
+            } catch (e) {
+                console.error('Redis batch publish error', e);
+            }
+        })();
+
         return NextResponse.json({
             success: true,
             count: successCount,

@@ -9,12 +9,10 @@ import {
     Play, Ban, PauseCircle, Eraser, Info, HardHat, Upload, Users,
     ChevronDown, Table2, Pencil, Eye, EyeOff, ClipboardList,
     RefreshCw, X, FileSpreadsheet, Check, Clock, CheckCircle2, Layers, AlertTriangle, Sparkles, Megaphone,
-    History, Loader2, Download, Trash2, BarChart2, TrendingUp, Monitor, ChevronUp, ZoomIn, ZoomOut
+    History, Loader2, Download, Trash2, BarChart2, TrendingUp, Monitor, ChevronUp, ZoomIn, ZoomOut,
+    LayoutGrid, List, KanbanSquare // Add icons
 } from 'lucide-react';
-import {
-    BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-    LineChart, Line, AreaChart, Area
-} from 'recharts';
+import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
 import { useTranslations } from 'next-intl';
 import PlannerTable from '@/components/PlannerTable';
 import MobilePlannerCards from '@/components/MobilePlannerCards';
@@ -24,10 +22,12 @@ import type { Order } from '@/lib/excel';
 import { getSession } from '@/lib/auth';
 import dynamic from 'next/dynamic';
 import AIChatPanel from '@/components/AIChatPanel';
+import KanbanBoard from '@/components/KanbanBoard'; // Import Kanban Board
 import { MessageNotification } from '@/components/MessageNotification';
 import { calculateECD } from '@/lib/ecd';
 import { useLocaleDetection } from '@/hooks/useLocaleDetection';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
+import { useRealtime } from '@/hooks/useRealtime';
 
 // Dynamic import for barcode scanner (client-only)
 const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false });
@@ -100,6 +100,21 @@ export default function DashboardPage() {
     const [eraseMode, setEraseMode] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [fontSizeScale, setFontSizeScale] = useState(1);
+    const [viewMode, setViewMode] = useState<'table' | 'board'>('table'); // Add View Mode
+
+    // Load view mode preference
+    useEffect(() => {
+        const savedView = localStorage.getItem('plannerViewMode');
+        if (savedView === 'table' || savedView === 'board') {
+            setViewMode(savedView);
+        }
+    }, []);
+
+    const toggleViewMode = () => {
+        const newMode = viewMode === 'table' ? 'board' : 'table';
+        setViewMode(newMode);
+        localStorage.setItem('plannerViewMode', newMode);
+    };
 
     // Load font size preference
     useEffect(() => {
@@ -144,13 +159,10 @@ export default function DashboardPage() {
     const [scannerOpen, setScannerOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [showAnalytics, setShowAnalytics] = useState(false);
-    const [analyticsData, setAnalyticsData] = useState<{
-        productivity: { name: string, count: number }[],
-        bottlenecks: { name: string, count: number }[],
-        trend: { date: string, output: number }[],
-        summary: { topProducer: string, bottleneck: string, totalOutput: number }
-    } | null>(null);
-    const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+
+    // Removed old analytics data state
+    // const [analyticsData, setAnalyticsData] = useState<{...}>();
+    // const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
     // Import State
     const [isImporting, setIsImporting] = useState(false);
@@ -317,6 +329,23 @@ export default function DashboardPage() {
         }
     };
 
+    // Generic Status Change Handler for Kanban
+    const handleStatusChange = async (woId: string, step: string, status: string) => {
+        try {
+            const res = await fetch(`/api/orders/${woId}/step`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ step, status, productId: selectedProductId })
+            });
+
+            if (res.ok) {
+                await fetchOrders();
+            }
+        } catch (err) {
+            console.error('Status change error:', err);
+        }
+    };
+
 
 
     const handleDeleteOrder = async (woId: string) => {
@@ -394,27 +423,8 @@ export default function DashboardPage() {
     };
 
     // Fetch analytics data
-    const fetchAnalyticsData = async (productId: string) => {
-        if (!productId) return;
-        setLoadingAnalytics(true);
-        try {
-            const res = await fetch(`/api/analytics?productId=${productId}`);
-            if (res.ok) {
-                const data = await res.json();
-                setAnalyticsData(data);
-            }
-        } catch (err) {
-            console.error('Failed to fetch analytics:', err);
-        } finally {
-            setLoadingAnalytics(false);
-        }
-    };
-
-    useEffect(() => {
-        if (showAnalytics && selectedProductId) {
-            fetchAnalyticsData(selectedProductId);
-        }
-    }, [showAnalytics, selectedProductId]);
+    // Analytics Logic moved to AnalyticsDashboard component
+    // Removed local fetchAnalyticsData and useEffect
 
     // Initial load - fetch config and orders
     useEffect(() => {
@@ -518,13 +528,8 @@ export default function DashboardPage() {
     };
 
     // Auto-refresh
-    useEffect(() => {
-        if (!selectedProductId) return;
-        const interval = setInterval(() => {
-            fetchOrders();
-        }, 5 * 60 * 1000);
-        return () => clearInterval(interval);
-    }, [selectedProductId]);
+    // Real-time updates via SSE
+    useRealtime(selectedProductId, fetchOrders);
 
     const handleLogout = async () => {
         await fetch('/api/auth', { method: 'DELETE' });
@@ -951,6 +956,24 @@ export default function DashboardPage() {
                                 {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
                             </button>
 
+                            {/* View Toggle */}
+                            <div className="flex bg-slate-100 rounded-lg p-1 hidden md:flex">
+                                <button
+                                    onClick={() => toggleViewMode()}
+                                    className={`p-1.5 rounded transition-all ${viewMode === 'table' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                    title="Table View"
+                                >
+                                    <List className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => toggleViewMode()}
+                                    className={`p-1.5 rounded transition-all ${viewMode === 'board' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                    title="Kanban Board View"
+                                >
+                                    <LayoutGrid className="w-4 h-4" />
+                                </button>
+                            </div>
+
                             <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
                                 <button
                                     onClick={() => updateFontSize(-0.1)}
@@ -1031,126 +1054,12 @@ export default function DashboardPage() {
             </header>
 
             {/* Production Insights Section */}
-            {
-                showAnalytics && (
-                    <div className="bg-white border-b border-slate-200 animate-in slide-in-from-top duration-300">
-                        <div className="max-w-7xl mx-auto px-4 py-8">
-                            <div className="flex items-center justify-between mb-6">
-                                <div className="flex items-center gap-2">
-                                    <TrendingUp className="w-5 h-5 text-indigo-600" />
-                                    <h2 className="text-xl font-bold text-slate-900">Production Insights</h2>
-                                    <span className="text-xs bg-indigo-100 text-indigo-700 font-medium px-2 py-0.5 rounded-full ml-2">Last 7 Days</span>
-                                </div>
-                                <button
-                                    onClick={() => fetchAnalyticsData(selectedProductId)}
-                                    className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-full transition-colors"
-                                >
-                                    <RefreshCw className={`w-4 h-4 ${loadingAnalytics ? 'animate-spin' : ''}`} />
-                                </button>
-                            </div>
-
-                            {loadingAnalytics && !analyticsData ? (
-                                <div className="h-[300px] flex items-center justify-center">
-                                    <Loader2 className="w-8 h-8 text-indigo-400 animate-spin" />
-                                </div>
-                            ) : analyticsData ? (
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                    {/* Summary Cards */}
-                                    <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
-                                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                                            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Top Producing Step</div>
-                                            <div className="text-xl font-bold text-indigo-600">{analyticsData.summary.topProducer}</div>
-                                        </div>
-                                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                                            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Current Bottleneck</div>
-                                            <div className="text-xl font-bold text-orange-600">{analyticsData.summary.bottleneck}</div>
-                                        </div>
-                                        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                                            <div className="text-xs text-slate-500 font-medium uppercase tracking-wider mb-1">Total Yield (7d)</div>
-                                            <div className="text-xl font-bold text-emerald-600">{analyticsData.summary.totalOutput} units</div>
-                                        </div>
-                                    </div>
-
-                                    {/* Step Productivity Chart */}
-                                    <div className="bg-white p-5 rounded-xl border border-slate-200 h-[350px]">
-                                        <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                                            <CheckCircle2 className="w-4 h-4 text-emerald-500" /> {t('charts.outputPerStep')}
-                                        </h3>
-                                        <ResponsiveContainer width="100%" height="90%">
-                                            <BarChart data={analyticsData.productivity}>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                                <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
-                                                <YAxis fontSize={10} axisLine={false} tickLine={false} />
-                                                <Tooltip
-                                                    cursor={{ fill: '#f8fafc' }}
-                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                />
-                                                <Bar dataKey="count" fill="#4f46e5" radius={[4, 4, 0, 0]} barSize={32} />
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-
-                                    {/* Bottleneck Chart */}
-                                    <div className="bg-white p-5 rounded-xl border border-slate-200 h-[350px]">
-                                        <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                                            <AlertTriangle className="w-4 h-4 text-orange-500" /> {t('charts.workInProgress')}
-                                        </h3>
-                                        <ResponsiveContainer width="100%" height="90%">
-                                            <BarChart data={analyticsData.bottlenecks}>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                                <XAxis dataKey="name" fontSize={10} axisLine={false} tickLine={false} />
-                                                <YAxis fontSize={10} axisLine={false} tickLine={false} />
-                                                <Tooltip
-                                                    cursor={{ fill: '#fff7ed' }}
-                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                />
-                                                <Bar dataKey="count" fill="#f97316" radius={[4, 4, 0, 0]} barSize={32} />
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-
-                                    {/* Yield Trend Chart */}
-                                    <div className="bg-white p-5 rounded-xl border border-slate-200 h-[350px]">
-                                        <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
-                                            <TrendingUp className="w-4 h-4 text-indigo-500" /> {t('charts.dailyProduction')}
-                                        </h3>
-                                        <ResponsiveContainer width="100%" height="90%">
-                                            <AreaChart data={analyticsData.trend}>
-                                                <defs>
-                                                    <linearGradient id="colorOutput" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.1} />
-                                                        <stop offset="95%" stopColor="#4f46e5" stopOpacity={0} />
-                                                    </linearGradient>
-                                                </defs>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                                                <XAxis
-                                                    dataKey="date"
-                                                    fontSize={10}
-                                                    axisLine={false}
-                                                    tickLine={false}
-                                                    tickFormatter={(str) => {
-                                                        const date = new Date(str);
-                                                        return format(date, 'MMM d');
-                                                    }}
-                                                />
-                                                <YAxis fontSize={10} axisLine={false} tickLine={false} />
-                                                <Tooltip
-                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                />
-                                                <Area type="monotone" dataKey="output" stroke="#4f46e5" fillOpacity={1} fill="url(#colorOutput)" strokeWidth={3} />
-                                            </AreaChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="h-[300px] flex items-center justify-center text-slate-400">
-                                    {t('noChartData')}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )
-            }
+            {/* Analytics Dashboard (Modal) */}
+            <AnalyticsDashboard
+                isOpen={showAnalytics}
+                onClose={() => setShowAnalytics(false)}
+                productId={selectedProductId}
+            />
 
             {/* Main Content */}
             <main className="p-4">
@@ -1355,105 +1264,117 @@ export default function DashboardPage() {
 
                                     {/* Desktop Table View */}
                                     <div className="hidden md:block">
-                                        <PlannerTable
-                                            orders={ordersToRender}
-                                            steps={steps}
-                                            detailColumns={detailColumns}
-                                            extraColumns={['ECD']}
-                                            onNavigate={handleNavigate}
-                                            pMode={pMode}
-                                            onSetP={handleSetP}
-                                            onBulkSetP={role !== 'user' ? (step) => {
-                                                const targets = ordersToRender.filter(o => !o[step]);
-                                                if (targets.length === 0) {
-                                                    alert('No empty cells to update in this column.');
-                                                    return;
-                                                }
-                                                setBulkConfirmState({ isOpen: true, step, mode: 'P', count: targets.length, targets });
-                                            } : undefined}
-                                            naMode={naMode}
-                                            onSetNA={handleSetNA}
-                                            onBulkSetNA={role !== 'user' ? (step) => {
-                                                const targets = ordersToRender.filter(o => !o[step]);
-                                                if (targets.length === 0) {
-                                                    alert('No empty cells to update in this column.');
-                                                    return;
-                                                }
-                                                setBulkConfirmState({ isOpen: true, step, mode: 'NA', count: targets.length, targets });
-                                            } : undefined}
-                                            holdMode={holdMode}
-                                            onSetHold={handleSetHold}
-                                            onBulkSetHold={role !== 'user' ? (step) => {
-                                                const targets = ordersToRender.filter(o => !o[step]);
-                                                if (targets.length === 0) {
-                                                    alert('No empty cells to update in this column.');
-                                                    return;
-                                                }
-                                                setBulkConfirmState({ isOpen: true, step, mode: 'Hold', count: targets.length, targets });
-                                            } : undefined}
-                                            qnMode={qnMode}
-                                            onSetQN={handleSetQN}
-                                            onBulkSetQN={role !== 'user' ? (step) => {
-                                                const targets = ordersToRender.filter(o => !o[step]);
-                                                if (targets.length === 0) {
-                                                    alert('No empty cells to update in this column.');
-                                                    return;
-                                                }
-                                                setBulkConfirmState({ isOpen: true, step, mode: 'QN', count: targets.length, targets });
-                                            } : undefined}
-                                            wipMode={wipMode}
-                                            onSetWIP={handleSetWIP}
-                                            onBulkSetWIP={role !== 'user' ? (step) => {
-                                                const targets = ordersToRender.filter(o => !o[step]);
-                                                if (targets.length === 0) {
-                                                    alert('No empty cells to update in this column.');
-                                                    return;
-                                                }
-                                                setBulkConfirmState({ isOpen: true, step, mode: 'WIP', count: targets.length, targets });
-                                            } : undefined}
-                                            completeMode={completeMode}
-                                            onSetComplete={handleSetComplete}
-                                            onBulkSetComplete={role !== 'user' ? (step) => {
-                                                const targets = ordersToRender.filter(o => !o[step]);
-                                                if (targets.length === 0) {
-                                                    alert('No empty cells to update in this column.');
-                                                    return;
-                                                }
-                                                setBulkConfirmState({ isOpen: true, step, mode: 'Complete', count: targets.length, targets });
-                                            } : undefined}
-                                            eraseMode={eraseMode}
-                                            onErase={handleErase}
-                                            highlightedWos={highlightedWos} // Pass highlighted WOs
-                                            role={role}
-                                            onUpdateDetail={async (woId, field, value) => {
-                                                try {
-                                                    const res = await fetch('/api/orders/update-detail', {
-                                                        method: 'POST',
-                                                        headers: { 'Content-Type': 'application/json' },
-                                                        body: JSON.stringify({ woId, field, value, productId: selectedProductId })
-                                                    });
-
-                                                    if (res.ok) {
-                                                        // Optimistic update
-                                                        setOrders(prev => prev.map(o => {
-                                                            if (o['WO ID'] === woId) {
-                                                                return { ...o, [field]: value };
-                                                            }
-                                                            return o;
-                                                        }));
-                                                    } else {
-                                                        alert('Failed to update detail');
-                                                        fetchOrders();
+                                        {viewMode === 'board' && (
+                                            <div className="flex-1 min-h-[600px] overflow-hidden bg-slate-100/50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-200 dark:border-slate-800 mb-4">
+                                                <KanbanBoard
+                                                    orders={ordersToRender}
+                                                    steps={steps}
+                                                    selectedProductId={selectedProductId}
+                                                    onStatusChange={handleStatusChange}
+                                                />
+                                            </div>
+                                        )}
+                                        <div className={viewMode === 'board' ? 'hidden' : 'block'}>
+                                            <PlannerTable
+                                                orders={ordersToRender}
+                                                steps={steps}
+                                                detailColumns={detailColumns}
+                                                extraColumns={['ECD']}
+                                                onNavigate={handleNavigate}
+                                                pMode={pMode}
+                                                onSetP={handleSetP}
+                                                onBulkSetP={role !== 'user' ? (step) => {
+                                                    const targets = ordersToRender.filter(o => !o[step]);
+                                                    if (targets.length === 0) {
+                                                        alert('No empty cells to update in this column.');
+                                                        return;
                                                     }
-                                                } catch (e) {
-                                                    console.error(e);
-                                                    alert('Error updating detail');
-                                                }
-                                            }}
+                                                    setBulkConfirmState({ isOpen: true, step, mode: 'P', count: targets.length, targets });
+                                                } : undefined}
+                                                naMode={naMode}
+                                                onSetNA={handleSetNA}
+                                                onBulkSetNA={role !== 'user' ? (step) => {
+                                                    const targets = ordersToRender.filter(o => !o[step]);
+                                                    if (targets.length === 0) {
+                                                        alert('No empty cells to update in this column.');
+                                                        return;
+                                                    }
+                                                    setBulkConfirmState({ isOpen: true, step, mode: 'NA', count: targets.length, targets });
+                                                } : undefined}
+                                                holdMode={holdMode}
+                                                onSetHold={handleSetHold}
+                                                onBulkSetHold={role !== 'user' ? (step) => {
+                                                    const targets = ordersToRender.filter(o => !o[step]);
+                                                    if (targets.length === 0) {
+                                                        alert('No empty cells to update in this column.');
+                                                        return;
+                                                    }
+                                                    setBulkConfirmState({ isOpen: true, step, mode: 'Hold', count: targets.length, targets });
+                                                } : undefined}
+                                                qnMode={qnMode}
+                                                onSetQN={handleSetQN}
+                                                onBulkSetQN={role !== 'user' ? (step) => {
+                                                    const targets = ordersToRender.filter(o => !o[step]);
+                                                    if (targets.length === 0) {
+                                                        alert('No empty cells to update in this column.');
+                                                        return;
+                                                    }
+                                                    setBulkConfirmState({ isOpen: true, step, mode: 'QN', count: targets.length, targets });
+                                                } : undefined}
+                                                wipMode={wipMode}
+                                                onSetWIP={handleSetWIP}
+                                                onBulkSetWIP={role !== 'user' ? (step) => {
+                                                    const targets = ordersToRender.filter(o => !o[step]);
+                                                    if (targets.length === 0) {
+                                                        alert('No empty cells to update in this column.');
+                                                        return;
+                                                    }
+                                                    setBulkConfirmState({ isOpen: true, step, mode: 'WIP', count: targets.length, targets });
+                                                } : undefined}
+                                                completeMode={completeMode}
+                                                onSetComplete={handleSetComplete}
+                                                onBulkSetComplete={role !== 'user' ? (step) => {
+                                                    const targets = ordersToRender.filter(o => !o[step]);
+                                                    if (targets.length === 0) {
+                                                        alert('No empty cells to update in this column.');
+                                                        return;
+                                                    }
+                                                    setBulkConfirmState({ isOpen: true, step, mode: 'Complete', count: targets.length, targets });
+                                                } : undefined}
+                                                eraseMode={eraseMode}
+                                                onErase={handleErase}
+                                                highlightedWos={highlightedWos} // Pass highlighted WOs
+                                                role={role}
+                                                onUpdateDetail={async (woId, field, value) => {
+                                                    try {
+                                                        const res = await fetch('/api/orders/update-detail', {
+                                                            method: 'POST',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify({ woId, field, value, productId: selectedProductId })
+                                                        });
 
-                                            onDeleteOrder={handleDeleteOrder}
-                                            fontSizeScale={fontSizeScale}
-                                        />
+                                                        if (res.ok) {
+                                                            // Optimistic update
+                                                            setOrders(prev => prev.map(o => {
+                                                                if (o['WO ID'] === woId) {
+                                                                    return { ...o, [field]: value };
+                                                                }
+                                                                return o;
+                                                            }));
+                                                        } else {
+                                                            alert('Failed to update detail');
+                                                            fetchOrders();
+                                                        }
+                                                    } catch (e) {
+                                                        console.error(e);
+                                                        alert('Error updating detail');
+                                                    }
+                                                }}
+
+                                                onDeleteOrder={handleDeleteOrder}
+                                                fontSizeScale={fontSizeScale}
+                                            />
+                                        </div>
                                     </div>
                                 </>
                             );

@@ -21,6 +21,7 @@ model User {
   updatedAt     DateTime  @updatedAt
   logs          OperationLog[]
   comments      Comment[]
+  savedReports  SavedReport[]
 }
 
 model Product {
@@ -97,4 +98,16 @@ model Comment {
   
   @@index([orderId, stepName])
   @@index([userId, createdAt])
+}
+
+model SavedReport {
+  id        String   @id @default(cuid())
+  name      String
+  config    String   // JSON: { type: 'bar', xAxis: 'operatorId', yAxis: 'count' ... }
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@index([userId])
 }

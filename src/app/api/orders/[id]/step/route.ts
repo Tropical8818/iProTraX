@@ -140,6 +140,20 @@ export async function PATCH(
             }
         }
 
+
+        // Publish real-time update
+        try {
+            const { redis } = await import('@/lib/redis');
+            await redis.publish('system-updates', JSON.stringify({
+                type: 'ORDER_UPDATE',
+                productId,
+                woId,
+                action: status
+            }));
+        } catch (rErr) {
+            console.error('Redis publish error:', rErr);
+        }
+
         return NextResponse.json({ success: true, order: { ...updatedOrder, ...currentData } });
     } catch (error) {
         console.error('Update Step Error:', error);
