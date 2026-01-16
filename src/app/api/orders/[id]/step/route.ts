@@ -62,6 +62,9 @@ export async function PATCH(
             newValue = status;
         }
 
+        // Get product name for notifications
+        const product = await prisma.product.findUnique({ where: { id: productId } });
+        const productName = product?.name || 'Unknown';
 
         // Transaction: Update Order + Create Log
         const [updatedOrder] = await prisma.$transaction([
@@ -83,11 +86,59 @@ export async function PATCH(
                     orderId: order.id,
                     snapshot: JSON.stringify({
                         woId,
-                        productName: (await prisma.product.findUnique({ where: { id: productId } }))?.name
+                        productName
                     })
                 }
             })
         ]);
+
+        // Auto-notify supervisors when Hold or QN is set
+        if (status === 'Hold' || status === 'QN') {
+            try {
+                // Get all supervisors and admins
+                const supervisors = await prisma.user.findMany({
+                    where: {
+                        role: { in: ['admin', 'supervisor'] }
+                    },
+                    select: { id: true }
+                });
+
+                const supervisorIds = supervisors.map(s => s.id);
+
+                // Get current user's username
+                const currentUser = await prisma.user.findUnique({
+                    where: { id: session.userId },
+                    select: { username: true }
+                });
+
+                // Create notification comment
+                const alertMessage = status === 'Hold'
+                    ? `🟠 HOLD Alert: WO ${woId} marked as HOLD at step "${step}" by ${currentUser?.username || 'Unknown'}`
+                    : `🔴 QN Alert: WO ${woId} marked as QN at step "${step}" by ${currentUser?.username || 'Unknown'}`;
+
+                await prisma.comment.create({
+                    data: {
+                        content: alertMessage,
+                        userId: session.userId,
+                        orderId: order.id,
+                        stepName: step,
+                        mentionedUserIds: JSON.stringify(supervisorIds),
+                        structuredData: JSON.stringify({
+                            type: status === 'Hold' ? 'hold_alert' : 'qn_alert',
+                            woId,
+                            step,
+                            productName,
+                            setBy: currentUser?.username
+                        })
+                    }
+                });
+
+                console.log(`[Notification] ${status} alert sent to ${supervisorIds.length} supervisors for WO ${woId}`);
+            } catch (notifyError) {
+                // Don't fail the main operation if notification fails
+                console.error('Failed to send supervisor notification:', notifyError);
+            }
+        }
 
         return NextResponse.json({ success: true, order: { ...updatedOrder, ...currentData } });
     } catch (error) {
@@ -95,3 +146,4 @@ export async function PATCH(
         return NextResponse.json({ error: 'Failed to update order' }, { status: 500 });
     }
 }
+
