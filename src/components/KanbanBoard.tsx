@@ -45,7 +45,7 @@ function getOrderColumn(order: Order, steps: string[]): string {
     return 'COMPLETED_COLUMN';
 }
 
-const KanbanCard = ({ order, status, isOverlay }: { order: Order; status: string; isOverlay?: boolean }) => {
+const KanbanCard = ({ order, status, isOverlay, columnWidth }: { order: Order; status: string; isOverlay?: boolean; columnWidth: number }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: order.id,
         data: { type: 'Order', order }
@@ -69,6 +69,9 @@ const KanbanCard = ({ order, status, isOverlay }: { order: Order; status: string
     // Safety check for WO ID
     const woId = order['WO ID'] || order.id || 'Unknown';
 
+    // Responsive font size based on column width
+    const fontSize = columnWidth < 280 ? 'text-xs' : columnWidth < 350 ? 'text-sm' : 'text-base';
+
     return (
         <Wrapper
             ref={setNodeRef}
@@ -78,30 +81,69 @@ const KanbanCard = ({ order, status, isOverlay }: { order: Order; status: string
             className={`p-3 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 mb-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow select-none ${statusColor}`}
         >
             <div className="flex justify-between items-start mb-1">
-                <span className="font-bold text-sm text-slate-800 dark:text-slate-100">#{woId}</span>
+                <span className={`font-extrabold ${fontSize} text-slate-900 dark:text-slate-50`}>{woId}</span>
                 {order.Priority === 'Urgent' && (
-                    <AlertCircle className="w-4 h-4 text-red-500" />
+                    <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                 )}
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400 truncate" title={order.Description || ''}>
                 {order.Description || 'No description'}
             </div>
             <div className="mt-2 flex justify-between items-center text-[10px] text-slate-400 font-mono">
-                <span>{order.PN}</span>
-                {status && <span className="uppercase font-bold">{status}</span>}
+                <span className="truncate">{order.PN}</span>
+                {status && <span className="uppercase font-bold flex-shrink-0 ml-1">{status}</span>}
             </div>
         </Wrapper>
     );
 };
 
-const KanbanColumn = ({ id, title, orders, isOver }: { id: string; title: string; orders: Order[]; isOver: boolean }) => {
+const KanbanColumn = ({
+    id,
+    title,
+    orders,
+    isOver,
+    width,
+    onResize
+}: {
+    id: string;
+    title: string;
+    orders: Order[];
+    isOver: boolean;
+    width: number;
+    onResize: (delta: number) => void;
+}) => {
     const { setNodeRef } = useDroppable({ id });
+    const [isResizing, setIsResizing] = useState(false);
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        e.preventDefault();
+        setIsResizing(true);
+        const startX = e.clientX;
+
+        const handleMouseMove = (moveEvent: MouseEvent) => {
+            const delta = moveEvent.clientX - startX;
+            onResize(delta);
+        };
+
+        const handleMouseUp = () => {
+            setIsResizing(false);
+            document.removeEventListener('mousemove', handleMouseMove);
+            document.removeEventListener('mouseup', handleMouseUp);
+        };
+
+        document.addEventListener('mousemove', handleMouseMove);
+        document.addEventListener('mouseup', handleMouseUp);
+    };
 
     return (
-        <div ref={setNodeRef} className={`flex-shrink-0 w-72 flex flex-col h-full rounded-xl transition-colors ${isOver ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'bg-slate-50/50 dark:bg-slate-800/20'}`}>
+        <div
+            ref={setNodeRef}
+            style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }}
+            className={`flex-shrink-0 flex flex-col h-full rounded-xl transition-colors relative ${isOver ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'bg-slate-50/50 dark:bg-slate-800/20'}`}
+        >
             <div className="p-3 font-semibold text-slate-700 dark:text-slate-200 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center sticky top-0 bg-inherit rounded-t-xl z-10 backdrop-blur-sm">
-                <span>{title}</span>
-                <span className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full text-xs">
+                <span className="truncate">{title}</span>
+                <span className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full text-xs flex-shrink-0">
                     {orders.length}
                 </span>
             </div>
@@ -110,7 +152,7 @@ const KanbanColumn = ({ id, title, orders, isOver }: { id: string; title: string
                     {orders.map(order => {
                         const data = safeParseData(order);
                         const status = id === 'COMPLETED_COLUMN' ? 'Done' : (data[id] || '');
-                        return <KanbanCard key={order.id} order={order} status={status} />;
+                        return <KanbanCard key={order.id} order={order} status={status} columnWidth={width} />;
                     })}
                 </SortableContext>
                 {orders.length === 0 && (
@@ -119,12 +161,20 @@ const KanbanColumn = ({ id, title, orders, isOver }: { id: string; title: string
                     </div>
                 )}
             </div>
+
+            {/* Resize handle */}
+            <div
+                className={`absolute top-0 right-0 bottom-0 w-1 cursor-col-resize hover:bg-indigo-400 transition-colors ${isResizing ? 'bg-indigo-500' : 'bg-transparent'}`}
+                onMouseDown={handleMouseDown}
+                title="Drag to resize all columns"
+            />
         </div>
     );
 };
 
 export default function KanbanBoard({ orders, steps, selectedProductId, onStatusChange }: KanbanBoardProps) {
     const [activeId, setActiveId] = useState<string | null>(null);
+    const [columnWidth, setColumnWidth] = useState(320); // Default width for all columns
 
     // Group orders by column
     const columns = useMemo(() => {
@@ -260,6 +310,10 @@ export default function KanbanBoard({ orders, steps, selectedProductId, onStatus
         }
     };
 
+    const handleResize = (delta: number) => {
+        setColumnWidth(prev => Math.max(200, Math.min(600, prev + delta)));
+    };
+
     const activeOrder = activeId ? orders.find(o => o.id === activeId) : null;
     const activeStatus = activeOrder && activeId ? 'Dragging' : ''; // simplified
 
@@ -284,6 +338,8 @@ export default function KanbanBoard({ orders, steps, selectedProductId, onStatus
                         title={step}
                         orders={columns[step]}
                         isOver={false}
+                        width={columnWidth}
+                        onResize={handleResize}
                     />
                 ))}
                 <KanbanColumn
@@ -291,13 +347,15 @@ export default function KanbanBoard({ orders, steps, selectedProductId, onStatus
                     title="Completed"
                     orders={columns['COMPLETED_COLUMN']}
                     isOver={false}
+                    width={columnWidth}
+                    onResize={handleResize}
                 />
             </div>
 
             <DragOverlay dropAnimation={dropAnimation}>
                 {activeOrder ? (
                     <div className="transform rotate-3 cursor-grabbing">
-                        <KanbanCard order={activeOrder} status={activeStatus} isOverlay />
+                        <KanbanCard order={activeOrder} status={activeStatus} isOverlay columnWidth={columnWidth} />
                     </div>
                 ) : null}
             </DragOverlay>
