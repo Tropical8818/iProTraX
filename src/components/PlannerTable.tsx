@@ -678,7 +678,7 @@ export default function PlannerTable({
                                                 <input
                                                     type="text"
                                                     defaultValue={formatDate(value, 'dd-MM-yyyy')}
-                                                    className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                    className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                                     onBlur={(e) => {
                                                         const newVal = e.target.value.trim();
                                                         if (newVal !== formatDate(value, 'dd-MM-yyyy')) {
@@ -703,7 +703,7 @@ export default function PlannerTable({
                                                 <input
                                                     type="text"
                                                     defaultValue={value}
-                                                    className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                    className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                                     onBlur={(e) => {
                                                         const newVal = e.target.value.trim();
                                                         if (newVal !== value) {
@@ -728,7 +728,7 @@ export default function PlannerTable({
                                                 <input
                                                     type="text"
                                                     defaultValue={value}
-                                                    className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                    className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                                     onBlur={(e) => {
                                                         const newVal = e.target.value.trim();
                                                         if (newVal !== value) {
@@ -757,7 +757,7 @@ export default function PlannerTable({
                                             <input
                                                 type="text"
                                                 defaultValue={value}
-                                                className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                                                 onBlur={(e) => {
                                                     const newVal = e.target.value.trim();
                                                     if (newVal !== value) {
