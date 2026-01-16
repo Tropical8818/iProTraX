@@ -970,7 +970,8 @@ export default function DashboardPage() {
                             </div>
 
                             {/* Theme Switcher */}
-                            <ThemeSwitcher />
+                            {/* Theme Switcher - Desktop only */}
+                            <ThemeSwitcher className="hidden md:flex text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700" />
 
                             {/* SVG Flag Language Switcher - Matching Login Page */}
                             <button
