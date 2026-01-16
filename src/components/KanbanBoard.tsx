@@ -32,28 +32,19 @@ function safeParseData(order: Order): Record<string, any> {
 function getOrderColumn(order: Order, steps: string[]): string {
     const data = safeParseData(order);
 
-    // Debug: Log what we're working with
-    const woId = order['WO ID'] || order.woId || order.id;
-    console.log(`[Kanban Debug] Order ${woId}:`, {
-        steps,
-        orderData: data,
-        orderKeys: Object.keys(data)
-    });
-
     for (const step of steps) {
         const val = data[step];
-        // If value implies "Done" or "N/A" (skipped), we move to next.
-        const isCompleted = val && val.length > 5 && val.includes('-') && !['Hold', 'QN', 'P', 'WIP', 'DIFA'].includes(val);
         const isSkipped = val === 'N/A';
 
-        console.log(`[Kanban Debug] Step "${step}" -> val="${val}", isCompleted=${isCompleted}, isSkipped=${isSkipped}`);
+        // A step is considered "completed" if it has a value (truthy)
+        // AND that value is NOT one of the active/pending/skipped statuses.
+        // This accepts dates ("15-Jan"), "Done", "Completed", etc.
+        const isCompleted = val && !['Hold', 'QN', 'P', 'WIP', 'DIFA', 'N/A'].includes(val);
 
         if (!isCompleted && !isSkipped) {
-            console.log(`[Kanban Debug] Order ${woId} assigned to column: ${step}`);
             return step;
         }
     }
-    console.log(`[Kanban Debug] Order ${woId} assigned to column: COMPLETED_COLUMN`);
     return 'COMPLETED_COLUMN';
 }
 
