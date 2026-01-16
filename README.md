@@ -134,6 +134,20 @@ After the initial deployment, use the following credentials to access the **Supe
     *   **Context Aware**: Knows your specific product lines and terminology.
     *   **Category Analysis**: Analyzes comments tagged with categories (e.g., QN, Machine, Material) to identify bottlenecks.
     *   **Smart Comments**: Tracks discussions per-step, allowing precise problem-solving directly in the flow.
+    *   **Category Analysis**: Analyzes comments tagged with categories (e.g., QN, Machine, Material) to identify bottlenecks.
+
+### 4. 📊 Unified Analytics (Report Builder)
+*   **Purpose**: Custom reporting engine.
+*   **Features**:
+    *   **Builder**: Create ad-hoc reports by grouping Work Orders or Logs by Status, Operator, or Action.
+    *   **Dynamic Charts**: Visualize production trends instantly.
+    *   **Save Reports**: Persist your favorite configurations for daily review.
+
+### 5. ⚡ Real-time Engine (Redis)
+*   **Purpose**: Zero-latency collaboration.
+*   **Features**:
+    *   **Instant Sync**: Updates appear on all screens (Kiosk, Dashboard) effectively instantly (<50ms).
+    *   **No Polling**: Replaced old "refresh every minute" mechanism with efficient Server-Sent Events.
 
 ---
 
@@ -152,10 +166,11 @@ flowchart TB
         API[Next.js API Routes]
         Watcher[Chokidar File Watcher]
         Prisma[Prisma ORM]
+        Redis[Redis Pub/Sub]
     end
 
     subgraph Data ["Data Persistence"]
-        SQLite[(SQLite Database)]
+        Postgres[(PostgreSQL)]
         Excel["Excel Files (.xlsx)"]
     end
 

@@ -1,6 +1,7 @@
 services:
   app:
     container_name: iprotrax
+    image: hzhang9/iprotrax:latest
     # -----------------------------------------------------------------------
     # PLATFORM / ARCHITECTURE SETTINGS
     # -----------------------------------------------------------------------

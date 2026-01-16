@@ -35,7 +35,8 @@
    - [AI Settings](#ai-settings)
    - [User Management](#user-management)
    - [Data Management](#data-management)
-9. [User Roles & Permissions](#user-roles--permissions)
+9. [Unified Analytics](#unified-analytics)
+10. [User Roles & Permissions](#user-roles--permissions)
 10. [Troubleshooting](#troubleshooting)
 
 ---
@@ -329,6 +330,40 @@ Navigate to **Settings → User Management** to:
 
 - **Export CSV**: Download all production data
 - **Cleanup**: Remove data older than 3 months
+
+---
+
+---
+
+## Unified Analytics
+
+*(New in v8.0.0)*
+
+The **Analytics Dashboard** replaces the old "Production Insights" with a powerful report builder.
+
+### Accessing Analytics
+Click the **Insights** icon (Graph) in the dashboard header.
+
+### 1. Overview Tab
+Shows standard KPIs:
+- **Daily Output**: Production count trends.
+- **Productivity**: Operator efficiency ranking.
+
+### 2. Custom Builder Tab
+Create your own reports to answer specific questions.
+
+#### How to Build a Report:
+1.  **Select Data Source**:
+    - `Work Orders` (Live Status): Current snapshot of the floor.
+    - `Operation Logs` (History): Historical performance over time.
+2.  **Group By**: Choose a dimension (e.g., `Status`, `Operator`, `Step`).
+3.  **Metrics**: Currently supports `Count`, `Sum`, and `Average`.
+4.  **Time Range**: Filter by Today, Last 7 Days, or All Time.
+
+#### Example Reports:
+- **"How many orders are on Hold?"**: Source: `Work Orders`, Group By: `Status`.
+- **"Who completed the most steps today?"**: Source: `Operation Logs`, Group By: `Operator`, Time: `Today`.
+- **"What are the top defect types?"**: Source: `Operation Logs`, Filter: `Action = QN`, Group By: `Details`.
 
 ---
 

@@ -58,3 +58,7 @@ scripts/diagnose-*.ts
 scripts/create-test-*.js
 scripts/create-test-*.ts
 scripts/validate-session.ts
+
+# Data Persistence
+data/postgres/
+data/redis/
