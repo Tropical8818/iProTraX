@@ -27,6 +27,7 @@ import AIChatPanel from '@/components/AIChatPanel';
 import { MessageNotification } from '@/components/MessageNotification';
 import { calculateECD } from '@/lib/ecd';
 import { useLocaleDetection } from '@/hooks/useLocaleDetection';
+import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 
 // Dynamic import for barcode scanner (client-only)
 const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false });
@@ -960,6 +961,9 @@ export default function DashboardPage() {
                                     <ZoomIn className="w-4 h-4" />
                                 </button>
                             </div>
+
+                            {/* Theme Switcher */}
+                            <ThemeSwitcher />
 
                             {/* SVG Flag Language Switcher - Matching Login Page */}
                             <button
