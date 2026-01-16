@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
-import { DndContext, DragOverlay, useDraggable, useDroppable, DragEndEvent, DragStartEvent, DragOverEvent, defaultDropAnimationSideEffects, DropAnimation } from '@dnd-kit/core';
-import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import React, { useMemo, useState, useEffect } from 'react';
+import { DndContext, DragOverlay, useDraggable, useDroppable, DragEndEvent, DragStartEvent, defaultDropAnimationSideEffects, DropAnimation, useSensor, useSensors, MouseSensor, TouchSensor } from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Order } from '@/lib/excel';
 import { format } from 'date-fns';
-import { AlertCircle, CheckCircle2, GripHorizontal } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 interface KanbanBoardProps {
     orders: Order[];
@@ -133,7 +133,7 @@ const KanbanColumn = ({
 
         const handleMouseMove = (moveEvent: MouseEvent) => {
             const delta = moveEvent.clientX - startXRef.current;
-            const newWidth = Math.max(200, Math.min(600, startWidthRef.current + delta));
+            const newWidth = Math.max(150, Math.min(600, startWidthRef.current + delta));
             onResize(newWidth);
         };
 
@@ -190,9 +190,36 @@ const KanbanColumn = ({
     );
 };
 
-export default function KanbanBoard({ orders, steps, selectedProductId, onStatusChange, onOrderClick }: KanbanBoardProps) {
+export default function KanbanBoard({ orders, steps, onStatusChange, onOrderClick }: KanbanBoardProps) {
     const [activeId, setActiveId] = useState<string | null>(null);
-    const [columnWidth, setColumnWidth] = useState(320); // Default width for all columns
+    const [columnWidth, setColumnWidth] = useState(320); // Default width
+
+    // Sensors with activation constraints to prevent accidental drags vs clicks
+    const sensors = useSensors(
+        useSensor(MouseSensor, {
+            activationConstraint: {
+                distance: 10,
+            },
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 250,
+                tolerance: 5,
+            },
+        })
+    );
+
+    // Persist column width
+    useEffect(() => {
+        const saved = localStorage.getItem('kanban_column_width');
+        if (saved) {
+            const w = parseInt(saved);
+            if (!isNaN(w) && w >= 150 && w <= 600) {
+                // eslint-disable-next-line
+                setColumnWidth(w);
+            }
+        }
+    }, []);
 
     // Group orders by column
     const columns = useMemo(() => {
@@ -330,6 +357,7 @@ export default function KanbanBoard({ orders, steps, selectedProductId, onStatus
 
     const handleResize = (newWidth: number) => {
         setColumnWidth(newWidth);
+        localStorage.setItem('kanban_column_width', newWidth.toString());
     };
 
     const activeOrder = activeId ? orders.find(o => o.id === activeId) : null;
@@ -347,7 +375,7 @@ export default function KanbanBoard({ orders, steps, selectedProductId, onStatus
     };
 
     return (
-        <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+        <DndContext onDragStart={handleDragStart} onDragEnd={handleDragEnd} sensors={sensors}>
             <div className="flex h-[calc(100vh-200px)] overflow-x-auto gap-4 px-2 pb-4 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-600">
                 {steps.map(step => (
                     <KanbanColumn
