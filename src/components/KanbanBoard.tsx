@@ -16,23 +16,25 @@ interface KanbanBoardProps {
     highlightedWos?: string[];
 }
 
+// Helper to safely parse order data
+function safeParseData(order: Order): Record<string, any> {
+    if (!order || !order.data) return {};
+    if (typeof order.data === 'object') return order.data;
+    try {
+        return JSON.parse(order.data);
+    } catch (e) {
+        console.error("Failed to parse order data", order.id, e);
+        return {};
+    }
+}
+
 // Helper: Determine which column (Step) an order belongs to.
-// Logic: It belongs to the FIRST step that is NOT Done/NA.
-// If all steps are Done/NA, it belongs to "Completed".
 function getOrderColumn(order: Order, steps: string[]): string {
-    const data = typeof order.data === 'string' ? JSON.parse(order.data) : order.data;
+    const data = safeParseData(order);
 
     for (const step of steps) {
         const val = data[step];
         // If value implies "Done" or "N/A" (skipped), we move to next.
-        // What exactly counts as "Done"?
-        // - A date stamp like "15-Jan, 10:30"
-        // - "N/A"
-        // - "Done"
-        // What implies NOT done?
-        // - Empty string
-        // - Statuses like "P", "WIP", "Hold", "QN" -> These mean it is currently IN this step.
-
         const isCompleted = val && val.length > 5 && val.includes('-') && !['Hold', 'QN', 'P', 'WIP', 'DIFA'].includes(val);
         const isSkipped = val === 'N/A';
 
@@ -106,7 +108,7 @@ const KanbanColumn = ({ id, title, orders, isOver }: { id: string; title: string
             <div className="flex-1 overflow-y-auto p-2 scrollbar-hide">
                 <SortableContext items={orders.map(o => o.id)} strategy={verticalListSortingStrategy}>
                     {orders.map(order => {
-                        const data = typeof order.data === 'string' ? JSON.parse(order.data) : order.data;
+                        const data = safeParseData(order);
                         const status = id === 'COMPLETED_COLUMN' ? 'Done' : (data[id] || '');
                         return <KanbanCard key={order.id} order={order} status={status} />;
                     })}
