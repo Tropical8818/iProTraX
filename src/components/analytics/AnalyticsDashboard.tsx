@@ -46,6 +46,7 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
     });
     const [builderResult, setBuilderResult] = useState<any[]>([]);
     const [loadingBuilder, setLoadingBuilder] = useState(false);
+    const [builderError, setBuilderError] = useState<string | null>(null);
 
     useEffect(() => {
         if (isOpen && activeTab === 'overview' && productId) {
@@ -73,6 +74,7 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
     const runBuilderQuery = async () => {
         if (!productId) return;
         setLoadingBuilder(true);
+        setBuilderError(null);
         try {
             const res = await fetch('/api/analytics/query', {
                 method: 'POST',
@@ -84,10 +86,18 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
             });
             if (res.ok) {
                 const json = await res.json();
+                console.log('[Analytics UI] Received data:', json);
                 setBuilderResult(json.data || []);
+                if (!json.data || json.data.length === 0) {
+                    setBuilderError('No data found for the selected filters. Try changing the time range to "All Time".');
+                }
+            } else {
+                const errJson = await res.json().catch(() => ({}));
+                setBuilderError(errJson.error || 'Query failed');
             }
         } catch (err) {
             console.error('Query failed', err);
+            setBuilderError('Network error or server unavailable');
         } finally {
             setLoadingBuilder(false);
         }
@@ -257,13 +267,17 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
                             </div>
 
                             {/* Chart Area */}
-                            <div className="flex-1 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-                                {builderResult.length > 0 ? (
-                                    <div className="flex-1 min-h-[400px]">
-                                        <h3 className="text-sm font-bold text-slate-700 mb-6 text-center">
+                            <div className="flex-1 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col min-h-[450px]">
+                                {loadingBuilder ? (
+                                    <div className="flex-1 flex items-center justify-center">
+                                        <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
+                                    </div>
+                                ) : builderResult.length > 0 ? (
+                                    <div className="flex-1">
+                                        <h3 className="text-sm font-bold text-slate-700 mb-4 text-center">
                                             {builderConfig.metric.toUpperCase()} by {builderConfig.groupBy.toUpperCase()}
                                         </h3>
-                                        <ResponsiveContainer width="100%" height="100%">
+                                        <ResponsiveContainer width="100%" height={350}>
                                             <BarChart data={builderResult}>
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                                 <XAxis dataKey="name" fontSize={12} />
@@ -285,7 +299,14 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
                                         <div className="bg-slate-50 p-6 rounded-full">
                                             <BarChart2 className="w-12 h-12 text-slate-300" />
                                         </div>
-                                        <p>Select parameters and click "Run Query" to visualize data</p>
+                                        {builderError ? (
+                                            <div className="text-center">
+                                                <p className="text-amber-600 font-medium">{builderError}</p>
+                                                <p className="text-xs text-slate-400 mt-1">Check if you have data in the selected product line</p>
+                                            </div>
+                                        ) : (
+                                            <p>Select parameters and click "Run Query" to visualize data</p>
+                                        )}
                                     </div>
                                 )}
                             </div>

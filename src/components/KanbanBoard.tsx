@@ -110,19 +110,24 @@ const KanbanColumn = ({
     orders: Order[];
     isOver: boolean;
     width: number;
-    onResize: (delta: number) => void;
+    onResize: (newWidth: number) => void;
 }) => {
     const { setNodeRef } = useDroppable({ id });
     const [isResizing, setIsResizing] = useState(false);
+    const startXRef = React.useRef(0);
+    const startWidthRef = React.useRef(0);
 
     const handleMouseDown = (e: React.MouseEvent) => {
         e.preventDefault();
+        e.stopPropagation();
         setIsResizing(true);
-        const startX = e.clientX;
+        startXRef.current = e.clientX;
+        startWidthRef.current = width;
 
         const handleMouseMove = (moveEvent: MouseEvent) => {
-            const delta = moveEvent.clientX - startX;
-            onResize(delta);
+            const delta = moveEvent.clientX - startXRef.current;
+            const newWidth = Math.max(200, Math.min(600, startWidthRef.current + delta));
+            onResize(newWidth);
         };
 
         const handleMouseUp = () => {
@@ -310,8 +315,8 @@ export default function KanbanBoard({ orders, steps, selectedProductId, onStatus
         }
     };
 
-    const handleResize = (delta: number) => {
-        setColumnWidth(prev => Math.max(200, Math.min(600, prev + delta)));
+    const handleResize = (newWidth: number) => {
+        setColumnWidth(newWidth);
     };
 
     const activeOrder = activeId ? orders.find(o => o.id === activeId) : null;
