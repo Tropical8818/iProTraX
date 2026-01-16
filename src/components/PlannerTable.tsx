@@ -640,7 +640,7 @@ export default function PlannerTable({
                                         >
                                             <div className="flex items-center justify-between gap-1">
                                                 <span
-                                                    className="cursor-pointer text-indigo-600 hover:underline truncate"
+                                                    className="cursor-pointer text-indigo-600 dark:text-blue-400 hover:underline truncate"
                                                     onClick={() => onNavigate(value)}
                                                 >
                                                     {value}
