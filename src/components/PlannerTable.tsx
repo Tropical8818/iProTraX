@@ -875,35 +875,37 @@ export default function PlannerTable({
                                     >
                                         <div className="relative w-full h-full flex items-center justify-center min-h-[14px]">
                                             {formatCellValue(cellValue)}
-                                            {(order as any).commentStats?.[step]?.total > 0 && (
-                                                <div
-                                                    className={`absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full border border-white ${(order as any).userUnreadStats?.[step]?.unread > 0 ? 'bg-red-500 animate-pulse' : 'bg-indigo-400'}`}
-                                                    title={(() => {
-                                                        const total = (order as any).commentStats?.[step]?.total || 0;
-                                                        const unread = (order as any).userUnreadStats?.[step]?.unread || 0;
-                                                        const previews = (order as any).commentPreviews?.[step] || [];
+                                            {(order as any).commentStats?.[step]?.total > 0 && (() => {
+                                                const total = (order as any).commentStats?.[step]?.total || 0;
+                                                const unread = (order as any).userUnreadStats?.[step]?.unread || 0;
+                                                const previews = (order as any).commentPreviews?.[step] || [];
 
-                                                        let tooltip = `${total} comment${total > 1 ? 's' : ''}${unread > 0 ? ` (${unread} unread)` : ''}`;
+                                                return (
+                                                    <div className="group/tooltip absolute -top-0.5 -right-0.5">
+                                                        <div className={`w-1.5 h-1.5 rounded-full border border-white cursor-pointer ${unread > 0 ? 'bg-red-500 animate-pulse' : 'bg-indigo-400'}`} />
 
-                                                        if (previews.length > 0) {
-                                                            tooltip += '\n\nRecent comments:\n';
-                                                            previews.forEach((p: any, idx: number) => {
-                                                                const content = p.content.length > 60 ? p.content + '...' : p.content;
-                                                                const date = new Date(p.createdAt);
-                                                                const timeStr = date.toLocaleString('en-US', {
-                                                                    month: 'short',
-                                                                    day: 'numeric',
-                                                                    hour: '2-digit',
-                                                                    minute: '2-digit'
-                                                                });
-                                                                tooltip += `\n[${timeStr}] ${p.username}: ${content}`;
-                                                            });
-                                                        }
-
-                                                        return tooltip;
-                                                    })()}
-                                                />
-                                            )}
+                                                        {/* Instant tooltip - appears on hover with no delay */}
+                                                        <div className="hidden group-hover/tooltip:block absolute bottom-full right-0 mb-1 z-[100] pointer-events-none">
+                                                            <div className="bg-slate-800 text-white text-[10px] rounded-lg px-2 py-1.5 shadow-lg whitespace-pre-wrap max-w-[250px] min-w-[120px]">
+                                                                <div className="font-semibold text-slate-200 mb-1">
+                                                                    {total} comment{total > 1 ? 's' : ''}{unread > 0 ? ` (${unread} unread)` : ''}
+                                                                </div>
+                                                                {previews.length > 0 && (
+                                                                    <div className="border-t border-slate-600 pt-1 mt-1 space-y-1">
+                                                                        {previews.slice(0, 3).map((p: any, idx: number) => (
+                                                                            <div key={idx} className="text-slate-300">
+                                                                                <span className="text-slate-400">{p.username}:</span> {p.content.length > 40 ? p.content.substring(0, 40) + '...' : p.content}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            {/* Arrow */}
+                                                            <div className="absolute bottom-0 right-1 transform translate-y-1/2 rotate-45 w-2 h-2 bg-slate-800" />
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     </td>
                                 );
