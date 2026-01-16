@@ -14,6 +14,7 @@ interface KanbanBoardProps {
     selectedProductId: string;
     onStatusChange: (woId: string, step: string, status: string) => Promise<void>;
     highlightedWos?: string[];
+    onOrderClick?: (woId: string) => void;
 }
 
 // Helper to safely parse order data
@@ -48,7 +49,7 @@ function getOrderColumn(order: Order, steps: string[]): string {
     return 'COMPLETED_COLUMN';
 }
 
-const KanbanCard = ({ order, status, isOverlay, columnWidth }: { order: Order; status: string; isOverlay?: boolean; columnWidth: number }) => {
+const KanbanCard = ({ order, status, isOverlay, columnWidth, onClick }: { order: Order; status: string; isOverlay?: boolean; columnWidth: number; onClick?: () => void }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
         id: order.id,
         data: { type: 'Order', order }
@@ -81,7 +82,8 @@ const KanbanCard = ({ order, status, isOverlay, columnWidth }: { order: Order; s
             style={style}
             {...attributes}
             {...listeners}
-            className={`p-3 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 mb-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow select-none ${statusColor}`}
+            onClick={onClick}
+            className={`p-3 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 mb-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow select-none ${statusColor} ${onClick ? 'cursor-pointer hover:ring-2 hover:ring-indigo-400/50' : ''}`}
         >
             <div className="flex justify-between items-start mb-1">
                 <span className={`font-extrabold ${fontSize} text-slate-900 dark:text-slate-50`}>{woId}</span>
@@ -106,7 +108,8 @@ const KanbanColumn = ({
     orders,
     isOver,
     width,
-    onResize
+    onResize,
+    onCardClick
 }: {
     id: string;
     title: string;
@@ -114,6 +117,7 @@ const KanbanColumn = ({
     isOver: boolean;
     width: number;
     onResize: (newWidth: number) => void;
+    onCardClick?: (woId: string) => void;
 }) => {
     const { setNodeRef } = useDroppable({ id });
     const [isResizing, setIsResizing] = useState(false);
@@ -160,7 +164,13 @@ const KanbanColumn = ({
                     {orders.map(order => {
                         const data = safeParseData(order);
                         const status = id === 'COMPLETED_COLUMN' ? 'Done' : (data[id] || '');
-                        return <KanbanCard key={order.id} order={order} status={status} columnWidth={width} />;
+                        return <KanbanCard
+                            key={order.id}
+                            order={order}
+                            status={status}
+                            columnWidth={width}
+                            onClick={() => onCardClick?.(order['WO ID'] || order.id)}
+                        />;
                     })}
                 </SortableContext>
                 {orders.length === 0 && (
@@ -180,7 +190,7 @@ const KanbanColumn = ({
     );
 };
 
-export default function KanbanBoard({ orders, steps, selectedProductId, onStatusChange }: KanbanBoardProps) {
+export default function KanbanBoard({ orders, steps, selectedProductId, onStatusChange, onOrderClick }: KanbanBoardProps) {
     const [activeId, setActiveId] = useState<string | null>(null);
     const [columnWidth, setColumnWidth] = useState(320); // Default width for all columns
 
@@ -348,6 +358,7 @@ export default function KanbanBoard({ orders, steps, selectedProductId, onStatus
                         isOver={false}
                         width={columnWidth}
                         onResize={handleResize}
+                        onCardClick={onOrderClick}
                     />
                 ))}
                 <KanbanColumn
@@ -357,6 +368,7 @@ export default function KanbanBoard({ orders, steps, selectedProductId, onStatus
                     isOver={false}
                     width={columnWidth}
                     onResize={handleResize}
+                    onCardClick={onOrderClick}
                 />
             </div>
 

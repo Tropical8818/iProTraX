@@ -1271,6 +1271,7 @@ export default function DashboardPage() {
                                                     steps={steps}
                                                     selectedProductId={selectedProductId}
                                                     onStatusChange={handleStatusChange}
+                                                    onOrderClick={handleNavigate}
                                                 />
                                             </div>
                                         )}
