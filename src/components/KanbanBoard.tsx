@@ -62,11 +62,11 @@ const KanbanCard = ({ order, status, isOverlay, columnWidth, onClick }: { order:
     };
 
     // Parse status for color
-    let statusColor = 'bg-white dark:bg-slate-800 border-l-4 border-slate-300';
-    if (status === 'P') statusColor = 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-blue-500';
-    if (status === 'Hold') statusColor = 'bg-orange-50 dark:bg-orange-900/20 border-l-4 border-orange-500';
-    if (status === 'QN') statusColor = 'bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500';
-    if (status === 'WIP') statusColor = 'bg-green-50 dark:bg-green-900/20 border-l-4 border-green-500';
+    let statusColor = 'bg-white border-l-4 border-slate-300';
+    if (status === 'P') statusColor = 'bg-blue-50 border-l-4 border-blue-500';
+    if (status === 'Hold') statusColor = 'bg-orange-50 border-l-4 border-orange-500';
+    if (status === 'QN') statusColor = 'bg-red-50 border-l-4 border-red-500';
+    if (status === 'WIP') statusColor = 'bg-green-50 border-l-4 border-green-500';
 
     const Wrapper = isOverlay ? 'div' : 'div';
 
@@ -83,15 +83,15 @@ const KanbanCard = ({ order, status, isOverlay, columnWidth, onClick }: { order:
             {...attributes}
             {...listeners}
             onClick={onClick}
-            className={`p-3 rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 mb-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow select-none ${statusColor} ${onClick ? 'cursor-pointer hover:ring-2 hover:ring-indigo-400/50' : ''}`}
+            className={`p-3 rounded-lg shadow-sm border border-slate-200 mb-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow select-none ${statusColor} ${onClick ? 'cursor-pointer hover:ring-2 hover:ring-indigo-400/50' : ''}`}
         >
             <div className="flex justify-between items-start mb-1">
-                <span className={`font-extrabold ${fontSize} text-slate-900 dark:text-slate-50`}>{woId}</span>
+                <span className={`font-extrabold ${fontSize} text-slate-900`}>{woId}</span>
                 {order.Priority === 'Urgent' && (
                     <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                 )}
             </div>
-            <div className="text-xs text-slate-500 dark:text-slate-400 truncate" title={order.Description || ''}>
+            <div className="text-xs text-slate-500 truncate" title={order.Description || ''}>
                 {order.Description || 'No description'}
             </div>
             <div className="mt-2 flex justify-between items-center text-[10px] text-slate-400 font-mono">
@@ -151,11 +151,11 @@ const KanbanColumn = ({
         <div
             ref={setNodeRef}
             style={{ width: `${width}px`, minWidth: `${width}px`, maxWidth: `${width}px` }}
-            className={`flex-shrink-0 flex flex-col h-full rounded-xl transition-colors relative ${isOver ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : 'bg-slate-50/50 dark:bg-slate-800/20'}`}
+            className={`flex-shrink-0 flex flex-col h-full rounded-xl transition-colors relative ${isOver ? 'bg-indigo-50' : 'bg-slate-50'}`}
         >
-            <div className="p-3 font-semibold text-slate-700 dark:text-slate-200 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center sticky top-0 bg-inherit rounded-t-xl z-10 backdrop-blur-sm">
+            <div className="p-3 font-semibold text-slate-700 border-b border-slate-200 flex justify-between items-center sticky top-0 bg-inherit rounded-t-xl z-10">
                 <span className="truncate">{title}</span>
-                <span className="bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full text-xs flex-shrink-0">
+                <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full text-xs flex-shrink-0">
                     {orders.length}
                 </span>
             </div>
@@ -174,7 +174,7 @@ const KanbanColumn = ({
                     })}
                 </SortableContext>
                 {orders.length === 0 && (
-                    <div className="h-full flex flex-col items-center justify-center text-slate-300 dark:text-slate-600 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg m-2 min-h-[100px]">
+                    <div className="h-full flex flex-col items-center justify-center text-slate-300 border-2 border-dashed border-slate-200 rounded-lg m-2 min-h-[100px]">
                         <span className="text-xs">Empty</span>
                     </div>
                 )}
