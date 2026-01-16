@@ -182,17 +182,33 @@ export async function importFromBuffer(buffer: Buffer, options: ImportOptions): 
         const finalOrderData = { ...detailData };
 
         // Initialize all steps from product config
+        // Initialize steps from product config or Excel data
         steps.forEach((step, index) => {
+            // Check if we have imported data for this step
+            // We use the normalized header which should match the step name if mapped correctly
+            const importedValue = rowData[step];
+
             if (existing) {
-                // If order exists, preserve existing step data
+                // If order exists, merge import with existing
                 const existingData = JSON.parse(existing.data);
-                finalOrderData[step] = existingData[step] || '';
-            } else {
-                // For new orders, auto-set first step timestamp
-                if (index === 0) {
-                    finalOrderData[step] = formatToShortTimestamp(getNow());
+
+                // Priority: Non-empty import > Existing value > Empty
+                if (importedValue && importedValue.length > 0) {
+                    finalOrderData[step] = importedValue;
                 } else {
-                    finalOrderData[step] = '';
+                    finalOrderData[step] = existingData[step] || '';
+                }
+            } else {
+                // For new orders
+                if (importedValue && importedValue.length > 0) {
+                    finalOrderData[step] = importedValue;
+                } else {
+                    // Fallback: auto-set first step timestamp if no data provided
+                    if (index === 0) {
+                        finalOrderData[step] = formatToShortTimestamp(getNow());
+                    } else {
+                        finalOrderData[step] = '';
+                    }
                 }
             }
         });
