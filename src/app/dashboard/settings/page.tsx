@@ -817,7 +817,7 @@ export default function SettingsPage() {
                                                                     setEditingProduct(updated);
                                                                     updateProduct(updated);
                                                                 }}
-                                                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-slate-900"
                                                             />
                                                             <p className="text-xs text-slate-500 mt-1">Default: 60 orders</p>
                                                         </div>
@@ -834,7 +834,7 @@ export default function SettingsPage() {
                                                                     setEditingProduct(updated);
                                                                     updateProduct(updated);
                                                                 }}
-                                                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                                                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-slate-900"
                                                             />
                                                             <p className="text-xs text-slate-500 mt-1">Default: 4000 tokens</p>
                                                         </div>
