@@ -31,28 +31,17 @@ interface AnalyticsDashboardProps {
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
 
 export default function AnalyticsDashboard({ isOpen, onClose, productId }: AnalyticsDashboardProps) {
-    const [activeTab, setActiveTab] = useState<'overview' | 'builder'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview'>('overview');
 
     // Overview State
     const [loadingOverview, setLoadingOverview] = useState(false);
     const [overviewData, setOverviewData] = useState<AnalyticsData | null>(null);
 
-    // Builder State
-    const [builderConfig, setBuilderConfig] = useState({
-        source: 'orders', // 'orders' | 'logs'
-        groupBy: 'status',
-        metric: 'count',
-        timeRange: '7d'
-    });
-    const [builderResult, setBuilderResult] = useState<any[]>([]);
-    const [loadingBuilder, setLoadingBuilder] = useState(false);
-    const [builderError, setBuilderError] = useState<string | null>(null);
-
     useEffect(() => {
-        if (isOpen && activeTab === 'overview' && productId) {
+        if (isOpen && productId) {
             fetchOverviewData();
         }
-    }, [isOpen, activeTab, productId]);
+    }, [isOpen, productId]);
 
     // Fetch Overview Data (Legacy API)
     const fetchOverviewData = async () => {
@@ -67,39 +56,6 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
             console.error('Failed to fetch overview', err);
         } finally {
             setLoadingOverview(false);
-        }
-    };
-
-    // Run Builder Query (New API)
-    const runBuilderQuery = async () => {
-        if (!productId) return;
-        setLoadingBuilder(true);
-        setBuilderError(null);
-        try {
-            const res = await fetch('/api/analytics/query', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...builderConfig,
-                    filters: { productId: productId === 'all' ? undefined : productId }
-                })
-            });
-            if (res.ok) {
-                const json = await res.json();
-                console.log('[Analytics UI] Received data:', json);
-                setBuilderResult(json.data || []);
-                if (!json.data || json.data.length === 0) {
-                    setBuilderError('No data found for the selected filters. Try changing the time range to "All Time".');
-                }
-            } else {
-                const errJson = await res.json().catch(() => ({}));
-                setBuilderError(errJson.error || 'Query failed');
-            }
-        } catch (err) {
-            console.error('Query failed', err);
-            setBuilderError('Network error or server unavailable');
-        } finally {
-            setLoadingBuilder(false);
         }
     };
 
@@ -133,13 +89,7 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
                     >
                         Overview
                     </button>
-                    <button
-                        onClick={() => setActiveTab('builder')}
-                        className={`pb-3 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 ${activeTab === 'builder' ? 'border-indigo-600 text-indigo-700' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
-                    >
-                        <Filter className="w-3 h-3" />
-                        Custom Builder
-                    </button>
+                    {/* Custom Builder Tab Removed as per request */}
                 </div>
 
                 {/* Content Area */}
@@ -208,108 +158,6 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
                             ) : (
                                 <div className="text-center py-20 text-slate-400">No data available</div>
                             )}
-                        </div>
-                    )}
-
-
-                    {/* -- BUILDER TAB -- */}
-                    {activeTab === 'builder' && (
-                        <div className="flex flex-col h-full gap-6">
-                            {/* Controls */}
-                            <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-                                <div>
-                                    <label className="text-xs font-semibold text-slate-500 block mb-1">Data Source</label>
-                                    <select
-                                        className="w-full text-sm border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800"
-                                        value={builderConfig.source}
-                                        onChange={(e) => setBuilderConfig({ ...builderConfig, source: e.target.value })}
-                                    >
-                                        <option value="orders">Work Orders (Current)</option>
-                                        <option value="logs">Operation Logs (History)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="text-xs font-semibold text-slate-500 block mb-1">Group By</label>
-                                    <select
-                                        className="w-full text-sm border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800"
-                                        value={builderConfig.groupBy}
-                                        onChange={(e) => setBuilderConfig({ ...builderConfig, groupBy: e.target.value })}
-                                    >
-                                        <option value="status">Status</option>
-                                        <option value="priority">Priority</option>
-                                        {builderConfig.source === 'logs' && <option value="userId">Operator</option>}
-                                        {builderConfig.source === 'logs' && <option value="action">Action Type</option>}
-                                        {builderConfig.source === 'logs' && <option value="step">Step</option>}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="text-xs font-semibold text-slate-500 block mb-1">Time Range</label>
-                                    <select
-                                        className="w-full text-sm border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800"
-                                        value={builderConfig.timeRange}
-                                        onChange={(e) => setBuilderConfig({ ...builderConfig, timeRange: e.target.value })}
-                                    >
-                                        <option value="today">Today</option>
-                                        <option value="7d">Last 7 Days</option>
-                                        <option value="30d">Last 30 Days</option>
-                                        <option value="3m">Last 3 Months</option>
-                                        <option value="all">All Time</option>
-                                    </select>
-                                </div>
-                                <button
-                                    onClick={runBuilderQuery}
-                                    disabled={loadingBuilder}
-                                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold text-sm hover:bg-indigo-700 disabled:opacity-50 flex items-center justify-center gap-2"
-                                >
-                                    {loadingBuilder ? <RefreshCw className="w-4 h-4 animate-spin" /> : <BarChart2 className="w-4 h-4" />}
-                                    Run Query
-                                </button>
-                            </div>
-
-                            {/* Chart Area */}
-                            <div className="flex-1 bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col min-h-[450px]">
-                                {loadingBuilder ? (
-                                    <div className="flex-1 flex items-center justify-center">
-                                        <RefreshCw className="w-8 h-8 text-indigo-500 animate-spin" />
-                                    </div>
-                                ) : builderResult.length > 0 ? (
-                                    <div className="flex-1">
-                                        <h3 className="text-sm font-bold text-slate-700 mb-4 text-center">
-                                            {builderConfig.metric.toUpperCase()} by {builderConfig.groupBy.toUpperCase()}
-                                        </h3>
-                                        <ResponsiveContainer width="100%" height={350}>
-                                            <BarChart data={builderResult}>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                                <XAxis dataKey="name" fontSize={12} />
-                                                <YAxis fontSize={12} />
-                                                <Tooltip
-                                                    cursor={{ fill: '#f8fafc' }}
-                                                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                                                />
-                                                <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={40}>
-                                                    {builderResult.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                                    ))}
-                                                </Bar>
-                                            </BarChart>
-                                        </ResponsiveContainer>
-                                    </div>
-                                ) : (
-                                    <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-4">
-                                        <div className="bg-slate-50 p-6 rounded-full">
-                                            <BarChart2 className="w-12 h-12 text-slate-300" />
-                                        </div>
-                                        {builderError ? (
-                                            <div className="text-center">
-                                                <p className="text-amber-600 font-medium">{builderError}</p>
-                                                <p className="text-xs text-slate-400 mt-1">Check if you have data in the selected product line</p>
-                                            </div>
-                                        ) : (
-                                            <p>Select parameters and click "Run Query" to visualize data</p>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
                         </div>
                     )}
                 </div>
