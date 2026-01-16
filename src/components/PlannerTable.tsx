@@ -455,7 +455,7 @@ export default function PlannerTable({
     }, [effectiveDetailColumns, orderedSteps, processedOrders, detailWidths, manualStepWidth]);
 
     return (
-        <div className="overflow-auto bg-white rounded-xl shadow-sm border border-slate-200 max-h-[calc(100vh-200px)]">
+        <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-slate-200 max-h-[calc(100vh-200px)]">
             <table className="border-collapse w-full table-fixed" style={{ fontSize: `${12 * fontSizeScale}px` }}>
                 <colgroup>
                     {/* Detail Columns */}
