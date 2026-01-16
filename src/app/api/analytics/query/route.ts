@@ -48,6 +48,8 @@ export async function POST(request: Request) {
         // 3. Execute Query
         let result: { name: string; value: number }[] = [];
 
+        console.log(`[Analytics] Query: Source=${source}, GroupBy=${groupBy}, Time=${timeRange}, Filters=${JSON.stringify(filters)}`);
+
         if (source === 'orders') {
             // Group By on Order table
             // Allowed fields: 'status', 'priority', 'productId'
@@ -106,6 +108,7 @@ export async function POST(request: Request) {
             }));
         }
 
+        console.log(`[Analytics] Result count: ${result.length}`);
         return NextResponse.json({ data: result });
 
     } catch (error) {

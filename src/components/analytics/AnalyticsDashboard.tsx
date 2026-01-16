@@ -210,7 +210,7 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
                                 <div>
                                     <label className="text-xs font-semibold text-slate-500 block mb-1">Data Source</label>
                                     <select
-                                        className="w-full text-sm border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full text-sm border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800"
                                         value={builderConfig.source}
                                         onChange={(e) => setBuilderConfig({ ...builderConfig, source: e.target.value })}
                                     >
@@ -221,13 +221,13 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
                                 <div>
                                     <label className="text-xs font-semibold text-slate-500 block mb-1">Group By</label>
                                     <select
-                                        className="w-full text-sm border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full text-sm border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800"
                                         value={builderConfig.groupBy}
                                         onChange={(e) => setBuilderConfig({ ...builderConfig, groupBy: e.target.value })}
                                     >
                                         <option value="status">Status</option>
                                         <option value="priority">Priority</option>
-                                        {builderConfig.source === 'logs' && <option value="operatorId">Operator</option>}
+                                        {builderConfig.source === 'logs' && <option value="userId">Operator</option>}
                                         {builderConfig.source === 'logs' && <option value="action">Action Type</option>}
                                         {builderConfig.source === 'logs' && <option value="step">Step</option>}
                                     </select>
@@ -235,7 +235,7 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
                                 <div>
                                     <label className="text-xs font-semibold text-slate-500 block mb-1">Time Range</label>
                                     <select
-                                        className="w-full text-sm border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                        className="w-full text-sm border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 text-slate-800 dark:text-slate-100 bg-white dark:bg-slate-800"
                                         value={builderConfig.timeRange}
                                         onChange={(e) => setBuilderConfig({ ...builderConfig, timeRange: e.target.value })}
                                     >
