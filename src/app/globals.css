@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Dark mode via class (manual toggle) */
+.dark {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+}
+
+/* System preference fallback */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: #0f172a;
+    --foreground: #f1f5f9;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ===== Dark Mode Overrides ===== */
+
+/* Backgrounds */
+.dark .bg-white {
+  background-color: #1e293b !important;
+}
+.dark .bg-slate-50 {
+  background-color: #0f172a !important;
+}
+.dark .bg-slate-100 {
+  background-color: #1e293b !important;
+}
+.dark .bg-slate-200 {
+  background-color: #334155 !important;
+}
+
+/* Text Colors */
+.dark .text-slate-900 {
+  color: #f1f5f9 !important;
+}
+.dark .text-slate-800 {
+  color: #e2e8f0 !important;
+}
+.dark .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+.dark .text-slate-500 {
+  color: #64748b !important;
+}
+.dark .text-black {
+  color: #f1f5f9 !important;
+}
+
+/* Borders */
+.dark .border-slate-200 {
+  border-color: #334155 !important;
+}
+.dark .border-slate-300 {
+  border-color: #475569 !important;
+}
+
+/* Cards and Surfaces */
+.dark .bg-gradient-to-r.from-indigo-50 {
+  background: linear-gradient(to right, #312e81, #4c1d95) !important;
+}
+.dark .bg-green-50 {
+  background-color: #14532d !important;
+}
+.dark .bg-red-50 {
+  background-color: #7f1d1d !important;
+}
+.dark .bg-yellow-50 {
+  background-color: #713f12 !important;
+}
+.dark .bg-indigo-50 {
+  background-color: #312e81 !important;
+}
+
+/* Inputs */
+.dark input,
+.dark textarea,
+.dark select {
+  background-color: #1e293b !important;
+  color: #f1f5f9 !important;
+  border-color: #475569 !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+/* Tables */
+.dark th {
+  background-color: #1e293b !important;
+}
+.dark tr:nth-child(even) {
+  background-color: rgba(30, 41, 59, 0.5) !important;
+}
+.dark tr:hover {
+  background-color: rgba(51, 65, 85, 0.5) !important;
+}
+
+/* Shadows - softer in dark mode */
+.dark .shadow-sm,
+.dark .shadow,
+.dark .shadow-md,
+.dark .shadow-lg {
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px -1px rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Header */
+.dark header {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+}
+
+/* Modal overlays */
+.dark .bg-black\/50 {
+  background-color: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Hide scrollbar for horizontal scroll containers */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

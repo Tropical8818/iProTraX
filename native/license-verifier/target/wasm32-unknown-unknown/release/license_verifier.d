@@ -1,0 +1,1 @@
+/Users/haijian/.gemini/antigravity/scratch/iProTraX/native/license-verifier/target/wasm32-unknown-unknown/release/license_verifier.wasm: /Users/haijian/.gemini/antigravity/scratch/iProTraX/native/license-verifier/src/lib.rs

@@ -1,0 +1,71 @@
+services:
+  app:
+    container_name: iprotrax
+    image: hzhang9/iprotrax:latest
+    # -----------------------------------------------------------------------
+    # PLATFORM / ARCHITECTURE SETTINGS
+    # -----------------------------------------------------------------------
+    # Default: Auto-detects the host system's architecture (ARM64 for Mac M-chips, AMD64 for Intel/Linux)
+    # If users are on a different chip architecture than this host (e.g. building on Mac M1 for Intel Server),
+    # uncomment the line below to force a specific platform (usually linux/amd64):
+    # platform: linux/amd64
+    # -----------------------------------------------------------------------
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    environment:
+      - PORT=3001
+      # Connect to the 'db' service defined below
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/iprotrax?schema=public
+      # Connect to the 'redis' service defined below
+      - REDIS_URL=redis://redis:6379
+      # Add your OpenAI Key here or in a .env file next to this compose file
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Timezone configuration (default: Asia/Singapore)
+      - TZ=${TZ:-Asia/Singapore}
+      # SuperAdmin password (only used on first deployment)
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-superadmin123}
+    depends_on:
+      - db
+    volumes:
+      # Persist config.json and legacy data
+      - ./data:/app/data
+      # Persist uploads
+      - ./public/uploads:/app/public/uploads
+    networks:
+      - tracker-network
+
+  db:
+    container_name: iprotrax-db
+    image: postgres:15-alpine
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: iprotrax
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+    networks:
+      - tracker-network
+
+  redis:
+    image: redis:alpine
+    container_name: iprotrax-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - tracker-network
+
+networks:
+  tracker-network:
+    driver: bridge

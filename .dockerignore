@@ -1,0 +1,52 @@
+# Environment and secrets
+.env
+.env.*
+*.env
+
+# Database files
+*.db
+*.sqlite
+data/
+
+# Node modules (will be rebuilt)
+node_modules/
+
+# Git
+.git/
+.gitignore
+
+# IDE
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test files
+test-results/
+playwright-report/
+coverage/
+
+# Build artifacts (for local dev)
+.next/
+
+# Documentation (not needed in runtime image)
+*.md
+!README.md
+docs/
+
+# Development files
+.husky/
+e2e/
+vitest.config.ts
+playwright.config.ts
+eslint.config.mjs
+
+# Sensitive backups
+*.backup
+*.bak
