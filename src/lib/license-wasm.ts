@@ -14,8 +14,6 @@ export interface VerificationResult {
     error?: string;
 }
 
-declare const __non_webpack_require__: any;
-
 // Cache the loaded module
 let wasmModule: any = null;
 
@@ -23,21 +21,17 @@ let wasmModule: any = null;
 export async function verifyLicenseWithWasm(token: string): Promise<VerificationResult> {
     if (!wasmModule) {
         try {
-            // In Next.js App Router (Server Components), 'require' is stubbed by Webpack/Turbopack.
-            // standard 'require' fails with "dynamic usage of require is not supported".
-            // We use 'createRequire' from 'node:module' to create a genuine Node.js require function that bypasses the bundler.
+            // Turbopack performs aggressive static analysis and traces all require/import calls.
+            // Even with string obfuscation, it still catches `requireNative(pkgPath)`.
+            // The ONLY reliable way to bypass this is to use eval() to make the code completely opaque.
+            // This is intentional and necessary for runtime-only module loading.
 
-            // We verify 'node:module' import string to bypass Turbopack static analysis which tries to resolve the path at build time.
-            const nodeModule = 'node:module';
-            const { createRequire } = await import(nodeModule);
-            const requireNative = createRequire(import.meta.url);
+            const pkgPath = path.join(process.cwd(), 'native', 'license-verifier', 'pkg', 'license_verifier.js');
 
-            // Break path into segments to prevent static analysis trying to resolve '/ROOT/...'
-            const native = 'native';
-            const pkg = 'license-verifier/pkg/license_verifier.js';
-            const pkgPath = path.join(process.cwd(), native, pkg);
-
-            wasmModule = requireNative(pkgPath);
+            // Use eval to construct a require that is invisible to static analysis
+             
+            const dynamicRequire = eval('require');
+            wasmModule = dynamicRequire(pkgPath);
         } catch (e) {
             console.error('[LicenseWASM] Failed to load WASM module:', e);
             console.error('[LicenseWASM] CWD:', process.cwd());
