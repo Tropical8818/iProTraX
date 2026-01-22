@@ -49,19 +49,26 @@ export async function chat(
     const config = getConfig();
     const openai = getOpenAI(options?.provider);
 
-    // Determine model to use
-    let model = options?.model || 'gpt-4o-mini';
+    // Determine model to use based on provider
+    let model = options?.model;
 
-    // If provider is Ollama but no model specified (or default openai model passed), try to use global default
-    if (options?.provider === 'ollama' && (model === 'gpt-4o-mini' || !options.model)) {
-        model = config.ollamaModel || 'llama3.1';
-    } else if (options?.provider === 'deepseek' && (model === 'gpt-4o-mini' || !options.model)) {
-        model = config.deepseekModel || 'deepseek-chat';
-    } else if (config.aiProvider === 'ollama' && !options?.provider) {
-        // Fallback to global config if no provider specified in options
-        model = config.ollamaModel || 'llama3.1';
-    } else if (config.aiProvider === 'deepseek' && !options?.provider) {
-        model = config.deepseekModel || 'deepseek-chat';
+    // Get effective provider
+    const effectiveProvider = options?.provider || config.aiProvider || 'openai';
+
+    // Use configured model for each provider if not explicitly specified
+    if (!model) {
+        switch (effectiveProvider) {
+            case 'ollama':
+                model = config.ollamaModel || 'llama3.1';
+                break;
+            case 'deepseek':
+                model = config.deepseekModel || 'deepseek-chat';
+                break;
+            case 'openai':
+            default:
+                model = config.openaiModel || 'gpt-4o-mini';
+                break;
+        }
     }
 
     // OPTIMIZATION: Different token limits for different providers
@@ -121,12 +128,21 @@ export async function* streamChat(
     const config = getConfig();
     const openai = getOpenAI();
 
-    // Determine model to use
-    let model = options?.model || 'gpt-4o-mini';
-    if (config.aiProvider === 'ollama') {
-        model = config.ollamaModel || 'llama3.1';
-    } else if (config.aiProvider === 'deepseek') {
-        model = config.deepseekModel || 'deepseek-chat';
+    // Determine model to use based on provider
+    let model = options?.model;
+    if (!model) {
+        switch (config.aiProvider) {
+            case 'ollama':
+                model = config.ollamaModel || 'llama3.1';
+                break;
+            case 'deepseek':
+                model = config.deepseekModel || 'deepseek-chat';
+                break;
+            case 'openai':
+            default:
+                model = config.openaiModel || 'gpt-4o-mini';
+                break;
+        }
     }
 
     // Unified configuration for both Cloud and Local AI

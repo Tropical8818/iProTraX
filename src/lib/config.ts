@@ -43,6 +43,7 @@ export interface Config {
     includeSunday?: boolean;   // Include Sunday in ECD calculation (default: false)
     aiProvider?: 'openai' | 'ollama' | 'deepseek';
     openAIApiKey?: string; // Stored in config instead of .env for persistence
+    openaiModel?: string;  // Default: gpt-4o-mini (user configurable)
     ollamaUrl?: string;
     ollamaModel?: string;
     deepseekApiKey?: string; // DeepSeek API key (for China mainland)
@@ -79,6 +80,7 @@ const DEFAULT_CONFIG: Config = {
     includeSaturday: false, // Default: exclude Saturday
     includeSunday: false,   // Default: exclude Sunday
     aiProvider: 'openai',   // Default to OpenAI
+    openaiModel: 'gpt-4o-mini', // Default OpenAI model (user can change)
     ollamaUrl: 'http://localhost:11434/v1',
     ollamaModel: 'llama3.1',
     deepseekModel: 'deepseek-chat' // DeepSeek default model
