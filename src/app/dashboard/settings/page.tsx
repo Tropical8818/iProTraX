@@ -33,9 +33,6 @@ interface Product {
 interface Config {
     products: Product[];
     activeProductId: string;
-    USER_PASSWORD?: string;
-    SUPERVISOR_PASSWORD?: string;
-    ADMIN_PASSWORD?: string;
     includeSaturday?: boolean;
     includeSunday?: boolean;
     aiProvider?: 'openai' | 'ollama' | 'deepseek';
@@ -110,7 +107,7 @@ export default function SettingsPage() {
     const tCommon = useTranslations('Common');
     const tDash = useTranslations('Dashboard');
     const router = useRouter();
-    const [config, setConfig] = useState<Config>({ products: [], activeProductId: '', USER_PASSWORD: '', SUPERVISOR_PASSWORD: '', ADMIN_PASSWORD: '' });
+    const [config, setConfig] = useState<Config>({ products: [], activeProductId: '' });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);

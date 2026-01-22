@@ -36,9 +36,6 @@ export interface Product {
 export interface Config {
     products: Product[];
     activeProductId: string;
-    USER_PASSWORD: string;
-    SUPERVISOR_PASSWORD: string;
-    ADMIN_PASSWORD: string;
     includeSaturday?: boolean; // Include Saturday in ECD calculation (default: false)
     includeSunday?: boolean;   // Include Sunday in ECD calculation (default: false)
     aiProvider?: 'openai' | 'ollama' | 'deepseek';
@@ -74,9 +71,6 @@ const DEFAULT_PRODUCT: Product = {
 const DEFAULT_CONFIG: Config = {
     products: [DEFAULT_PRODUCT],
     activeProductId: 'default',
-    USER_PASSWORD: process.env.USER_PASSWORD || '123456',
-    SUPERVISOR_PASSWORD: process.env.SUPERVISOR_PASSWORD || 'dhe-supervisor',
-    ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'dhe-admin',
     includeSaturday: false, // Default: exclude Saturday
     includeSunday: false,   // Default: exclude Sunday
     aiProvider: 'openai',   // Default to OpenAI
@@ -114,9 +108,6 @@ function migrateConfig(parsed: Record<string, unknown>): Config {
     return {
         products: [migratedProduct],
         activeProductId: 'default',
-        USER_PASSWORD: (parsed.USER_PASSWORD as string) || DEFAULT_CONFIG.USER_PASSWORD,
-        SUPERVISOR_PASSWORD: (parsed.LEADER_PASSWORD as string) || DEFAULT_CONFIG.SUPERVISOR_PASSWORD,
-        ADMIN_PASSWORD: (parsed.ADMIN_PASSWORD as string) || DEFAULT_CONFIG.ADMIN_PASSWORD
     };
 }
 
