@@ -32,7 +32,7 @@ export async function verifyLicense(licenseKey?: string): Promise<LicenseDetails
     // We remove the logging of "Using Custom Public Key" because the key is now embedded/hidden.
     // console.log('[License] Verifying key via Native Module...');
 
-    const result = verifyLicenseWithWasm(licenseKey);
+    const result = await verifyLicenseWithWasm(licenseKey);
 
     if (result.valid && result.claims) {
         console.log('[License] Verification Successful (WASM):', result.claims.customerName);
