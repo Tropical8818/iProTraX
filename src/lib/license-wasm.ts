@@ -1,4 +1,3 @@
-
 import path from 'path';
 
 export interface LicensePayload {
@@ -24,15 +23,19 @@ let wasmModule: any = null;
 export async function verifyLicenseWithWasm(token: string): Promise<VerificationResult> {
     if (!wasmModule) {
         try {
-            // console.log('[LicenseWASM] Loading WASM module...');
             // In Next.js App Router (Server Components), 'require' is stubbed by Webpack/Turbopack.
             // standard 'require' fails with "dynamic usage of require is not supported".
             // We use 'createRequire' from 'node:module' to create a genuine Node.js require function that bypasses the bundler.
-            const { createRequire } = await import('node:module');
+
+            // We verify 'node:module' import string to bypass Turbopack static analysis which tries to resolve the path at build time.
+            const nodeModule = 'node:module';
+            const { createRequire } = await import(nodeModule);
             const requireNative = createRequire(import.meta.url);
 
-            const pkgPath = path.join(process.cwd(), 'native/license-verifier/pkg/license_verifier.js');
-            // console.log('[LicenseWASM] Loading from:', pkgPath);
+            // Break path into segments to prevent static analysis trying to resolve '/ROOT/...'
+            const native = 'native';
+            const pkg = 'license-verifier/pkg/license_verifier.js';
+            const pkgPath = path.join(process.cwd(), native, pkg);
 
             wasmModule = requireNative(pkgPath);
         } catch (e) {
