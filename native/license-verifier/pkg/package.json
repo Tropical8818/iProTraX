@@ -1,0 +1,11 @@
+{
+  "name": "license-verifier",
+  "version": "0.1.0",
+  "files": [
+    "license_verifier_bg.wasm",
+    "license_verifier.js",
+    "license_verifier.d.ts"
+  ],
+  "main": "license_verifier.js",
+  "types": "license_verifier.d.ts"
+}
