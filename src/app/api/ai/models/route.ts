@@ -68,15 +68,8 @@ export async function GET(request: Request) {
             const apiKey = config.openAIApiKey || process.env.OPENAI_API_KEY;
 
             if (!apiKey) {
-                // Fallback to common models if no API key configured
-                return NextResponse.json({
-                    data: [
-                        { id: 'gpt-4o-mini', object: 'model', owned_by: 'openai' },
-                        { id: 'gpt-4o', object: 'model', owned_by: 'openai' },
-                        { id: 'gpt-3.5-turbo', object: 'model', owned_by: 'openai' },
-                        { id: 'gpt-4-turbo', object: 'model', owned_by: 'openai' }
-                    ]
-                });
+                // User Request: If no API key configured, return empty list (no fallback)
+                return NextResponse.json({ data: [] });
             }
 
             try {
@@ -97,26 +90,13 @@ export async function GET(request: Request) {
                     return NextResponse.json({ data: chatModels });
                 } else {
                     console.error('OpenAI API error:', res.status, await res.text());
-                    // Fallback to common models on error
-                    return NextResponse.json({
-                        data: [
-                            { id: 'gpt-4o-mini', object: 'model', owned_by: 'openai' },
-                            { id: 'gpt-4o', object: 'model', owned_by: 'openai' },
-                            { id: 'gpt-3.5-turbo', object: 'model', owned_by: 'openai' },
-                            { id: 'gpt-4-turbo', object: 'model', owned_by: 'openai' }
-                        ]
-                    });
+                    // User Request: Return empty list on error (no fallback)
+                    return NextResponse.json({ data: [] });
                 }
             } catch (e) {
                 console.error('OpenAI models fetch error:', e);
-                return NextResponse.json({
-                    data: [
-                        { id: 'gpt-4o-mini', object: 'model', owned_by: 'openai' },
-                        { id: 'gpt-4o', object: 'model', owned_by: 'openai' },
-                        { id: 'gpt-3.5-turbo', object: 'model', owned_by: 'openai' },
-                        { id: 'gpt-4-turbo', object: 'model', owned_by: 'openai' }
-                    ]
-                });
+                // User Request: Return empty list on error (no fallback)
+                return NextResponse.json({ data: [] });
             }
         }
     } catch (error) {
