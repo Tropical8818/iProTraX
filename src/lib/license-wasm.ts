@@ -26,7 +26,7 @@ export function verifyLicenseWithWasm(token: string): VerificationResult {
             // In a standard Next.js server runtime, process.cwd() is the project root.
             const pkgPath = path.join(process.cwd(), 'native/license-verifier/pkg/license_verifier.js');
 
-             
+
             // Use eval('require') or similar to bypass Webpack/Turbopack static analysis 
             // since we want runtime resolution from filesystem.
             const dynamicRequire = typeof __non_webpack_require__ !== 'undefined' ? __non_webpack_require__ : require;
@@ -35,6 +35,33 @@ export function verifyLicenseWithWasm(token: string): VerificationResult {
             // console.log('[LicenseWASM] Module loaded successfully.');
         } catch (e) {
             console.error('[LicenseWASM] Failed to load WASM module:', e);
+            console.error('[LicenseWASM] CWD:', process.cwd());
+            console.error('[LicenseWASM] __dirname:', __dirname);
+            const pkgPath = path.join(process.cwd(), 'native/license-verifier/pkg/license_verifier.js');
+            console.error('[LicenseWASM] Target Path:', pkgPath);
+            try {
+                 
+                const fs = require('fs');
+                console.error('[LicenseWASM] File Exists?', fs.existsSync(pkgPath));
+
+                // Print contents of nested dirs to help debug
+                const nativeDir = path.join(process.cwd(), 'native');
+                if (fs.existsSync(nativeDir)) {
+                    console.error('[LicenseWASM] /app/native contents:', fs.readdirSync(nativeDir));
+                    const pkgDir = path.join(nativeDir, 'license-verifier/pkg');
+                    if (fs.existsSync(pkgDir)) {
+                        console.error('[LicenseWASM] /app/native/license-verifier/pkg contents:', fs.readdirSync(pkgDir));
+                    } else {
+                        console.error('[LicenseWASM] /app/native/license-verifier/pkg DOES NOT EXIST');
+                    }
+                } else {
+                    console.error('[LicenseWASM] /app/native DOES NOT EXIST');
+                }
+
+            } catch (err) {
+                console.error('[LicenseWASM] Debugging FS failed:', err);
+            }
+
             // Fallback or critical failure? 
             // If the module is missing, we can't secure verification.
             return {
