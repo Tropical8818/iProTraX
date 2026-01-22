@@ -15,7 +15,7 @@ export interface Shift {
 // Product configuration
 export interface Product {
     id: string;           // Unique identifier (e.g., "stator")
-    name: string;         // Display name (e.g., "Stator Line")
+    name: string;         // Display name (e.g., "Standard Production Line")
     excelPath: string;    // Path to Excel file
     detailColumns: string[]; // Work order detail columns (e.g., WO ID, PN, Description)
     steps: string[];      // Process step column names
@@ -52,17 +52,17 @@ export interface Config {
     rolePrompts?: Record<string, string>;
 }
 
-// Default steps for migration from v2
+// Default steps for new product lines (Generic)
 const DEFAULT_STEPS = [
-    'WO Released', 'Stacking', 'Winding', 'Lacing', 'Formation',
-    'Impregnation', 'Assembly', 'HI-POT test', 'Final Inspection', 'Receipt'
+    'Step 1', 'Step 2', 'Step 3', 'Step 4', 'Step 5',
+    'Step 6', 'Step 7', 'Step 8', 'Step 9', 'Step 10'
 ];
 
 const DEFAULT_DETAIL_COLUMNS = ['WO ID', 'PN', 'Description', 'WO DUE', 'Priority'];
 
 const DEFAULT_PRODUCT: Product = {
     id: 'default',
-    name: 'Default Product',
+    name: 'Standard Production Line',
     excelPath: '',
     detailColumns: DEFAULT_DETAIL_COLUMNS,
     steps: DEFAULT_STEPS,
@@ -102,7 +102,7 @@ function migrateConfig(parsed: Record<string, unknown>): Config {
 
     const migratedProduct: Product = {
         id: 'default',
-        name: 'Stator Line',
+        name: 'Standard Production Line',
         excelPath: (parsed.EXCEL_FILE_PATH as string) || '',
         detailColumns: DEFAULT_DETAIL_COLUMNS,
         steps: DEFAULT_STEPS,
