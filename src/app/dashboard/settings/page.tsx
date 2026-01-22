@@ -1612,20 +1612,6 @@ export default function SettingsPage() {
                                                         </div>
                                                         <p className="text-xs text-slate-500 mt-1">{t('apiKeyHelp')}</p>
                                                     </div>
-                                                    {/* OpenAI Model Selection */}
-                                                    <div className="mt-4">
-                                                        <label className="block text-sm font-medium text-slate-700 mb-1">OpenAI Model</label>
-                                                        <input
-                                                            type="text"
-                                                            value={config.openaiModel || 'gpt-4o-mini'}
-                                                            onChange={(e) => setConfig({ ...config, openaiModel: e.target.value })}
-                                                            placeholder="gpt-4o-mini"
-                                                            className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 font-mono text-sm text-slate-800"
-                                                        />
-                                                        <p className="text-xs text-slate-500 mt-1">
-                                                            {t('openaiModelHelp') || 'Enter the OpenAI model ID (e.g., gpt-4o-mini, gpt-4-turbo, gpt-4o)'}
-                                                        </p>
-                                                    </div>
                                                 </>
                                             )}
 
@@ -1678,8 +1664,7 @@ export default function SettingsPage() {
                                                                 headers: { 'Content-Type': 'application/json' },
                                                                 body: JSON.stringify({
                                                                     aiProvider: 'openai',
-                                                                    openAIApiKey: apiKeyToSave,
-                                                                    openaiModel: config.openaiModel || 'gpt-4o-mini'
+                                                                    openAIApiKey: apiKeyToSave
                                                                 })
                                                             });
 

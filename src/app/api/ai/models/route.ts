@@ -64,15 +64,60 @@ export async function GET(request: Request) {
                 return NextResponse.json({ error: 'Failed to connect to Ollama. Check URL.' }, { status: 500 });
             }
         } else {
-            // Return standard OpenAI models
-            return NextResponse.json({
-                data: [
-                    { id: 'gpt-4o-mini', object: 'model', owned_by: 'openai' },
-                    { id: 'gpt-4o', object: 'model', owned_by: 'openai' },
-                    { id: 'gpt-3.5-turbo', object: 'model', owned_by: 'openai' },
-                    { id: 'gpt-4-turbo', object: 'model', owned_by: 'openai' }
-                ]
-            });
+            // Fetch models dynamically from OpenAI API
+            const apiKey = config.openAIApiKey || process.env.OPENAI_API_KEY;
+
+            if (!apiKey) {
+                // Fallback to common models if no API key configured
+                return NextResponse.json({
+                    data: [
+                        { id: 'gpt-4o-mini', object: 'model', owned_by: 'openai' },
+                        { id: 'gpt-4o', object: 'model', owned_by: 'openai' },
+                        { id: 'gpt-3.5-turbo', object: 'model', owned_by: 'openai' },
+                        { id: 'gpt-4-turbo', object: 'model', owned_by: 'openai' }
+                    ]
+                });
+            }
+
+            try {
+                const res = await fetch('https://api.openai.com/v1/models', {
+                    headers: {
+                        'Authorization': `Bearer ${apiKey}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    // Filter to only show GPT chat models (not embeddings, whisper, etc.)
+                    const chatModels = data.data
+                        .filter((m: any) => m.id.includes('gpt'))
+                        .sort((a: any, b: any) => b.id.localeCompare(a.id)); // Sort newest first
+
+                    return NextResponse.json({ data: chatModels });
+                } else {
+                    console.error('OpenAI API error:', res.status, await res.text());
+                    // Fallback to common models on error
+                    return NextResponse.json({
+                        data: [
+                            { id: 'gpt-4o-mini', object: 'model', owned_by: 'openai' },
+                            { id: 'gpt-4o', object: 'model', owned_by: 'openai' },
+                            { id: 'gpt-3.5-turbo', object: 'model', owned_by: 'openai' },
+                            { id: 'gpt-4-turbo', object: 'model', owned_by: 'openai' }
+                        ]
+                    });
+                }
+            } catch (e) {
+                console.error('OpenAI models fetch error:', e);
+                return NextResponse.json({
+                    data: [
+                        { id: 'gpt-4o-mini', object: 'model', owned_by: 'openai' },
+                        { id: 'gpt-4o', object: 'model', owned_by: 'openai' },
+                        { id: 'gpt-3.5-turbo', object: 'model', owned_by: 'openai' },
+                        { id: 'gpt-4-turbo', object: 'model', owned_by: 'openai' }
+                    ]
+                });
+            }
         }
     } catch (error) {
         console.error('Models API Error:', error);
