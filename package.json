@@ -9,7 +9,7 @@
     "dev:watch": "concurrently \"npm run dev\" \"npm run watcher\"",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "docker:up": "docker-compose up -d --build",
     "docker:build:amd64": "docker build --platform linux/amd64 -t hzhang9/iprotrax:latest .",
     "docker:push": "docker push hzhang9/iprotrax:latest",
