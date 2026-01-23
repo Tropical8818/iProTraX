@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Table2, HardHat, Settings, LogOut, Save, FileSpreadsheet, Lock, Plus, Trash2, Edit2, X, ChevronUp, ChevronDown, Package, RefreshCw, Check, Eye, EyeOff, Clock, FilePlus, Info, User, Key, Users, Database, Download, Bot, Sparkles, Monitor, Play, Upload, Globe } from 'lucide-react';
+import { Table2, HardHat, Settings, LogOut, Save, FileSpreadsheet, Lock, Plus, Trash2, Edit2, X, ChevronUp, ChevronDown, Package, RefreshCw, Check, Eye, EyeOff, Clock, FilePlus, Info, User, Key, Users, Database, Download, Bot, Sparkles, Monitor, Play, Upload, Globe, Copy, ShieldCheck, BarChart2 } from 'lucide-react';
+import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
 import { APP_VERSION } from '@/lib/version';
 
 interface Product {
@@ -112,6 +113,11 @@ export default function SettingsPage() {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
+    // System Identity State (Enterprise)
+    const [machineId, setMachineId] = useState<string>('');
+    const [fingerprintHash, setFingerprintHash] = useState<string>('');
+    const [copiedId, setCopiedId] = useState(false);
+
     // Product editing state
     const [editingProduct, setEditingProduct] = useState<Product | null>(null);
     const [detecting, setDetecting] = useState(false);
@@ -150,9 +156,28 @@ export default function SettingsPage() {
     const [loadingModels, setLoadingModels] = useState(false);
 
     // Watcher state
+    const [watcherLoading, setWatcherLoading] = useState(false);
     const [watcherRunning, setWatcherRunning] = useState(false);
     const [watcherPid, setWatcherPid] = useState<number | null>(null);
-    const [watcherLoading, setWatcherLoading] = useState(false);
+    const [showAnalytics, setShowAnalytics] = useState(false);
+    const [selectedProductId, setSelectedProductId] = useState<string>('');
+
+    // Fetch Machine ID (Enterprise)
+    useEffect(() => {
+        const fetchSystemId = async () => {
+            try {
+                const res = await fetch('/api/system/id');
+                if (res.ok) {
+                    const data = await res.json();
+                    setMachineId(data.machineId);
+                    setFingerprintHash(data.fingerprintHash);
+                }
+            } catch (e) {
+                // console.error('Failed to fetch system ID:', e);
+            }
+        };
+        fetchSystemId();
+    }, []);
 
 
 
@@ -163,6 +188,9 @@ export default function SettingsPage() {
                 if (res.ok) {
                     const data = await res.json();
                     setConfig(data);
+                    if (data.activeProductId) {
+                        setSelectedProductId(data.activeProductId);
+                    }
                     // Fetch both model lists initially
                     fetchModels();
                 }
@@ -498,6 +526,25 @@ export default function SettingsPage() {
                             <span className="hidden sm:inline">{tDash('operation')}</span>
                         </button>
 
+                        {(isAdmin || isSupervisor) && (
+                            <button
+                                onClick={() => {
+                                    if (!selectedProductId && config.activeProductId) {
+                                        setSelectedProductId(config.activeProductId);
+                                    }
+                                    setShowAnalytics(!showAnalytics);
+                                }}
+                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${showAnalytics
+                                    ? 'bg-indigo-600 text-white shadow-sm dark:bg-indigo-500'
+                                    : 'text-slate-600 hover:bg-slate-50'
+                                    }`}
+                                title={tDash('reports')}
+                            >
+                                <BarChart2 className="w-4 h-4" />
+                                <span className="hidden sm:inline">{tDash('reports')}</span>
+                            </button>
+                        )}
+
                         <button className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium">
                             <Settings className="w-4 h-4" />
                             <span className="hidden sm:inline">{tDash('settings')}</span>
@@ -513,6 +560,13 @@ export default function SettingsPage() {
                 </div>
             </header>
 
+            {/* Analytics Dashboard (Modal) */}
+            <AnalyticsDashboard
+                isOpen={showAnalytics}
+                onClose={() => setShowAnalytics(false)}
+                productId={selectedProductId || config.activeProductId}
+            />
+
             {/* Main Content */}
             <main className="p-4 max-w-4xl mx-auto pb-24">
                 {loading ? (
@@ -522,6 +576,7 @@ export default function SettingsPage() {
                     <div className="max-w-4xl mx-auto space-y-6">
                         {isAdmin && (
                             <div className="space-y-6">
+
                                 {/* Products Section */}
                                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md">
                                     <div className="flex items-center justify-between mb-4">
@@ -689,47 +744,81 @@ export default function SettingsPage() {
                                                     {t('excelUploadHelp')}
                                                 </p>
 
-                                                {/* Create Excel Template Button */}
-                                                {(editingProduct.steps.length > 0 || editingProduct.detailColumns.length > 0) && !editingProduct.excelPath && (
-                                                    <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-xl shadow-sm">
-                                                        <p className="text-sm text-green-800 mb-3 font-medium">
-                                                            {t('detailStepsDefined', { countDetails: editingProduct.detailColumns.length, countSteps: editingProduct.steps.length })}
-                                                        </p>
-                                                        <button
-                                                            onClick={async () => {
-                                                                setCreatingTemplate(true);
-                                                                try {
-                                                                    const res = await fetch('/api/create-template', {
-                                                                        method: 'POST',
-                                                                        headers: { 'Content-Type': 'application/json' },
-                                                                        body: JSON.stringify({ productId: editingProduct.id })
-                                                                    });
-                                                                    const data = await res.json();
-                                                                    if (res.ok) {
-                                                                        setMessage({ type: 'success', text: `Excel template created: ${data.path}` });
-                                                                        // Update editingProduct with new excelPath
-                                                                        const updated = { ...editingProduct, excelPath: data.path };
-                                                                        setEditingProduct(updated);
-                                                                        // Refresh config
-                                                                        const configRes = await fetch('/api/config');
-                                                                        if (configRes.ok) {
-                                                                            setConfig(await configRes.json());
+                                                {/* Excel Template Management */}
+                                                {(editingProduct.steps.length > 0 || editingProduct.detailColumns.length > 0) && (
+                                                    <div className={`mt-4 p-4 rounded-xl border shadow-sm ${editingProduct.excelPath ? 'bg-indigo-50 border-indigo-200' : 'bg-green-50 border-green-200'}`}>
+                                                        <div className="mb-4">
+                                                            <p className={`text-sm font-medium mb-2 ${editingProduct.excelPath ? 'text-indigo-800' : 'text-green-800'}`}>
+                                                                {editingProduct.excelPath ? t('templateExists') || 'Excel Template Ready' : t('detailStepsDefined', { countDetails: editingProduct.detailColumns.length, countSteps: editingProduct.steps.length })}
+                                                            </p>
+                                                            {editingProduct.excelPath && (
+                                                                <div className="p-2 bg-white/50 rounded-lg border border-indigo-100/50 flex items-start gap-2.5">
+                                                                    <FileSpreadsheet className="w-4 h-4 text-indigo-500 mt-0.5 flex-shrink-0" />
+                                                                    <div className="flex-1 min-w-0">
+                                                                        <span className="text-[11px] text-indigo-600 font-mono break-all line-clamp-2" title={editingProduct.excelPath}>
+                                                                            {editingProduct.excelPath.split('/').pop()}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="flex flex-col sm:flex-row gap-2">
+                                                            <button
+                                                                onClick={async () => {
+                                                                    setCreatingTemplate(true);
+                                                                    try {
+                                                                        // Always trigger creation first to ensure it matches current DB config
+                                                                        const res = await fetch('/api/create-template', {
+                                                                            method: 'POST',
+                                                                            headers: { 'Content-Type': 'application/json' },
+                                                                            body: JSON.stringify({ productId: editingProduct.id })
+                                                                        });
+                                                                        const data = await res.json();
+                                                                        if (res.ok) {
+                                                                            // Update state
+                                                                            const updated = { ...editingProduct, excelPath: data.path };
+                                                                            setEditingProduct(updated);
+
+                                                                            // Trigger download
+                                                                            const filename = data.path.split('/').pop() || 'template.xlsx';
+                                                                            window.open(`/api/download?path=${encodeURIComponent(data.path)}&name=${encodeURIComponent(filename)}`);
+
+                                                                            setMessage({ type: 'success', text: `Excel template updated and downloaded` });
+
+                                                                            // Refresh config for background sync
+                                                                            const configRes = await fetch('/api/config');
+                                                                            if (configRes.ok) {
+                                                                                setConfig(await configRes.json());
+                                                                            }
+                                                                        } else {
+                                                                            setMessage({ type: 'error', text: data.error || 'Failed to prepare template' });
                                                                         }
-                                                                    } else {
-                                                                        setMessage({ type: 'error', text: data.error || 'Failed to create template' });
+                                                                    } catch (err) {
+                                                                        setMessage({ type: 'error', text: 'Failed to prepare template' });
+                                                                    } finally {
+                                                                        setCreatingTemplate(false);
                                                                     }
-                                                                } catch (err) {
-                                                                    setMessage({ type: 'error', text: 'Failed to create template' });
-                                                                } finally {
-                                                                    setCreatingTemplate(false);
-                                                                }
-                                                            }}
-                                                            disabled={creatingTemplate}
-                                                            className="w-full sm:w-auto px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-500 disabled:opacity-50 flex items-centerjustify-center gap-2 shadow-sm transition-all hover:shadow-md hover:scale-[1.02]"
-                                                        >
-                                                            <FilePlus className={`w-4 h-4 ${creatingTemplate ? 'animate-pulse' : ''}`} />
-                                                            {creatingTemplate ? t('creating') : t('createExcelTemplateFile')}
-                                                        </button>
+                                                                }}
+                                                                disabled={creatingTemplate}
+                                                                className={`w-full px-4 py-2.5 rounded-lg font-bold flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99] ${editingProduct.excelPath
+                                                                    ? 'bg-indigo-600 text-white hover:bg-indigo-500'
+                                                                    : 'bg-green-600 text-white hover:bg-green-500'
+                                                                    }`}
+                                                            >
+                                                                {creatingTemplate ? (
+                                                                    <>
+                                                                        <RefreshCw className="w-4 h-4 animate-spin" />
+                                                                        <span>{t('creating') || 'Preparing...'}</span>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        {editingProduct.excelPath ? <Download className="w-4 h-4" /> : <FilePlus className="w-4 h-4" />}
+                                                                        <span>{editingProduct.excelPath ? t('downloadTemplate') || 'Download Template' : t('createExcelTemplateFile')}</span>
+                                                                    </>
+                                                                )}
+                                                            </button>
+                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
@@ -1384,23 +1473,7 @@ export default function SettingsPage() {
 
                         {/* Right Column - Sidebar (ECD / Security / About) */}
                         <div className="space-y-6">
-                            {/* User Management Link */}
-                            {(isAdmin || isSupervisor) && (
-                                <div
-                                    onClick={() => router.push('/dashboard/users')}
-                                    className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md cursor-pointer group"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="bg-purple-100 p-3 rounded-lg group-hover:bg-purple-200 transition-colors">
-                                            <Users className="w-6 h-6 text-purple-600" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-bold text-slate-900 group-hover:text-purple-700 transition-colors">{t('userManagement')}</h3>
-                                            <p className="text-sm text-slate-500">{t('manageAccountsApprovals')}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+
 
 
 
@@ -1787,8 +1860,29 @@ export default function SettingsPage() {
                                 </div>
                             )}
 
+
+
+
+                            {/* User Management Link */}
+                            {(isAdmin || isSupervisor) && (
+                                <div
+                                    onClick={() => router.push('/dashboard/users')}
+                                    className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md cursor-pointer group mb-6"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div className="bg-purple-100 p-3 rounded-lg group-hover:bg-purple-200 transition-colors">
+                                            <Users className="w-6 h-6 text-purple-600" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-slate-900 group-hover:text-purple-700 transition-colors">{t('userManagement')}</h3>
+                                            <p className="text-sm text-slate-500">{t('manageAccountsApprovals')}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* User Profile & Security */}
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md">
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md mb-6">
                                 <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
                                     <User className="w-5 h-5 text-indigo-600" />
                                     {t('yourProfile')}
@@ -1879,6 +1973,42 @@ export default function SettingsPage() {
                                     <p className="text-sm text-slate-500">{t('loadingUserProfile')}</p>
                                 )}
                             </div>
+
+                            {/* System Identity Section (Admin Only) */}
+                            {isAdmin && (
+                                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md mb-6">
+                                    <h2 className="text-xl font-bold text-slate-900 flex items-center gap-2 mb-4">
+                                        <ShieldCheck className="w-5 h-5 text-indigo-600" />
+                                        System Identity
+                                    </h2>
+                                    <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+                                        <p className="text-sm text-slate-600 mb-2">
+                                            {t('certificateId')}
+                                        </p>
+                                        <div className="flex items-center gap-2">
+                                            <code className="flex-1 bg-white px-3 py-2 rounded border border-slate-200 font-mono text-sm text-slate-800 break-all">
+                                                {machineId || 'Loading...'}
+                                            </code>
+                                            <button
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(machineId);
+                                                    setCopiedId(true);
+                                                    setTimeout(() => setCopiedId(false), 2000);
+                                                }}
+                                                className="p-2 text-slate-500 hover:text-indigo-600 hover:bg-white rounded-lg border border-transparent hover:border-slate-200 transition-all"
+                                                title="Copy ID"
+                                            >
+                                                {copiedId ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                                            </button>
+                                        </div>
+                                        {fingerprintHash && (
+                                            <p className="text-xs text-slate-400 mt-2 font-mono">
+                                                Fingerprint: {fingerprintHash.substring(0, 16)}...
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
 
 
                         </div>

@@ -303,7 +303,11 @@
         "shiftHelp": "Define daily shifts for this product line (e.g. Morning, Night).",
         "linesUsed": "Lines Used",
         "licenseLimitReached": "License Limit Reached",
-        "upgradeLicenseForMore": "Upgrade license to add more lines"
+        "upgradeLicenseForMore": "Upgrade license to add more lines",
+        "certificateId": "Certificate ID",
+        "templateExists": "Excel Template Ready",
+        "downloadTemplate": "Download Template",
+        "regenerateTemplate": "Re-generate"
     },
     "StepTracking": {
         "trackProgress": "Track Progress",

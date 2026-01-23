@@ -303,7 +303,11 @@
         "shiftHelp": "定义该产品线的每日班次 (如：早班、晚班)。",
         "linesUsed": "已用额度",
         "licenseLimitReached": "已达许可限制",
-        "upgradeLicenseForMore": "升级许可解锁更多产线"
+        "upgradeLicenseForMore": "升级许可解锁更多产线",
+        "certificateId": "证书ID",
+        "templateExists": "Excel 模板已就绪",
+        "downloadTemplate": "下载模板",
+        "regenerateTemplate": "重新生成"
     },
     "StepTracking": {
         "trackProgress": "进度追踪",

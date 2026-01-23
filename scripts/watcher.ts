@@ -48,7 +48,7 @@ async function handleFileChange(filePath: string, productId: string, productName
     try {
         const result = await importFromFile(filePath, {
             productId,
-            mode: 'skip-existing'  // Skip existing orders, only import new ones
+            mode: 'update'  // Changed from 'skip-existing' to allow overlaying updates
         });
 
         if (result.success) {

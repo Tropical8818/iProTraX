@@ -157,13 +157,24 @@ export async function importFromBuffer(buffer: Buffer, options: ImportOptions): 
         const steps: string[] = config.steps || [];
         const detailColumns: string[] = config.detailColumns || [];
 
-        // Only keep columns that are in detailColumns OR are WO ID
+        // Identify due date and release date keys for more robust selection
+        const dueDateKey = Object.keys(rowData).find(k => k.toLowerCase().includes('due') || k.toLowerCase().includes('date') || k.toLowerCase().includes('交期') || k.toLowerCase().includes('到期'));
+
+        // Only keep columns that are in detailColumns OR are WO ID OR are due/release dates
         Object.keys(rowData).forEach(key => {
-            if (key === 'WO ID' || detailColumns.includes(key) ||
-                key.toLowerCase().includes('customer') ||
+            const isWordOrderId = key === 'WO ID';
+            const isConfiguredDetail = detailColumns.includes(key);
+            const isCommonField = key.toLowerCase().includes('customer') ||
                 key.toLowerCase().includes('qty') ||
-                key.toLowerCase().includes('ecd') ||
-                key.toLowerCase() === woRelKey?.toLowerCase()) {
+                key.toLowerCase().includes('ecd');
+            const isDueDateField = key === dueDateKey ||
+                key === 'WO DUE' ||
+                headerMapping[key] === 'WO DUE';
+            const isReleaseDateField = key === woRelKey ||
+                key === 'WO Rel' ||
+                headerMapping[key] === 'WO Rel';
+
+            if (isWordOrderId || isConfiguredDetail || isCommonField || isDueDateField || isReleaseDateField) {
                 detailData[key] = rowData[key];
             }
         });

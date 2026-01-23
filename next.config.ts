@@ -29,6 +29,14 @@ const nextConfig: NextConfig = {
         }, ['**/*.js']) // This second arg is 'excludes' for the plugin instance if targeting files
       );
     }
+
+    // Enable WebAssembly
+    config.experiments = {
+      ...config.experiments,
+      asyncWebAssembly: true,
+      layers: true,
+    };
+
     return config;
   },
   async headers() {

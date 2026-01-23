@@ -75,12 +75,23 @@ const KanbanCard = ({ order, status, isOverlay, columnWidth, onClick, disabled }
         opacity: isDragging ? 0.4 : 1,
     };
 
-    // Parse status for color
-    let statusColor = 'bg-white border-l-4 border-slate-300';
-    if (status === 'P') statusColor = 'bg-blue-50 border-l-4 border-blue-500';
-    if (status === 'Hold') statusColor = 'bg-orange-50 border-l-4 border-orange-500';
-    if (status === 'QN') statusColor = 'bg-red-50 border-l-4 border-red-500';
-    if (status === 'WIP') statusColor = 'bg-green-50 border-l-4 border-green-500';
+    // Parse status for color to match getStatusStyle in operation page
+    let statusColor = 'bg-white border-l-4 border-slate-300 text-slate-600';
+    const v = (status || '').toUpperCase();
+
+    if (v.startsWith('P')) {
+        statusColor = 'bg-[#0014DC] text-white border-l-4 border-blue-800 shadow-blue-100';
+    } else if (v === 'WIP') {
+        statusColor = 'bg-yellow-100 text-yellow-900 border-l-4 border-yellow-500 shadow-yellow-50';
+    } else if (v === 'HOLD') {
+        statusColor = 'bg-orange-100 text-orange-900 border-l-4 border-orange-500 shadow-orange-50';
+    } else if (v === 'QN' || v === 'DIFA') {
+        statusColor = 'bg-red-100 text-red-900 border-l-4 border-red-500 shadow-red-50';
+    } else if (v === 'DONE' || v === 'COMPLETED' || /\d{4}-\d{2}-\d{2}/.test(status)) {
+        statusColor = 'bg-green-100 text-green-900 border-l-4 border-green-500 shadow-green-50';
+    } else if (v === 'N/A') {
+        statusColor = 'bg-slate-100 text-slate-500 border-l-4 border-slate-300';
+    }
 
     const Wrapper = isOverlay ? 'div' : 'div';
 
@@ -100,15 +111,15 @@ const KanbanCard = ({ order, status, isOverlay, columnWidth, onClick, disabled }
             className={`p-3 rounded-lg shadow-sm border border-slate-200 mb-2 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow select-none ${statusColor} ${onClick ? 'cursor-pointer hover:ring-2 hover:ring-indigo-400/50' : ''}`}
         >
             <div className="flex justify-between items-start mb-1">
-                <span className={`font-extrabold ${fontSize} text-slate-900`}>{woId}</span>
+                <span className={`font-extrabold ${fontSize} ${v.startsWith('P') ? 'text-white' : 'text-slate-900'}`}>{woId}</span>
                 {order.Priority === 'Urgent' && (
                     <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                 )}
             </div>
-            <div className="text-xs text-slate-500 truncate" title={order.Description || ''}>
+            <div className={`text-xs truncate ${v.startsWith('P') ? 'text-blue-50' : 'text-slate-500'}`} title={order.Description || ''}>
                 {order.Description || 'No description'}
             </div>
-            <div className="mt-2 flex justify-between items-center text-[10px] text-slate-400 font-mono">
+            <div className={`mt-2 flex justify-between items-center text-[10px] font-mono ${v.startsWith('P') ? 'text-blue-100' : 'text-slate-500'}`}>
                 <span className="truncate">{order.PN}</span>
                 {status && <span className="uppercase font-bold flex-shrink-0 ml-1">{status}</span>}
             </div>

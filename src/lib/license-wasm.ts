@@ -1,4 +1,8 @@
-import path from 'path';
+import { getSystemFingerprint } from './system-id';
+
+// Embedded Public Key (ES256) - Matching the one in Rust/Verifier
+// Note: The newlines must be explicit \n for Rust PEM parser to work correctly
+const PUBLIC_KEY = "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEX9BNislruXoueGcZGYR0jRof5Nzs\niuiO2hubmiA6JosZUDf1UN4kli5BGBms/pfYoKFA3pT3b5N1sn0+8fE4OQ==\n-----END PUBLIC KEY-----";
 
 export interface LicensePayload {
     customerName: string;
@@ -6,6 +10,7 @@ export interface LicensePayload {
     maxProductLines: number;
     maxUsers?: number;
     expiresAt: string;
+    machineId?: string;
 }
 
 export interface VerificationResult {
@@ -14,43 +19,44 @@ export interface VerificationResult {
     error?: string;
 }
 
-// Cache the loaded module
-let wasmModule: any = null;
-
-// Must be async now because dynamic import is async
 export async function verifyLicenseWithWasm(token: string): Promise<VerificationResult> {
-    if (!wasmModule) {
-        try {
-            // Turbopack performs aggressive static analysis and traces all require/import calls.
-            // Even with string obfuscation, it still catches `requireNative(pkgPath)`.
-            // The ONLY reliable way to bypass this is to use eval() to make the code completely opaque.
-            // This is intentional and necessary for runtime-only module loading.
+    try {
+        // Collect System Fingerprint
+        const systemFingerprint = getSystemFingerprint();
 
-            const pkgPath = path.join(process.cwd(), 'native', 'license-verifier', 'pkg', 'license_verifier.js');
+        // Dynamic Import of WASM Module (Async)
+        // This requires 'asyncWebAssembly: true' in next.config.ts
+        // Points to the local copy in src/lib/wasm-pkg
+        const wasm = await import('./wasm-pkg/license_verifier.js');
 
-            // Use eval to construct a require that is invisible to static analysis
-             
-            const dynamicRequire = eval('require');
-            wasmModule = dynamicRequire(pkgPath);
-        } catch (e) {
-            console.error('[LicenseWASM] Failed to load WASM module:', e);
-            console.error('[LicenseWASM] CWD:', process.cwd());
+        // Call the WASM function
+        // verify_license_wasm(jwt, pub_key, sys_fp, current_timestamp_ms)
+        const jsonResult = wasm.verify_license_wasm(
+            token,
+            PUBLIC_KEY,
+            systemFingerprint,
+            Date.now() // Pass current timestamp for expiry check
+        );
 
-            // Fallback or critical failure? 
-            // If the module is missing, we can't secure verification.
+        const parsed = JSON.parse(jsonResult);
+
+        if (!parsed.isValid) {
             return {
                 valid: false,
-                error: 'Security module missing. Please ensure native/license-verifier is built.'
+                error: parsed.error || 'Unknown WASM validation error'
             };
         }
-    }
 
-    try {
-        // call verify_license form Rust
-        const result = wasmModule.verify_license(token);
-        return result as VerificationResult;
-    } catch (e) {
-        console.error('[LicenseWASM] Error during verification execution:', e);
-        return { valid: false, error: 'Verification runtime error.' };
+        return {
+            valid: true,
+            claims: parsed.payload // Rust struct field is 'payload'
+        };
+
+    } catch (e: any) {
+        console.error('[LicenseWASM] Verification Error:', e);
+        return {
+            valid: false,
+            error: `Runtime Error: ${e.message || e}`
+        };
     }
 }

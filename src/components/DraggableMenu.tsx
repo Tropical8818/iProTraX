@@ -171,6 +171,14 @@ export default function DraggableMenu({
                             <span>{t('home')}</span>
                         </button>
 
+                        <button
+                            onClick={() => { onShowAnalytics(); setIsOpen(false); }}
+                            className="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-600 font-medium transition-colors border border-slate-100/50 dark:border-slate-600/50 text-sm"
+                        >
+                            <BarChart2 className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                            <span>{t('reports')}</span>
+                        </button>
+
                         {(role === 'admin' || role === 'supervisor') && (
                             <button
                                 onClick={() => { onImport(); setIsOpen(false); }}
@@ -190,16 +198,8 @@ export default function DraggableMenu({
                         </button>
 
                         <button
-                            onClick={() => { onShowAnalytics(); setIsOpen(false); }}
-                            className="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-600 font-medium transition-colors border border-slate-100/50 dark:border-slate-600/50 text-sm"
-                        >
-                            <BarChart2 className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                            <span>{t('reports')}</span>
-                        </button>
-
-                        <button
                             onClick={() => { onRefresh(); setIsOpen(false); }}
-                            className="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-600 font-medium transition-colors border border-slate-100/50 dark:border-slate-600/50 text-sm"
+                            className="flex items-center gap-2 p-2.5 bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-600 font-medium transition-colors border border-slate-100/50 dark:border-slate-600/50 text-sm col-span-2"
                         >
                             <RefreshCw className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                             <span>{t('refresh')}</span>

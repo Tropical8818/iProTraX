@@ -474,16 +474,6 @@ function OperationContent() {
                             <span className="hidden sm:inline">{tDash('operation')}</span>
                         </button>
 
-                        {role === 'admin' && (
-                            <button
-                                onClick={() => router.push('/dashboard/settings')}
-                                className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
-                            >
-                                <Settings className="w-4 h-4" />
-                                <span className="hidden sm:inline">{tDash('settings')}</span>
-                            </button>
-                        )}
-
                         {(role === 'supervisor' || role === 'admin') && (
                             <button
                                 onClick={() => setShowAnalytics(!showAnalytics)}
@@ -497,6 +487,15 @@ function OperationContent() {
                                 <span className="hidden sm:inline">{tDash('reports')}</span>
                             </button>
                         )}
+
+                        <button
+                            onClick={() => router.push('/dashboard/settings')}
+                            className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
+                        >
+                            <Settings className="w-4 h-4" />
+                            <span className="hidden sm:inline">{tDash('settings')}</span>
+                        </button>
+
 
                         {/* Message Notification */}
                         <MessageNotification />

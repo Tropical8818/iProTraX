@@ -38,6 +38,7 @@ export async function POST() {
     try {
         // Start watcher process
         const scriptPath = path.join(process.cwd(), 'scripts', 'watcher.ts');
+        console.log(`[Watcher API] Starting watcher script: ${scriptPath}`);
 
         watcherProcess = spawn('npx', ['tsx', scriptPath], {
             detached: false,
@@ -46,19 +47,24 @@ export async function POST() {
         });
 
         const pid = watcherProcess.pid;
+        console.log(`[Watcher API] Spawned process with PID: ${pid}`);
 
         // Log output for debugging
         watcherProcess.stdout?.on('data', (data) => {
-            console.log(`[Watcher] ${data.toString()}`);
+            console.log(`[Watcher] ${data.toString().trim()}`);
         });
 
         watcherProcess.stderr?.on('data', (data) => {
-            console.error(`[Watcher Error] ${data.toString()}`);
+            console.error(`[Watcher Error] ${data.toString().trim()}`);
         });
 
         watcherProcess.on('exit', (code) => {
-            console.log(`[Watcher] Process exited with code ${code}`);
+            console.log(`[Watcher API] Process exited with code ${code}`);
             watcherProcess = null;
+        });
+
+        watcherProcess.on('error', (err) => {
+            console.error(`[Watcher API] Failed to spawn process:`, err);
         });
 
         return NextResponse.json({

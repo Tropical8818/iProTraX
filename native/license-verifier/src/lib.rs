@@ -1,137 +1,114 @@
 use wasm_bindgen::prelude::*;
 use serde::{Deserialize, Serialize};
-use p256::ecdsa::{VerifyingKey, Signature, signature::Verifier};
-use p256::pkcs8::DecodePublicKey;
+use p256::ecdsa::{Signature, VerifyingKey, signature::Verifier};
+use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
 
-// Embedded Public Key (SPKI format)
-// We strip the header/footer and newlines to have the raw base64 data, 
-// or we can parse the PEM. Parsing PEM in pure Rust without standard library file IO 
-// (though we can use strings) is fine.
-// But for "enterprise security", let's store it as raw bytes or at least clean base64 
-// to avoid easy string search "BEGIN PUBLIC KEY".
-// 
-// The key provided:
-// MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEX9BNislruXoueGcZGYR0jRof5Nzs
-// iuiO2hubmiA6JosZUDf1UN4kli5BGBms/pfYoKFA3pT3b5N1sn0+8fE4OQ==
-
-const PUB_KEY_B64: &str = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEX9BNislruXoueGcZGYR0jRof5Nzs\
-                           iuiO2hubmiA6JosZUDf1UN4kli5BGBms/pfYoKFA3pT3b5N1sn0+8fE4OQ==";
-
-#[derive(Serialize, Deserialize, Debug)]
-struct LicensePayload {
-    #[serde(rename = "customerName")]
-    customer_name: String,
+#[derive(Serialize, Deserialize)]
+pub struct LicensePayload {
+    pub customerName: String,
     #[serde(rename = "type")]
-    license_type: String,
-    #[serde(default)]
-    #[serde(rename = "maxProductLines")]
-    max_product_lines: u32,
-    #[serde(default)]
-    #[serde(rename = "maxUsers")]
-    max_users: Option<u32>,
-    #[serde(rename = "expiresAt")]
-    expires_at: String, // ISO format
+    pub type_: String, 
+    pub maxProductLines: i32,
+    pub maxUsers: i32,
+    pub expiresAt: String,
+    pub machineId: Option<String>,
 }
 
 #[derive(Serialize)]
-struct VerificationResult {
-    valid: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    claims: Option<LicensePayload>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    error: Option<String>,
+pub struct VerificationResult {
+    pub isValid: bool,
+    pub error: Option<String>,
+    pub payload: Option<LicensePayload>,
 }
 
 #[wasm_bindgen]
-pub fn verify_license(token: &str) -> JsValue {
-    let result = verify_internal(token);
-    serde_wasm_bindgen::to_value(&result).unwrap()
-}
-
-fn verify_internal(token: &str) -> VerificationResult {
-    let parts: Vec<&str> = token.split('.').collect();
+pub fn verify_license_wasm(
+    jwt: &str, 
+    public_key_pem: &str, 
+    system_fingerprint_opt: Option<String>,
+    current_timestamp_ms: f64
+) -> String {
+    
+    // 1. Decode JWT (Simple 2-part split)
+    let parts: Vec<&str> = jwt.split('.').collect();
     if parts.len() != 3 {
-        return VerificationResult { valid: false, claims: None, error: Some("Invalid token format".to_string()) };
+        return json_err("Invalid JWT format");
     }
 
-    let header_b64 = parts[0];
-    let payload_b64 = parts[1];
-    let signature_b64 = parts[2];
+    let payload_part = parts[1];
+    let sig_part = parts[2];
 
-    // 1. Reconstruct message
-    let message = format!("{}.{}", header_b64, payload_b64);
-
-    // 2. Decode Signature
-    // JWT uses Base64URL, standard Base64 might fail on URL safe chars
-    // So we use base64::engine::general_purpose::URL_SAFE_NO_PAD
-    use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
-
-    let signature_bytes = match URL_SAFE_NO_PAD.decode(signature_b64) {
+    // 2. Decode Payload
+    let payload_bytes = match URL_SAFE_NO_PAD.decode(payload_part) {
         Ok(b) => b,
-        Err(_) => return VerificationResult { valid: false, claims: None, error: Some("Invalid signature encoding".to_string()) },
-    };
-    // Try native raw first (standard JWT), then DER
-    let signature = if signature_bytes.len() == 64 {
-         Signature::from_slice(&signature_bytes).ok()
-    } else {
-         Signature::from_der(&signature_bytes).ok()
-    };
-    
-    let signature = match signature {
-        Some(s) => s,
-        None => return VerificationResult { valid: false, claims: None, error: Some("Invalid signature length/format".to_string()) },
-    };
-
-    // 3. Decode Public Key
-    // The constant is SPKI (DER) base64 encoded.
-    let pub_key_bytes = match base64::engine::general_purpose::STANDARD.decode(PUB_KEY_B64) {
-        Ok(b) => b,
-        Err(_) => return VerificationResult { valid: false, claims: None, error: Some("Invalid public key error".to_string()) },
-    };
-    
-    let verifying_key = match VerifyingKey::from_public_key_der(&pub_key_bytes) {
-        Ok(k) => k,
-        Err(_) => return VerificationResult { valid: false, claims: None, error: Some("Key parsing error".to_string()) },
-    };
-
-    // 4. Verify
-    if verifying_key.verify(message.as_bytes(), &signature).is_err() {
-        return VerificationResult { valid: false, claims: None, error: Some("Signature verification failed".to_string()) };
-    }
-
-    // 5. Decode Payload
-    let payload_bytes = match URL_SAFE_NO_PAD.decode(payload_b64) {
-        Ok(b) => b,
-        Err(_) => return VerificationResult { valid: false, claims: None, error: Some("Invalid payload encoding".to_string()) },
+        Err(_) => return json_err("Invalid Base64 payload"),
     };
 
     let payload: LicensePayload = match serde_json::from_slice(&payload_bytes) {
         Ok(p) => p,
-        Err(_) => return VerificationResult { valid: false, claims: None, error: Some("Invalid payload JSON".to_string()) },
+        Err(e) => return json_err(&format!("Invalid JSON payload: {}", e)),
     };
 
-    // 6. Check Expiration
-    let expires_at_str = &payload.expires_at;
-    let expires_at = match chrono::DateTime::parse_from_rfc3339(expires_at_str) {
-        Ok(d) => d,
-        Err(_) => {
-            // Try lenient parsing if needed, but ISO is expected
-             return VerificationResult { valid: false, claims: None, error: Some("Invalid expiration date format".to_string()) }
+    // 3. Verify Signature
+    let message = format!("{}.{}", parts[0], parts[1]);
+    if !verify_jwt_signature(&message, sig_part, public_key_pem) {
+         return json_err("Signature verification failed");
+    }
+
+    // 4. Verify Expiry (Using timestamp from JS)
+    if let Ok(expiry_date) = chrono::DateTime::parse_from_rfc3339(&payload.expiresAt) {
+         let expiry_ms = expiry_date.timestamp_millis() as f64;
+         if current_timestamp_ms > expiry_ms {
+             return json_err("License expired");
+         }
+    }
+
+    // 5. Verify Machine Binding
+    if let Some(ref license_mid) = payload.machineId {
+        if let Some(ref sys_fp) = system_fingerprint_opt {
+             let sys_machine_id = sys_fp.split('|').next().unwrap_or("");
+             if license_mid != sys_machine_id {
+                  return json_err(&format!("Machine ID mismatch. License bound to {}, system is {}", license_mid, sys_machine_id));
+             }
+        } else {
+             return json_err("License requires machine binding, but no system ID provided");
         }
-    };
-    
-    let now = chrono::Utc::now();
-    if expires_at < now {
-        return VerificationResult { 
-            valid: false, 
-            claims: Some(payload), 
-            error: Some("License expired".to_string()) 
-        };
     }
 
-    VerificationResult {
-        valid: true,
-        claims: Some(payload),
+    // Success
+    let res = VerificationResult {
+        isValid: true,
         error: None,
-    }
+        payload: Some(payload),
+    };
+    serde_json::to_string(&res).unwrap_or_else(|_| "{}".to_string())
+}
+
+fn json_err(msg: &str) -> String {
+    let res = VerificationResult {
+        isValid: false,
+        error: Some(msg.to_string()),
+        payload: None,
+    };
+    serde_json::to_string(&res).unwrap_or_else(|_| "{}".to_string())
+}
+
+fn verify_jwt_signature(message: &str, signature_b64: &str, pub_key_pem: &str) -> bool {
+    let signature_bytes = match URL_SAFE_NO_PAD.decode(signature_b64) {
+        Ok(b) => b,
+        Err(_) => return false,
+    };
+
+    use p256::pkcs8::DecodePublicKey;
+    let verifying_key = match VerifyingKey::from_public_key_pem(pub_key_pem) {
+        Ok(k) => k,
+        Err(_) => return false,
+    };
+
+    let signature = match Signature::from_slice(&signature_bytes) {
+         Ok(s) => s,
+         Err(_) => return false,
+    };
+
+    verifying_key.verify(message.as_bytes(), &signature).is_ok()
 }

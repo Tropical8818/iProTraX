@@ -76,8 +76,8 @@ export function getDefaultMappings(): ColumnMappings {
     return {
         "WO ID": ["WO ID", "工单号", "Work Order", "订单号", "WO Number", "Order ID"],
         "Description": ["Description", "描述", "说明", "Desc", "Product", "产品"],
-        "WO DUE": ["WO DUE", "到期日", "Due Date", "截止日期", "Deadline", "交期"],
-        "WO Rel": ["WO Rel", "发布日", "Release Date", "发放日", "Released"],
+        "WO DUE": ["WO DUE", "到期日", "Due Date", "截止日期", "Deadline", "交期", "Dead line", "Target Date", "Finish Date", "交付日期", "承诺交期"],
+        "WO Rel": ["WO Rel", "发布日", "Release Date", "发放日", "Released", "下发日期", "工单发布"],
         "Receipt": ["Receipt", "收货", "Received", "完成", "Completion"],
     };
 }
