@@ -18,8 +18,24 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        // Basic security check: ensure it starts with standard app data paths or CWD/data
-        const absolutePath = path.isAbsolute(filePath) ? filePath : path.join(process.cwd(), filePath);
+        // SECURITY: Prevent Path Traversal
+        // 1. Resolve to absolute path
+        const absolutePath = path.resolve(filePath.startsWith('/') ? filePath : path.join(process.cwd(), filePath));
+
+        // 2. Define allowed root (Project Root)
+        const projectRoot = path.resolve(process.cwd());
+
+        // 3. Strict Check: File must be within project root
+        if (!absolutePath.startsWith(projectRoot)) {
+            console.error(`[Security Block] Attempted access outside root: ${absolutePath}`);
+            return NextResponse.json({ error: 'Access denied: Invalid file path' }, { status: 403 });
+        }
+
+        // 4. Block access to sensitive files explicitly
+        const sensitiveFiles = ['.env', '.git', 'package.json', 'tsconfig.json'];
+        if (sensitiveFiles.some(f => absolutePath.includes(f))) {
+            return NextResponse.json({ error: 'Access denied: Sensitive file' }, { status: 403 });
+        }
 
         if (!fs.existsSync(absolutePath)) {
             return NextResponse.json({ error: 'File not found' }, { status: 404 });
