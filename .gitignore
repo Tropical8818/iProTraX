@@ -59,6 +59,7 @@ docs/ProTracker_PPT_Template.md
 
 # Rust
 **/target/
+!src/lib/wasm-pkg/
 
 # Debug & One-off Scripts
 scripts/check_*.js
