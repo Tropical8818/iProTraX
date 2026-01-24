@@ -87,7 +87,25 @@ export function MessageNotification() {
                     <div className="absolute right-0 top-12 w-96 bg-white dark:bg-slate-800 rounded-lg shadow-xl border dark:border-slate-700 z-[101]">
                         <div className="p-4 border-b dark:border-slate-700 flex justify-between items-center">
                             <h3 className="font-bold text-gray-900 dark:text-white">💬 Messages</h3>
-                            <span className="text-sm text-gray-500 dark:text-slate-400">{unreadCount} unread</span>
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm text-gray-500 dark:text-slate-400">{unreadCount} unread</span>
+                                {unreadCount > 0 && (
+                                    <button
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
+                                            try {
+                                                await fetch('/api/messages/read-all', { method: 'POST' });
+                                                fetchMessages();
+                                            } catch (error) {
+                                                console.error('Failed to mark all as read:', error);
+                                            }
+                                        }}
+                                        className="text-xs text-indigo-600 hover:text-indigo-800 font-medium hover:underline"
+                                    >
+                                        Mark all read
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         <div className="max-h-96 overflow-y-auto">

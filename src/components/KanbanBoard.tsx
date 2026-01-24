@@ -42,6 +42,78 @@ function safeParseData(order: Order): Record<string, any> {
     return order;
 }
 
+// Helper to reliably get WO ID from order data (handles various column name formats)
+function getWoId(order: Order): string {
+    if (!order) return '';
+
+    // Try explicit fields first
+    if (order.woId) return order.woId;
+    if (order['WO ID']) return String(order['WO ID']);
+
+    const data = safeParseData(order);
+    if (data['WO ID']) return String(data['WO ID']);
+
+    // Try aliases
+    const woIdAliases = ['WO_ID', 'WOID', 'Order ID', 'OrderID', 'Work Order', 'WorkOrder', 'wo id', '工单号'];
+    for (const alias of woIdAliases) {
+        if (order[alias]) return String(order[alias]);
+        if (data[alias]) return String(data[alias]);
+    }
+
+    // Try case-insensitive match
+    // Check top-level keys
+    for (const key of Object.keys(order)) {
+        const keyLower = key.toLowerCase().replace(/[_\s]/g, '');
+        if (keyLower === 'woid' || keyLower === 'orderid') {
+            return String(order[key] || '');
+        }
+    }
+    // Check data keys
+    for (const key of Object.keys(data)) {
+        const keyLower = key.toLowerCase().replace(/[_\s]/g, '');
+        if (keyLower === 'woid' || keyLower === 'orderid') {
+            return String(data[key] || '');
+        }
+    }
+
+    // Fallback to ID
+    return order.id || 'Unknown';
+}
+
+// Helper to robustly get description (handles renaming of Description column)
+function getDescription(order: Order, detailColumns?: string[]): string {
+    if (!order) return '';
+
+    // 1. Try standard keys
+    if (order.Description) return String(order.Description);
+    if (order['Description']) return String(order['Description']);
+
+    const data = safeParseData(order);
+    if (data.Description) return String(data.Description);
+    if (data['Description']) return String(data['Description']);
+
+    // 2. Try common aliases
+    const aliases = ['Desc', 'desc', 'Description', 'description', '描述', 'Product', '产品', 'Name', 'Title'];
+    for (const alias of aliases) {
+        if (order[alias]) return String(order[alias]);
+        if (data[alias]) return String(data[alias]);
+    }
+
+    // 3. Try to find any column that contains "desc" or "name" from config
+    // (This is a heuristic fallback)
+    /*
+    if (detailColumns) {
+        const descCol = detailColumns.find(c => c.toLowerCase().includes('desc') || c.toLowerCase().includes('name'));
+        if (descCol) {
+            if (order[descCol]) return String(order[descCol]);
+            if (data[descCol]) return String(data[descCol]);
+        }
+    }
+    */
+
+    return '';
+}
+
 // Helper: Determine which column (Step) an order belongs to.
 function getOrderColumn(order: Order, steps: string[]): string {
     const data = safeParseData(order);
@@ -96,7 +168,8 @@ const KanbanCard = ({ order, status, isOverlay, columnWidth, onClick, disabled }
     const Wrapper = isOverlay ? 'div' : 'div';
 
     // Safety check for WO ID
-    const woId = order['WO ID'] || order.id || 'Unknown';
+    const woId = getWoId(order);
+    const description = getDescription(order);
 
     // Responsive font size based on column width
     const fontSize = columnWidth < 280 ? 'text-xs' : columnWidth < 350 ? 'text-sm' : 'text-base';
@@ -116,8 +189,8 @@ const KanbanCard = ({ order, status, isOverlay, columnWidth, onClick, disabled }
                     <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                 )}
             </div>
-            <div className={`text-xs truncate ${v.startsWith('P') ? 'text-blue-50' : 'text-slate-500'}`} title={order.Description || ''}>
-                {order.Description || 'No description'}
+            <div className={`text-xs truncate ${v.startsWith('P') ? 'text-blue-50' : 'text-slate-500'}`} title={description}>
+                {description || 'No description'}
             </div>
             <div className={`mt-2 flex justify-between items-center text-[10px] font-mono ${v.startsWith('P') ? 'text-blue-100' : 'text-slate-500'}`}>
                 <span className="truncate">{order.PN}</span>
@@ -196,7 +269,7 @@ const KanbanColumn = ({
                             order={order}
                             status={status}
                             columnWidth={width}
-                            onClick={() => onCardClick?.(order['WO ID'] || order.id)}
+                            onClick={() => onCardClick?.(getWoId(order))}
                             disabled={dragDisabled}
                         />;
                     })}
@@ -386,7 +459,7 @@ export default function KanbanBoard({ orders, steps, onStatusChange, onOrderClic
                 const stepToComplete = steps[i];
                 console.log('[Kanban] Completing step:', stepToComplete);
                 // Use woId (database field) or fall back to 'WO ID' from data
-                const woIdForApi = activeOrder.woId || activeOrder['WO ID'];
+                const woIdForApi = getWoId(activeOrder);
                 await onStatusChange(woIdForApi, stepToComplete, 'Done');
             }
         } else {
@@ -420,7 +493,7 @@ export default function KanbanBoard({ orders, steps, onStatusChange, onOrderClic
 
                 if (i < steps.length) {
                     const stepToReset = steps[i];
-                    const woIdForApi = activeOrder.woId || activeOrder['WO ID'];
+                    const woIdForApi = getWoId(activeOrder);
                     await onStatusChange(woIdForApi, stepToReset, 'Reset');
                 }
             }

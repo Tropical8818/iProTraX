@@ -73,6 +73,73 @@ function getStepAbbrev(step: string): string {
     return STEP_ABBREV[step] || step;
 }
 
+// Column name alias mapping - maps config names to possible data key names
+// This handles the case where column mapping standardizes names during import
+// e.g., "Due date" in config -> data key might be "WO DUE" after normalization
+const COLUMN_ALIASES: Record<string, string[]> = {
+    'Due date': ['WO DUE', 'Due Date', 'due date', 'DUE DATE'],
+    'Release date': ['WO Rel', 'Release Date', 'release date', 'RELEASE DATE'],
+    'WO DUE': ['Due date', 'Due Date', 'due date'],
+    'WO Rel': ['Release date', 'Release Date', 'release date'],
+    'WO ID': ['WO_ID', 'WOID', 'Order ID', 'OrderID', 'Work Order', 'WorkOrder', 'wo id', '工单号'],
+};
+
+// Get the WO ID from order data - handles various column name formats
+function getWoId(order: Record<string, unknown>): string {
+    // Try exact match first
+    if (order['WO ID']) return String(order['WO ID']);
+
+    // Try aliases
+    const woIdAliases = ['WO_ID', 'WOID', 'Order ID', 'OrderID', 'Work Order', 'WorkOrder', 'wo id', '工单号'];
+    for (const alias of woIdAliases) {
+        if (order[alias]) return String(order[alias]);
+    }
+
+    // Try case-insensitive match for keys containing 'wo' and 'id'
+    for (const key of Object.keys(order)) {
+        const keyLower = key.toLowerCase().replace(/[_\s]/g, '');
+        if (keyLower === 'woid' || keyLower === 'orderid') {
+            return String(order[key] || '');
+        }
+    }
+
+    // Last resort: use the first column value (often the ID)
+    const firstKey = Object.keys(order).find(k => !['id', 'productId', 'data', 'createdAt', 'updatedAt'].includes(k));
+    if (firstKey && order[firstKey]) {
+        return String(order[firstKey]);
+    }
+
+    return '';
+}
+
+// Get the value from order using column name or its aliases
+function getOrderValue(order: Record<string, unknown>, colName: string): string {
+    // Direct match first
+    if (order[colName] !== undefined && order[colName] !== null && order[colName] !== '') {
+        return String(order[colName]);
+    }
+
+    // Try aliases
+    const aliases = COLUMN_ALIASES[colName];
+    if (aliases) {
+        for (const alias of aliases) {
+            if (order[alias] !== undefined && order[alias] !== null && order[alias] !== '') {
+                return String(order[alias]);
+            }
+        }
+    }
+
+    // Try case-insensitive match
+    const colLower = colName.toLowerCase();
+    for (const key of Object.keys(order)) {
+        if (key.toLowerCase() === colLower) {
+            return String(order[key] || '');
+        }
+    }
+
+    return '';
+}
+
 export default function PlannerTable({
     orders,
     steps: orderedSteps, // Renamed to avoid conflict with local 'steps' variable
@@ -640,11 +707,13 @@ export default function PlannerTable({
                         <tr key={order.id} className={`border-b border-slate-100 hover:bg-slate-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
                             {/* Detail Columns - Dynamic Rendering */}
                             {effectiveDetailColumns.map((col, colIdx) => {
-                                const value = order[col] || '';
+                                const value = getOrderValue(order, col);
                                 const colUpper = col.toUpperCase();
 
-                                // WO ID - Clickable, first column sticky
-                                if (col === 'WO ID') {
+                                // First column (WO ID) - Clickable, sticky
+                                if (colIdx === 0) {
+                                    // Always use the actual WO ID for navigation (handles various column name formats)
+                                    const woIdForNav = getWoId(order) || value;
                                     return (
 
                                         <td
@@ -655,7 +724,7 @@ export default function PlannerTable({
                                             <div className="flex items-center justify-between gap-1">
                                                 <span
                                                     className="cursor-pointer text-indigo-600 dark:text-blue-400 hover:underline truncate"
-                                                    onClick={() => onNavigate(value)}
+                                                    onClick={() => onNavigate(String(woIdForNav))}
                                                 >
                                                     {value}
                                                 </span>
@@ -855,20 +924,23 @@ export default function PlannerTable({
                                                                         : ''
                                             }`}
                                         onClick={() => {
+                                            // Robust ID retrieval
+                                            const woId = getWoId(order);
+
                                             if (isEraseClickable && onErase) {
-                                                onErase(order['WO ID'], step);
+                                                onErase(woId, step);
                                             } else if (isPClickable && onSetP) {
-                                                onSetP(order['WO ID'], step, cellValue);
+                                                onSetP(woId, step, cellValue);
                                             } else if (isNAClickable && onSetNA) {
-                                                onSetNA(order['WO ID'], step, cellValue);
+                                                onSetNA(woId, step, cellValue);
                                             } else if (isHoldClickable && onSetHold) {
-                                                onSetHold(order['WO ID'], step, cellValue);
+                                                onSetHold(woId, step, cellValue);
                                             } else if (isQNClickable && onSetQN) {
-                                                onSetQN(order['WO ID'], step, cellValue);
+                                                onSetQN(woId, step, cellValue);
                                             } else if (isWIPClickable && onSetWIP) {
-                                                onSetWIP(order['WO ID'], step, cellValue);
+                                                onSetWIP(woId, step, cellValue);
                                             } else if (isCompleteClickable && onSetComplete) {
-                                                onSetComplete(order['WO ID'], step);
+                                                onSetComplete(woId, step);
                                             }
                                         }}
                                         title={

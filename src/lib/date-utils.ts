@@ -124,3 +124,57 @@ export function excelSerialToDate(serial: number): Date {
 
     return dateInfo;
 }
+
+/**
+ * Parse "dd-MMM, HH:mm" (e.g., "23-Jan, 16:29") back to Date object
+ * Defaults to current year.
+ */
+export function parseShortTimestamp(str: string): Date | null {
+    if (!str) return null;
+
+    // Regex for dd-MMM, HH:mm
+    const match = str.match(/(\d{1,2})-([A-Za-z]{3}),\s*(\d{1,2}):(\d{2})/);
+    if (!match) return null;
+
+    const [_, day, monthStr, hour, minute] = match;
+    const months: { [key: string]: number } = {
+        'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+        'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+    };
+
+    const monthIndex = months[monthStr];
+    if (monthIndex === undefined) return null;
+
+    const now = new Date();
+    const year = now.getFullYear();
+
+    const date = new Date(year, monthIndex, parseInt(day), parseInt(hour), parseInt(minute));
+
+    // Handle edge case: if we are in Jan and date is Dec, might be previous year? 
+    // For now assuming current year is fine as this is a short-term production tracker.
+
+    return date;
+}
+
+/**
+ * Format a date as "YYYY-MM-DD HH:mm" for backend storage
+ */
+export function formatToFullTimestamp(date: Date): string {
+    const timeZone = getTimeZone();
+    try {
+        // Use sv-SE (Sweden) locale which uses ISO 8601 format YYYY-MM-DD
+        const formatter = new Intl.DateTimeFormat('sv-SE', {
+            timeZone,
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+        });
+        return formatter.format(date).replace(' ', 'T').replace('T', ' '); // Ensure space separator if needed, or keeping it ISO-like
+    } catch {
+        // Fallback
+        return date.toISOString().slice(0, 16).replace('T', ' ');
+    }
+}

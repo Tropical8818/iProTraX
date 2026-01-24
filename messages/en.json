@@ -307,7 +307,15 @@
         "certificateId": "Certificate ID",
         "templateExists": "Excel Template Ready",
         "downloadTemplate": "Download Template",
-        "regenerateTemplate": "Re-generate"
+        "regenerateTemplate": "Re-generate",
+        "renameColumn": "Rename Column (Migrate Data)",
+        "renameColumnDesc": "This will update all existing order data to use the new column name.",
+        "oldColumnName": "Old Column Name",
+        "newColumnName": "New Column Name",
+        "migrationWarning": "This action will modify all existing orders for this product. Make sure the old column name exactly matches the data in your orders.",
+        "migrate": "Migrate",
+        "migrating": "Migrating...",
+        "doubleClickToRename": "Double-click column name to rename (data will be migrated)"
     },
     "StepTracking": {
         "trackProgress": "Track Progress",

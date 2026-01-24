@@ -7,7 +7,7 @@
 import { prisma } from '@/lib/prisma';
 import { parseExcelBuffer } from '@/lib/excel';
 import * as fs from 'fs';
-import { normalizeHeaders, getDefaultMappings, validateRequiredColumns, type ColumnMappings } from '@/lib/columnMapping';
+import { getDefaultMappings, type ColumnMappings } from '@/lib/columnMapping';
 import { validateOrderData, getDefaultValidationRules, type ValidationRules, type ValidationError } from '@/lib/validation';
 import { formatToShortTimestamp, getNow, excelSerialToDate, formatToExcelTimestamp, formatToDateOnly } from '@/lib/date-utils';
 
@@ -72,13 +72,15 @@ export async function importFromBuffer(buffer: Buffer, options: ImportOptions): 
         .map(h => h ? String(h).trim() : '')
         .filter(h => h && h.length > 0 && !h.includes('null') && !h.toLowerCase().includes('unnamed'));
 
-    // Apply column mapping
-    const { normalized: headers, mapping: headerMapping } = normalizeHeaders(detectedHeaders, columnMappings);
+    // SIMPLIFIED: Use original column names directly (no normalization)
+    // This ensures consistency: Settings → Template → Import all use the same names
+    const headers = detectedHeaders;
+    const headerMapping: Record<string, string> = {}; // Empty since no normalization
 
-    // Validate required columns
-    const requiredCheck = validateRequiredColumns(headers, ['WO ID']);
-    if (!requiredCheck.valid) {
-        return createErrorResult(`Missing required columns: ${requiredCheck.missing.join(', ')}`);
+    // Validate required columns (case-insensitive check for WO ID)
+    const hasWoId = headers.some(h => h.toLowerCase() === 'wo id');
+    if (!hasWoId) {
+        return createErrorResult('Missing required column: WO ID');
     }
 
     // Parse data rows (starting from row 3, index 2)
@@ -157,24 +159,27 @@ export async function importFromBuffer(buffer: Buffer, options: ImportOptions): 
         const steps: string[] = config.steps || [];
         const detailColumns: string[] = config.detailColumns || [];
 
-        // Identify due date and release date keys for more robust selection
-        const dueDateKey = Object.keys(rowData).find(k => k.toLowerCase().includes('due') || k.toLowerCase().includes('date') || k.toLowerCase().includes('交期') || k.toLowerCase().includes('到期'));
+        // SIMPLIFIED: Direct matching with case-insensitive fallback
+        // Since we're not normalizing column names, config names should match Excel header names directly
+        const matchesColumn = (key: string, targetColumns: string[]): boolean => {
+            const keyLower = key.toLowerCase();
+            return targetColumns.some(col => col.toLowerCase() === keyLower);
+        };
 
-        // Only keep columns that are in detailColumns OR are WO ID OR are due/release dates
+        // Only keep columns that are in detailColumns OR are WO ID
         Object.keys(rowData).forEach(key => {
-            const isWordOrderId = key === 'WO ID';
-            const isConfiguredDetail = detailColumns.includes(key);
-            const isCommonField = key.toLowerCase().includes('customer') ||
-                key.toLowerCase().includes('qty') ||
-                key.toLowerCase().includes('ecd');
-            const isDueDateField = key === dueDateKey ||
-                key === 'WO DUE' ||
-                headerMapping[key] === 'WO DUE';
-            const isReleaseDateField = key === woRelKey ||
-                key === 'WO Rel' ||
-                headerMapping[key] === 'WO Rel';
+            const keyLower = key.toLowerCase();
+            const isWoId = keyLower === 'wo id';
+            const isConfiguredDetail = matchesColumn(key, detailColumns);
 
-            if (isWordOrderId || isConfiguredDetail || isCommonField || isDueDateField || isReleaseDateField) {
+            // Include common important fields as fallback
+            const isCommonField = keyLower.includes('customer') ||
+                keyLower.includes('qty') ||
+                keyLower.includes('due') ||
+                keyLower.includes('release') ||
+                keyLower.includes('ecd');
+
+            if (isWoId || isConfiguredDetail || isCommonField) {
                 detailData[key] = rowData[key];
             }
         });

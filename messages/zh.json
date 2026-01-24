@@ -307,7 +307,15 @@
         "certificateId": "证书ID",
         "templateExists": "Excel 模板已就绪",
         "downloadTemplate": "下载模板",
-        "regenerateTemplate": "重新生成"
+        "regenerateTemplate": "重新生成",
+        "renameColumn": "重命名列 (迁移数据)",
+        "renameColumnDesc": "这将更新所有现有订单数据以使用新的列名。",
+        "oldColumnName": "旧列名",
+        "newColumnName": "新列名",
+        "migrationWarning": "此操作将修改该产品的所有现有订单。请确保旧列名与订单中的数据完全匹配。",
+        "migrate": "迁移",
+        "migrating": "迁移中...",
+        "doubleClickToRename": "双击列名可重命名（数据将同步迁移）"
     },
     "StepTracking": {
         "trackProgress": "进度追踪",

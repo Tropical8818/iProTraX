@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
+import { parseShortTimestamp } from '@/lib/date-utils';
 import {
     LayoutDashboard, FileText, Settings, LogOut,
     Maximize, Minimize, Activity, AlertCircle, ScanBarcode, ArrowRight,
@@ -1159,21 +1160,39 @@ export default function DashboardPage() {
                                         const currentMonth = today.getMonth();
                                         const currentYear = today.getFullYear();
 
-                                        // Find receipt/completion column (case-insensitive)
-                                        const receiptCol = steps.find(s =>
-                                            s.toLowerCase() === 'receipt' ||
-                                            s.toLowerCase() === 'outgoing' ||
-                                            s.toLowerCase() === 'completion'
-                                        ) || steps[steps.length - 1];
+                                        // Helper to get value case-insensitively
+                                        const getStepValue = (o: any, stepName: string) => {
+                                            if (o[stepName]) return o[stepName];
+                                            const lower = stepName.toLowerCase();
+                                            for (const key of Object.keys(o)) {
+                                                if (key.toLowerCase() === lower) return o[key];
+                                            }
+                                            return '';
+                                        };
+
+                                        // Logic: The order is completed when the LAST step is finished (has a date)
+                                        const receiptCol = steps.length > 0 ? steps[steps.length - 1] : '';
 
                                         let completed = 0;
                                         if (receiptCol) {
                                             completed = orders.filter(o => {
-                                                const val = o[receiptCol];
-                                                if (!val) return false;
-                                                const d = new Date(val);
-                                                return !isNaN(d.getTime()) &&
-                                                    d.getMonth() === currentMonth &&
+                                                const val = getStepValue(o, receiptCol);
+                                                if (!val || val.toUpperCase() === 'N/A') return false;
+
+                                                // Priority: Try our custom parser first (formats to Current Year), then fallback to native.
+                                                // Now that we migrated data to YYYY-MM-DD, native parser works great too.
+                                                // But keeping robustness is good.
+                                                let d = parseShortTimestamp(val);
+                                                if (!d) {
+                                                    const native = new Date(val);
+                                                    if (!isNaN(native.getTime())) {
+                                                        d = native;
+                                                    }
+                                                }
+
+                                                if (!d) return false;
+
+                                                return d.getMonth() === currentMonth &&
                                                     d.getFullYear() === currentYear;
                                             }).length;
                                         }
@@ -1203,21 +1222,23 @@ export default function DashboardPage() {
                                         }
 
                                         return (
-                                            <div className="flex items-baseline gap-2">
-                                                <span>{completed}</span>
-                                                <span
-                                                    className={`text-xs font-normal text-slate-500 ${(role === 'admin' || role === 'supervisor') ? 'cursor-pointer hover:text-blue-600 hover:bg-blue-100 px-1 rounded transition-colors' : ''}`}
-                                                    title={(role === 'admin' || role === 'supervisor') ? "Click to edit target" : ""}
-                                                    onClick={() => {
-                                                        if (role === 'admin' || role === 'supervisor') {
-                                                            setTempTarget(target.toString());
-                                                            setEditingTarget(true);
-                                                        }
-                                                    }}
-                                                >
-                                                    / {target}
-                                                </span>
-                                                <span className={`text-xs ml-1 ${percentage >= 100 ? 'text-green-600' : 'text-slate-400'}`}>({percentage}%)</span>
+                                            <div className="flex flex-col">
+                                                <div className="flex items-baseline gap-2">
+                                                    <span>{completed}</span>
+                                                    <span
+                                                        className={`text-xs font-normal text-slate-500 ${(role === 'admin' || role === 'supervisor') ? 'cursor-pointer hover:text-blue-600 hover:bg-blue-100 px-1 rounded transition-colors' : ''}`}
+                                                        title={(role === 'admin' || role === 'supervisor') ? "Click to edit target" : ""}
+                                                        onClick={() => {
+                                                            if (role === 'admin' || role === 'supervisor') {
+                                                                setTempTarget(target.toString());
+                                                                setEditingTarget(true);
+                                                            }
+                                                        }}
+                                                    >
+                                                        / {target}
+                                                    </span>
+                                                    <span className={`text-xs ml-1 ${percentage >= 100 ? 'text-green-600' : 'text-slate-400'}`}>({percentage}%)</span>
+                                                </div>
                                             </div>
                                         );
                                     })()}

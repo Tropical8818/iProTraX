@@ -2,6 +2,7 @@ import ExcelJS from 'exceljs';
 import * as fs from 'fs';
 import { getConfig, getProductById, Product } from './config';
 import { formatToExcelTimestamp, getNow } from './date-utils';
+import { getDefaultMappings } from './columnMapping';
 
 // Columns that are NOT process steps
 const NON_STEP_COLUMNS = ['WO ID', 'PN', 'Description', 'Remarks', 'Type', 'QCP', 'WO DUE', 'Priority', ' Priority'];
@@ -145,19 +146,43 @@ export async function readOrders(productId?: string): Promise<ExcelData> {
             ? product.detailColumns.filter(c => headers.includes(c))
             : NON_STEP_COLUMNS.filter(c => headers.includes(c));
 
+        // Helper to get column index with aliases
+        const mappings = getDefaultMappings();
+        const getColIndex = (name: string): number => {
+            // Try exact match
+            let idx = headers.indexOf(name);
+            if (idx >= 0) return idx;
+
+            // Try aliases
+            const aliases = mappings[name];
+            if (aliases) {
+                for (const alias of aliases) {
+                    idx = headers.indexOf(alias);
+                    if (idx >= 0) return idx;
+                }
+            }
+
+            // Try case-insensitive
+            const lowerName = name.toLowerCase();
+            idx = headers.findIndex(h => h.toLowerCase() === lowerName);
+            if (idx >= 0) return idx;
+
+            return -1;
+        };
+
         // Map row data to objects
         const orders: Order[] = [];
         for (let i = 2; i < rawData.length; i++) {
             const row = rawData[i] as (string | number | null)[];
             if (!row || row.length === 0) continue;
 
-            const woIdIdx = headers.indexOf('WO ID');
-            const woId = row[woIdIdx] ?? '';
+            const woIdIdx = getColIndex('WO ID');
+            const woId = woIdIdx >= 0 ? row[woIdIdx] ?? '' : '';
 
             if (!woId) continue; // Skip rows without WO ID
 
             const getColVal = (name: string) => {
-                const idx = headers.indexOf(name);
+                const idx = getColIndex(name);
                 return idx >= 0 ? row[idx] : undefined;
             };
 
@@ -234,113 +259,5 @@ function formatCellValue(value: unknown): string {
     return String(value);
 }
 
-// Update order step for a specific product
-export async function updateOrderStep(woId: string, step: string, status: string, operatorId?: string, productId?: string): Promise<Order | null> {
-    const config = getConfig();
-
-    let product: Product | null;
-    if (productId) {
-        product = getProductById(productId);
-    } else {
-        product = config.products.find(p => p.id === config.activeProductId) || config.products[0];
-    }
-
-    if (!product || !product.excelPath) throw new Error('No product configured');
-
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(product.excelPath);
-    const sheet = findWorksheet(workbook);
-
-    const headerRow = sheet.getRow(1);
-    const headers: { [key: string]: number } = {};
-    headerRow.eachCell((cell, colNumber) => {
-        headers[String(cell.text || cell.value).trim()] = colNumber;
-    });
-
-    let targetRowNumber = -1;
-    const woIdCol = headers['WO ID'];
-
-    if (!woIdCol) throw new Error('WO ID columns not found');
-
-    sheet.eachRow((row, rowNumber) => {
-        if (rowNumber === 1) return;
-        const cell = row.getCell(woIdCol);
-        if (String(cell.value) === woId) {
-            targetRowNumber = rowNumber;
-        }
-    });
-
-    if (targetRowNumber === -1) {
-        throw new Error(`Order ${woId} not found`);
-    }
-
-    let cellValue: string;
-    if (status === 'Done') {
-        const now = getNow();
-        const formatted = formatToExcelTimestamp(now);
-        cellValue = operatorId ? `${formatted} (ID: ${operatorId})` : formatted;
-    } else if (status === 'Reset') {
-        cellValue = '';
-    } else {
-        cellValue = status;
-    }
-
-    const stepCol = headers[step];
-    if (stepCol === undefined) throw new Error(`Step ${step} not found`);
-
-    const targetRow = sheet.getRow(targetRowNumber);
-    const targetCell = targetRow.getCell(stepCol);
-    targetCell.value = cellValue;
-
-    await workbook.xlsx.writeFile(product.excelPath);
-
-    const { orders } = await readOrders(productId);
-    return orders.find(o => o['WO ID'] === woId) || null;
-}
-
-export async function updateOrderStepsBatch(updates: StepUpdate[], operatorId?: string, productId?: string): Promise<void> {
-    const config = getConfig();
-    let product: Product | null;
-    if (productId) {
-        product = getProductById(productId);
-    } else {
-        product = config.products.find(p => p.id === config.activeProductId) || config.products[0];
-    }
-
-    if (!product || !product.excelPath) throw new Error('Product not configured');
-
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(product.excelPath);
-    const sheet = findWorksheet(workbook);
-
-    const headerRow = sheet.getRow(1);
-    const headers: { [key: string]: number } = {};
-    headerRow.eachCell((cell, colNumber) => {
-        headers[String(cell.text || cell.value).trim()] = colNumber;
-    });
-
-    const woIdCol = headers['WO ID'] ?? 0;
-    const woRowMap: Record<string, number> = {};
-
-    sheet.eachRow((row, rowNumber) => {
-        if (rowNumber <= 1) return;
-        const cell = row.getCell(woIdCol);
-        woRowMap[String(cell.value)] = rowNumber;
-    });
-
-    updates.forEach(update => {
-        const r = woRowMap[update.woId];
-        const c = headers[update.step];
-        if (r !== undefined && c !== undefined) {
-            let cellValue = update.status;
-            if (update.status === 'Reset') {
-                cellValue = '';
-            }
-            const row = sheet.getRow(r);
-            const cell = row.getCell(c);
-            cell.value = cellValue;
-        }
-    });
-
-    await workbook.xlsx.writeFile(product.excelPath);
-}
+// Update functions removed to ensure Excel is treated as Read-Only / Import Template.
+// All status updates are persisted to the Database (Prisma/Postgres) only.

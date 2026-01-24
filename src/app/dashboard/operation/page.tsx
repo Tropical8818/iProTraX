@@ -156,7 +156,27 @@ function OperationContent() {
             const stepParam = searchParams.get('step');
 
             if (woParam) {
-                const order = ordersData.orders?.find((o: Order) => o['WO ID'] === woParam);
+                // Flexible WO ID matching - handles various column name formats
+                const order = ordersData.orders?.find((o: Order) => {
+                    // Try exact match first
+                    if (o['WO ID'] === woParam) return true;
+
+                    // Try various WO ID column names
+                    const woIdAliases = ['WO ID', 'WO_ID', 'WOID', 'Order ID', 'OrderID', 'Work Order', 'WorkOrder', 'wo id', '工单号'];
+                    for (const alias of woIdAliases) {
+                        if (o[alias] === woParam) return true;
+                    }
+
+                    // Case-insensitive search across all keys
+                    for (const key of Object.keys(o)) {
+                        const keyLower = key.toLowerCase().replace(/[_\s]/g, '');
+                        if ((keyLower === 'woid' || keyLower === 'orderid') && o[key] === woParam) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
                 if (order) {
                     setSelectedOrder(order);
 
@@ -315,12 +335,38 @@ function OperationContent() {
         setConfirmModal({ step, status });
     };
 
+    // Helper for robust WO ID retrieval
+    const getWoId = (order: Order): string => {
+        if (!order) return '';
+        // Try exact match
+        if (order['WO ID']) return String(order['WO ID']);
+
+        // Try aliases
+        const aliases = ['WO_ID', 'WOID', 'Order ID', 'OrderID', 'Work Order', 'WorkOrder', 'wo id', '工单号'];
+        for (const alias of aliases) {
+            if (order[alias]) return String(order[alias]);
+        }
+
+        // Try case-insensitive keys
+        for (const key of Object.keys(order)) {
+            const keyLower = key.toLowerCase().replace(/[_\s]/g, '');
+            if (keyLower === 'woid' || keyLower === 'orderid') {
+                return String(order[key]);
+            }
+        }
+
+        // Fallback to ID if nothing else matches
+        return order.id;
+    };
+
     const confirmAction = async () => {
         if (!confirmModal || !selectedOrder) return;
 
         setUpdating(true);
         try {
-            const res = await fetch(`/api/orders/${selectedOrder['WO ID']}/step`, {
+            // Use robust ID lookup
+            const targetWoId = getWoId(selectedOrder);
+            const res = await fetch(`/api/orders/${targetWoId}/step`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -331,14 +377,37 @@ function OperationContent() {
             });
 
             if (res.ok) {
-                await fetchData();
-                // Re-select the updated order
-                const ordersUrl = productId
-                    ? `/api/orders?productId=${productId}`
-                    : '/api/orders';
-                const updatedOrders = await (await fetch(ordersUrl)).json();
-                const updated = updatedOrders.orders?.find((o: Order) => o['WO ID'] === selectedOrder['WO ID']);
-                if (updated) setSelectedOrder(updated);
+                const data = await res.json();
+
+                // Optimistic / Immediate update of local state
+                if (data.order) {
+                    const updatedOrder = { ...selectedOrder, ...data.order };
+                    // Ensure the specific step key is updated in the top-level object if it's flattened
+                    if (data.order[confirmModal.step]) {
+                        updatedOrder[confirmModal.step] = data.order[confirmModal.step];
+                    } else if (data.order.data) {
+                        // If it's in the data object
+                        try {
+                            const parsed = typeof data.order.data === 'string' ? JSON.parse(data.order.data) : data.order.data;
+                            updatedOrder[confirmModal.step] = parsed[confirmModal.step];
+                        } catch (e) { }
+                    }
+
+                    setSelectedOrder(updatedOrder);
+
+                    // Update orders list as well
+                    setOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+                }
+
+                // Background refresh and ensure consistency
+                const freshOrders = await fetchData();
+                if (freshOrders && freshOrders.length > 0) {
+                    // Re-sync selectedOrder from fresh server data using stable ID
+                    const freshSelected = freshOrders.find((o: Order) => o.id === selectedOrder.id);
+                    if (freshSelected) {
+                        setSelectedOrder(freshSelected);
+                    }
+                }
             }
         } catch (err) {
             console.error(err);
@@ -356,7 +425,12 @@ function OperationContent() {
         if (v === 'HOLD') return 'bg-orange-100 text-orange-800';
         if (v === 'QN' || v === 'DIFA') return 'bg-red-100 text-red-800';
         if (v === 'N/A') return 'bg-slate-200 text-slate-600';
-        if (/\d{4}-\d{2}-\d{2}/.test(val)) return 'bg-green-100 text-green-800';
+
+        // Date Check: Matches YYYY-MM-DD, DD-MMM (24-Jan), DD/MM/YYYY
+        if (/\d{4}-\d{2}-\d{2}/.test(val) || /\d{1,2}-[A-Za-z]{3}/.test(val) || /\d{1,2}\/\d{1,2}/.test(val)) {
+            return 'bg-green-100 text-green-800';
+        }
+
         return 'bg-slate-100 text-slate-600';
     };
 

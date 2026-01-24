@@ -129,6 +129,13 @@ export default function SettingsPage() {
     const [newStepName, setNewStepName] = useState('');
     const [newDetailColumnName, setNewDetailColumnName] = useState('');
 
+    // Inline column editing state
+    const [editingColumnIndex, setEditingColumnIndex] = useState<number | null>(null);
+    const [editingColumnValue, setEditingColumnValue] = useState('');
+    const [editingStepIndex, setEditingStepIndex] = useState<number | null>(null);
+    const [editingStepValue, setEditingStepValue] = useState('');
+    const [migrating, setMigrating] = useState(false);
+
     // Template creation state
     const [creatingTemplate, setCreatingTemplate] = useState(false);
 
@@ -403,6 +410,132 @@ export default function SettingsPage() {
         const updated = { ...editingProduct, detailColumns: newCols };
         setEditingProduct(updated);
         updateProduct(updated);
+    };
+
+    // Inline rename column with data migration
+    const renameAndMigrateColumn = async (index: number, oldName: string, newName: string) => {
+        if (!editingProduct || !oldName || !newName || oldName === newName) {
+            setEditingColumnIndex(null);
+            return;
+        }
+
+        setMigrating(true);
+        try {
+            // 1. Call API to migrate data
+            const res = await fetch('/api/migrate-columns', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productId: editingProduct.id,
+                    oldColumnName: oldName,
+                    newColumnName: newName
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Migration failed');
+            }
+
+            // 2. Update detailColumns
+            const newCols = [...editingProduct.detailColumns];
+            newCols[index] = newName;
+            const updated = { ...editingProduct, detailColumns: newCols };
+
+            setEditingProduct(updated);
+            updateProduct(updated);
+
+            setMessage({
+                type: 'success',
+                text: `✓ "${oldName}" → "${newName}" (${data.migratedOrders} orders migrated)`
+            });
+        } catch (error) {
+            setMessage({
+                type: 'error',
+                text: error instanceof Error ? error.message : 'Migration failed'
+            });
+        } finally {
+            setMigrating(false);
+            setEditingColumnIndex(null);
+            setEditingColumnValue('');
+        }
+    };
+
+    // Inline rename Step with data migration
+    const renameAndMigrateStep = async (index: number, oldName: string, newName: string) => {
+        if (!editingProduct || !oldName || !newName || oldName === newName) {
+            setEditingStepIndex(null);
+            return;
+        }
+
+        // Prevent duplicate step names
+        if (editingProduct.steps.includes(newName)) {
+            setMessage({ type: 'error', text: 'Step name already exists!' });
+            return;
+        }
+
+        setMigrating(true);
+        try {
+            // 1. Call API to migrate data (same API works for any key in JSON data)
+            const res = await fetch('/api/migrate-columns', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productId: editingProduct.id,
+                    oldColumnName: oldName,
+                    newColumnName: newName
+                })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Migration failed');
+            }
+
+            // 2. Update steps array
+            const newSteps = [...editingProduct.steps];
+            newSteps[index] = newName;
+
+            // 3. Update stepDurations keys
+            const newDurations = { ...editingProduct.stepDurations };
+            if (newDurations[oldName] !== undefined) {
+                newDurations[newName] = newDurations[oldName];
+                delete newDurations[oldName];
+            }
+
+            // 4. Update stepUnits keys (if exists)
+            const newUnits = { ...editingProduct.stepUnits };
+            if (newUnits && newUnits[oldName] !== undefined) {
+                newUnits[newName] = newUnits[oldName];
+                delete newUnits[oldName];
+            }
+
+            const updated = {
+                ...editingProduct,
+                steps: newSteps,
+                stepDurations: newDurations,
+                stepUnits: newUnits
+            };
+
+            setEditingProduct(updated);
+            updateProduct(updated);
+
+            setMessage({
+                type: 'success',
+                text: `✓ Step "${oldName}" → "${newName}" (${data.migratedOrders} orders migrated)`
+            });
+        } catch (error) {
+            setMessage({
+                type: 'error',
+                text: error instanceof Error ? error.message : 'Migration failed'
+            });
+        } finally {
+            setMigrating(false);
+            setEditingStepIndex(null);
+            setEditingStepValue('');
+        }
     };
 
     // Manual step management functions
@@ -1226,7 +1359,7 @@ export default function SettingsPage() {
                                                     </p>
 
                                                     {/* Add Detail Column Input */}
-                                                    <div className="flex gap-2 mb-3">
+                                                    <div className="flex gap-2 mb-2">
                                                         <input
                                                             type="text"
                                                             value={newDetailColumnName}
@@ -1244,16 +1377,57 @@ export default function SettingsPage() {
                                                         </button>
                                                     </div>
 
-                                                    {/* Detail Columns List */}
+                                                    {/* Detail Columns List - Double-click to rename */}
+                                                    <p className="text-[10px] text-amber-600 mb-2">💡 {t('doubleClickToRename') || 'Double-click column name to rename (data will be migrated)'}</p>
                                                     <div className="bg-white border border-slate-200 rounded-lg p-1 min-h-[100px] max-h-[400px] overflow-y-auto space-y-1">
                                                         {editingProduct.detailColumns.map((col, index) => (
-                                                            <div key={col} className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-100 rounded-md group hover:bg-blue-100 transition-colors">
-                                                                <div className="flex flex-col gap-0.5 opacity-50 hover:opacity-100">
-                                                                    <button onClick={() => moveDetailColumn(index, 'up')} disabled={index === 0} className="hover:text-blue-700"><ChevronUp className="w-3 h-3" /></button>
-                                                                    <button onClick={() => moveDetailColumn(index, 'down')} disabled={index === editingProduct.detailColumns.length - 1} className="hover:text-blue-700"><ChevronDown className="w-3 h-3" /></button>
+                                                            <div key={`${col}-${index}`} className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-100 rounded-md group hover:bg-blue-100 transition-colors">
+                                                                <div className="flex flex-col gap-0.5">
+                                                                    <button onClick={() => moveDetailColumn(index, 'up')} disabled={index === 0} className="text-blue-500 hover:text-blue-700 disabled:text-slate-300 disabled:cursor-not-allowed"><ChevronUp className="w-4 h-4" /></button>
+                                                                    <button onClick={() => moveDetailColumn(index, 'down')} disabled={index === editingProduct.detailColumns.length - 1} className="text-blue-500 hover:text-blue-700 disabled:text-slate-300 disabled:cursor-not-allowed"><ChevronDown className="w-4 h-4" /></button>
                                                                 </div>
                                                                 <span className="text-xs font-mono text-blue-500 w-5 text-center">{index + 1}</span>
-                                                                <div className="flex-1 text-sm font-medium text-slate-700 truncate">{col}</div>
+
+                                                                {/* Editable column name */}
+                                                                {editingColumnIndex === index ? (
+                                                                    <input
+                                                                        type="text"
+                                                                        value={editingColumnValue}
+                                                                        onChange={(e) => setEditingColumnValue(e.target.value)}
+                                                                        onBlur={() => {
+                                                                            if (editingColumnValue.trim() && editingColumnValue !== col) {
+                                                                                renameAndMigrateColumn(index, col, editingColumnValue.trim());
+                                                                            } else {
+                                                                                setEditingColumnIndex(null);
+                                                                            }
+                                                                        }}
+                                                                        onKeyDown={(e) => {
+                                                                            if (e.key === 'Enter') {
+                                                                                if (editingColumnValue.trim() && editingColumnValue !== col) {
+                                                                                    renameAndMigrateColumn(index, col, editingColumnValue.trim());
+                                                                                } else {
+                                                                                    setEditingColumnIndex(null);
+                                                                                }
+                                                                            } else if (e.key === 'Escape') {
+                                                                                setEditingColumnIndex(null);
+                                                                            }
+                                                                        }}
+                                                                        autoFocus
+                                                                        disabled={migrating}
+                                                                        className="flex-1 px-2 py-1 text-sm font-medium text-slate-900 border border-blue-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                                                    />
+                                                                ) : (
+                                                                    <div
+                                                                        className="flex-1 text-sm font-medium text-slate-700 truncate cursor-pointer hover:text-blue-600"
+                                                                        onDoubleClick={() => {
+                                                                            setEditingColumnIndex(index);
+                                                                            setEditingColumnValue(col);
+                                                                        }}
+                                                                        title={t('doubleClickToRename') || 'Double-click to rename'}
+                                                                    >
+                                                                        {col}
+                                                                    </div>
+                                                                )}
 
                                                                 {/* AI Visibility Toggle */}
                                                                 <button
@@ -1337,15 +1511,46 @@ export default function SettingsPage() {
                                                         {editingProduct.steps.map((step, index) => (
                                                             <div key={step} className="grid grid-cols-12 gap-2 p-2 items-center bg-white border border-slate-200 rounded-md group hover:bg-slate-50 transition-colors">
                                                                 {/* Move Buttons - Col 1 */}
-                                                                <div className="col-span-1 flex flex-col items-center justify-center gap-0.5 opacity-50 hover:opacity-100">
-                                                                    <button onClick={() => moveStep(index, 'up')} disabled={index === 0} className="hover:text-indigo-700"><ChevronUp className="w-3 h-3" /></button>
-                                                                    <button onClick={() => moveStep(index, 'down')} disabled={index === editingProduct.steps.length - 1} className="hover:text-indigo-700"><ChevronDown className="w-3 h-3" /></button>
+                                                                <div className="col-span-1 flex flex-col items-center justify-center gap-0.5">
+                                                                    <button onClick={() => moveStep(index, 'up')} disabled={index === 0} className="text-indigo-500 hover:text-indigo-700 disabled:text-slate-300 disabled:cursor-not-allowed"><ChevronUp className="w-4 h-4" /></button>
+                                                                    <button onClick={() => moveStep(index, 'down')} disabled={index === editingProduct.steps.length - 1} className="text-indigo-500 hover:text-indigo-700 disabled:text-slate-300 disabled:cursor-not-allowed"><ChevronDown className="w-4 h-4" /></button>
                                                                 </div>
 
-                                                                {/* Name - Col 4 */}
                                                                 <div className="col-span-4 flex items-center gap-2 min-w-0">
                                                                     <span className="text-xs font-mono text-slate-400 w-5 text-center flex-shrink-0">{index + 1}</span>
-                                                                    <div className="text-sm font-medium text-slate-700 truncate" title={step}>{step}</div>
+                                                                    {editingStepIndex === index ? (
+                                                                        <div className="flex-1 relative">
+                                                                            <input
+                                                                                autoFocus
+                                                                                type="text"
+                                                                                className="w-full text-sm font-medium border border-indigo-300 rounded px-1 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-200 text-slate-900 bg-white"
+                                                                                value={editingStepValue}
+                                                                                onChange={(e) => setEditingStepValue(e.target.value)}
+                                                                                onBlur={() => renameAndMigrateStep(index, step, editingStepValue)}
+                                                                                onKeyDown={(e) => {
+                                                                                    if (e.key === 'Enter') renameAndMigrateStep(index, step, editingStepValue);
+                                                                                    if (e.key === 'Escape') setEditingStepIndex(null);
+                                                                                }}
+                                                                                disabled={migrating}
+                                                                            />
+                                                                            {migrating && (
+                                                                                <div className="absolute right-2 top-1.5 animate-spin">
+                                                                                    <RefreshCw className="w-3 h-3 text-indigo-500" />
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div
+                                                                            className="text-sm font-medium text-slate-700 truncate cursor-pointer hover:text-indigo-600 hover:bg-slate-100 px-1 rounded border border-transparent hover:border-slate-200"
+                                                                            title={`${step} (${t('renameColumn')})`}
+                                                                            onDoubleClick={() => {
+                                                                                setEditingStepIndex(index);
+                                                                                setEditingStepValue(step);
+                                                                            }}
+                                                                        >
+                                                                            {step}
+                                                                        </div>
+                                                                    )}
                                                                 </div>
 
                                                                 {/* Quantity & Unit - Col 4 */}

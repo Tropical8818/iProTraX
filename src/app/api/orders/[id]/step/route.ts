@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { format } from 'date-fns';
-import { formatToExcelTimestamp } from '@/lib/date-utils';
+import { formatToExcelTimestamp, formatToShortTimestamp, formatToFullTimestamp } from '@/lib/date-utils';
 
 export async function PATCH(
     request: Request,
@@ -22,14 +22,26 @@ export async function PATCH(
         }
 
         // Find the order
-        const order = await prisma.order.findUnique({
-            where: {
-                productId_woId: {
-                    productId,
-                    woId
+        let order;
+        // Check if woId looks like a UUID
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(woId);
+
+        if (isUuid) {
+            order = await prisma.order.findUnique({
+                where: { id: woId }
+            });
+        }
+
+        if (!order) {
+            order = await prisma.order.findUnique({
+                where: {
+                    productId_woId: {
+                        productId,
+                        woId
+                    }
                 }
-            }
-        });
+            });
+        }
 
         if (!order) {
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
@@ -44,8 +56,9 @@ export async function PATCH(
             newValue = '';
             delete currentData[step];
         } else if (status === 'Done') {
-            // "Done" generates a timestamp in format: YYYY-MM-DD HH:mm (Unified format)
-            newValue = formatToExcelTimestamp(new Date());
+            // "Done" generates a timestamp in format: YYYY-MM-DD HH:mm (Backend stores full date now)
+            // Frontend will handle abbreviation
+            newValue = formatToFullTimestamp(new Date());
             currentData[step] = newValue;
         } else if (['P', 'WIP', 'N/A', 'Hold', 'QN', 'DIFA'].includes(status)) {
             // Status markers are kept as-is

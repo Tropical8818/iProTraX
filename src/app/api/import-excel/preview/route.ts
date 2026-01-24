@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { parseExcelBuffer } from '@/lib/excel';
-import { normalizeHeaders, getDefaultMappings, validateRequiredColumns, type ColumnMappings } from '@/lib/columnMapping';
+import { getDefaultMappings, type ColumnMappings } from '@/lib/columnMapping';
 import { validateOrderData, getDefaultValidationRules, type ValidationRules, type ValidationError } from '@/lib/validation';
 
 export async function POST(request: NextRequest) {
@@ -62,20 +62,20 @@ export async function POST(request: NextRequest) {
             .map(h => h ? String(h).trim() : '')
             .filter(h => h && h.length > 0 && !h.includes('null') && !h.toLowerCase().includes('unnamed'));
 
-        // Apply column mapping
-        const { normalized: headers, mapping: headerMapping } = normalizeHeaders(detectedHeaders, columnMappings);
+        // SIMPLIFIED: Use original column names directly (no normalization)
+        const headers = detectedHeaders;
+        const headerMapping: Record<string, string> = {}; // Empty since no normalization
 
-        // Validate required columns
-        const requiredCheck = validateRequiredColumns(headers, ['WO ID']);
-        if (!requiredCheck.valid) {
+        // Validate required columns (case-insensitive)
+        const hasWoId = headers.some(h => h.toLowerCase() === 'wo id');
+        if (!hasWoId) {
             return NextResponse.json({
-                error: `Missing required columns: ${requiredCheck.missing.join(', ')}`,
-                detectedHeaders,
-                mappedHeaders: headerMapping
+                error: 'Missing required column: WO ID',
+                detectedHeaders
             }, { status: 400 });
         }
 
-        // Validate against Product Config (detailColumns + steps)
+        // SIMPLIFIED: Check for missing columns using case-insensitive matching
         let missingColumns: string[] = [];
         if (product) {
             try {
@@ -85,16 +85,11 @@ export async function POST(request: NextRequest) {
                     ...(config.steps || [])
                 ];
 
-                // Check if all expected columns are present in headers
-                // Case-insensitive check handled by normalizeHeaders? 
-                // No, headers are normalized to what was found. 
-                // We need to check if 'expected' exists in 'headers'.
-                // Ideally, we check normalized forms.
+                const foundHeadersLower = new Set(headers.map(h => h.toLowerCase().trim()));
 
                 missingColumns = expectedColumns.filter(col => {
-                    // Check strict or loose? Loose (case-insensitive) is safer for user friendliness
-                    const normCol = String(col).toLowerCase().trim();
-                    return !headers.some(h => String(h).toLowerCase().trim() === normCol);
+                    const colLower = String(col).toLowerCase().trim();
+                    return !foundHeadersLower.has(colLower);
                 });
 
             } catch (e) {

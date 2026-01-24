@@ -11,6 +11,7 @@
 
 import chokidar from 'chokidar';
 import path from 'path';
+import * as fs from 'fs';
 import { PrismaClient } from '@prisma/client';
 import { importFromFile } from '../src/lib/import-service';
 
@@ -85,11 +86,19 @@ function startWatching(product: ProductWatchConfig) {
         return;
     }
 
+    // Validate that the watch folder exists on this machine
+    if (!fs.existsSync(watchFolder)) {
+        console.error(`❌ Watch folder does NOT exist on this machine: ${watchFolder}`);
+        console.error(`   Product: ${name} (${id})`);
+        console.error(`   Please verify the path is correct and accessible.`);
+        return;
+    }
+
     console.log(`👀 Starting watch on: ${watchFolder} (Product: ${name})`);
 
     const watcher = chokidar.watch(watchFolder, {
         persistent: true,
-        ignoreInitial: true,  // Don't process existing files on startup
+        ignoreInitial: false,  // Process existing files on startup for initial sync
         awaitWriteFinish: {
             stabilityThreshold: 2000,  // Wait 2s after last change
             pollInterval: 500
