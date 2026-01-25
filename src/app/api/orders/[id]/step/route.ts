@@ -112,7 +112,7 @@ export async function PATCH(
                     select: { id: true }
                 });
 
-                const supervisorIds = supervisors.map(s => s.id);
+                const supervisorIds = supervisors.map((s: { id: string }) => s.id);
 
                 // Get current user's username
                 const currentUser = await prisma.user.findUnique({

@@ -132,7 +132,7 @@ export async function buildAIContext(productId?: string, queriedWoId?: string, q
         }
     });
 
-    const productData = products.map(p => {
+    const productData = products.map((p: any) => {
         const config = JSON.parse(p.config || '{}');
         return {
             id: p.id,
@@ -148,7 +148,7 @@ export async function buildAIContext(productId?: string, queriedWoId?: string, q
     let activeProvider: 'openai' | 'ollama' | 'deepseek' = 'openai';
 
     if (productId) {
-        const p = productData.find(p => p.id === productId);
+        const p = productData.find((p: any) => p.id === productId);
         if (p?.config.aiModel) activeModel = p.config.aiModel;
         if (p?.config.aiProvider) activeProvider = p.config.aiProvider;
     } else if (productData.length > 0) {
@@ -169,7 +169,7 @@ export async function buildAIContext(productId?: string, queriedWoId?: string, q
         },
 
         // Limit default context based on product config
-        take: productId ? ((productData.find(p => p.id === productId) as any)?.aiContextLimit || 60) : 60,
+        take: productId ? ((productData.find((p: any) => p.id === productId) as any)?.aiContextLimit || 60) : 60,
         orderBy: { updatedAt: 'desc' } // Sort by most recently updated
     });
 
@@ -178,7 +178,7 @@ export async function buildAIContext(productId?: string, queriedWoId?: string, q
         console.log(`[AI Context] Intelligent Query START for: "${queriedWoId}" in Product: ${productId}`);
 
         // Strategy 1: Check if already in the fetched list (Exact match)
-        const existingOrderIndex = orders.findIndex(o => o.woId === queriedWoId);
+        const existingOrderIndex = orders.findIndex((o: any) => o.woId === queriedWoId);
 
         if (existingOrderIndex !== -1) {
             console.log(`[AI Context] Intelligent Query: Order found in recent list at index ${existingOrderIndex}. Promoting to TOP.`);
@@ -228,7 +228,7 @@ export async function buildAIContext(productId?: string, queriedWoId?: string, q
     }
 
     // Process orders into summaries
-    const orderSummaries: OrderSummary[] = orders.map(order => {
+    const orderSummaries: OrderSummary[] = orders.map((order: any) => {
         const data = JSON.parse(order.data || '{}');
         const config = JSON.parse(order.product.config || '{}');
         const steps = config.steps || [];
@@ -377,7 +377,7 @@ export async function buildAIContext(productId?: string, queriedWoId?: string, q
         topIssues: []
     };
 
-    relevantComments.forEach(c => {
+    relevantComments.forEach((c: any) => {
         // Aggregate by Query Category
         if (!categoryStats.total[c.category]) categoryStats.total[c.category] = 0;
         categoryStats.total[c.category]++;
@@ -436,16 +436,16 @@ export async function buildAIContext(productId?: string, queriedWoId?: string, q
 
     // Create a map for quick username -> employeeId lookup (lowercase for case-insensitive match)
     const userMap = new Map<string, string>();
-    allUsers.forEach(u => {
+    allUsers.forEach((u: any) => {
         if (u.username && u.employeeId) {
             userMap.set(u.username.toLowerCase(), u.employeeId);
         }
     });
 
     // Filter for truly active orders (check status from JSON)
-    const activeIssues = activeOrderComments.filter(c => {
+    const activeIssues = activeOrderComments.filter((c: any) => {
         const data = JSON.parse(c.order.data || '{}');
-        const product = productData.find(p => p.id === productId);
+        const product = productData.find((p: any) => p.id === productId);
         const config = (product as any).config || {};
         const steps = config.steps || [];
 
@@ -458,13 +458,13 @@ export async function buildAIContext(productId?: string, queriedWoId?: string, q
         }
 
         return status !== 'Completed';
-    }).map(c => {
+    }).map((c: any) => {
         // Sanitize content with Employee IDs
         let content = c.content || '';
 
         // 1. Replace mentions @Username -> @EmployeeID using lookup map
         // Match @Username word boundaries
-        content = content.replace(/@(\w+)/g, (match, username) => {
+        content = content.replace(/@(\w+)/g, (match: string, username: string) => {
             const eid = userMap.get(username.toLowerCase());
             return eid ? `[ID:${eid}]` : match; // Replace if found, else keep original (will be caught by generic sanitizer later)
         });
@@ -509,7 +509,7 @@ export async function buildAIContext(productId?: string, queriedWoId?: string, q
         }
     });
 
-    const recentLogs = logs.map(log => {
+    const recentLogs = logs.map((log: any) => {
         const details = JSON.parse(log.details || '{}');
         return {
             action: log.action,

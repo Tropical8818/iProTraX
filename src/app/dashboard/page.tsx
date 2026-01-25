@@ -1141,7 +1141,16 @@ export default function DashboardPage() {
                             <div className="bg-amber-50 rounded-lg border border-amber-200 p-3">
                                 <div className="text-xs text-slate-500">{t('stats.holdQn')}</div>
                                 <div className="text-xl font-bold text-amber-700">
-                                    {displayedOrders.filter(o => o.status === 'Hold' || o.status === 'QN').length}
+                                    {(() => {
+                                        let count = 0;
+                                        orders.forEach(o => {
+                                            steps.forEach(step => {
+                                                const val = String(o[step] || '').trim().toUpperCase();
+                                                if (val === 'HOLD' || val === 'QN') count++;
+                                            });
+                                        });
+                                        return count;
+                                    })()}
                                 </div>
                             </div>
                             <div className="bg-orange-50 rounded-lg border border-orange-200 p-3">

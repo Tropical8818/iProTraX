@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         const userId = session.userId;
 
         // Fetch all comments for these orders where user is mentioned and hasn't read
-        const orderIds = orders.map(o => o.id);
+        const orderIds = orders.map((o: any) => o.id);
         const unreadComments = await prisma.comment.findMany({
             where: {
                 orderId: { in: orderIds },
@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
         // Build unread stats map: orderId -> { stepName: { unread: number } }
         const unreadStatsMap: Record<string, Record<string, { unread: number }>> = {};
 
-        unreadComments.forEach(comment => {
+        unreadComments.forEach((comment: any) => {
             const readByList = comment.readBy ? JSON.parse(comment.readBy) : [];
             const isUnread = !readByList.includes(userId);
 
@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
 
         // Build comment previews map: orderId -> { stepName: [...all comments] }
         const commentPreviewsMap: Record<string, Record<string, any[]>> = {};
-        allComments.forEach(comment => {
+        allComments.forEach((comment: any) => {
             if (!commentPreviewsMap[comment.orderId]) {
                 commentPreviewsMap[comment.orderId] = {};
             }
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
         // Calculate real-time stats from allComments to ensure consistency with previews
         const realTimeStatsMap: Record<string, Record<string, { total: number }>> = {};
 
-        allComments.forEach(comment => {
+        allComments.forEach((comment: any) => {
             if (!realTimeStatsMap[comment.orderId]) {
                 realTimeStatsMap[comment.orderId] = {};
             }
@@ -107,7 +107,7 @@ export async function GET(request: NextRequest) {
             realTimeStatsMap[comment.orderId][comment.stepName].total++;
         });
 
-        const formattedOrders = orders.map(order => {
+        const formattedOrders = orders.map((order: any) => {
             const data = JSON.parse(order.data);
             // Use real-time calculated stats instead of DB cache
             // const stats = order.commentStats ? JSON.parse(order.commentStats) : {}; 
