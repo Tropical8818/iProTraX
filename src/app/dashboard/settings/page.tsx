@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Table2, HardHat, Settings, LogOut, Save, FileSpreadsheet, Lock, Plus, Trash2, Edit2, X, ChevronUp, ChevronDown, Package, RefreshCw, Check, Eye, EyeOff, Clock, FilePlus, Info, User, Key, Users, Database, Download, Bot, Sparkles, Monitor, Play, Upload, Globe, Copy, ShieldCheck, BarChart2 } from 'lucide-react';
+import { Table2, HardHat, Settings, LogOut, Save, FileSpreadsheet, Lock, Plus, Trash2, Edit2, X, ChevronUp, ChevronDown, Package, RefreshCw, Check, Eye, EyeOff, Clock, FilePlus, Info, User, Key, Users, Database, Download, Bot, Sparkles, Monitor, Play, Upload, Globe, Copy, ShieldCheck, BarChart2, AlertTriangle } from 'lucide-react';
 import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
 import { APP_VERSION } from '@/lib/version';
 
@@ -128,6 +128,13 @@ export default function SettingsPage() {
     const [editingWebhook, setEditingWebhook] = useState<WebhookConfig | null>(null);
     const [isWebhookModalOpen, setIsWebhookModalOpen] = useState(false);
     const [webhookTestStatus, setWebhookTestStatus] = useState<{ status: 'idle' | 'success' | 'error', message: string }>({ status: 'idle', message: '' });
+    const [apiKeys, setApiKeys] = useState<any[]>([]);
+    const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+    const [newKeyName, setNewKeyName] = useState('');
+    const [createdKey, setCreatedKey] = useState<any | null>(null);
+    const [selectedPermissions, setSelectedPermissions] = useState<string[]>(['orders:read', 'products:read']);
+    const [isRevokeModalOpen, setIsRevokeModalOpen] = useState(false);
+    const [keyToRevoke, setKeyToRevoke] = useState<any | null>(null);
 
     // Fetch Machine ID (Enterprise)
     useEffect(() => {
@@ -179,6 +186,20 @@ export default function SettingsPage() {
         fetchConfig();
         fetchUser();
         fetchWatcherStatus(); // Check watcher status on mount
+
+        // Fetch API Keys for admin users
+        const fetchApiKeys = async () => {
+            try {
+                const res = await fetch('/api/v1/keys');
+                if (res.ok) {
+                    const data = await res.json();
+                    setApiKeys(data.keys || []);
+                }
+            } catch (e) {
+                console.error('Failed to fetch API keys:', e);
+            }
+        };
+        fetchApiKeys();
     }, []);
 
     // Auto-dismiss messages after 4 seconds
@@ -2519,6 +2540,68 @@ export default function SettingsPage() {
 
 
 
+                            {/* API Keys Management (Admin Only) */}
+                            {isAdmin && (
+                                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md mb-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                                            <Key className="w-5 h-5 text-amber-600" />
+                                            {t('apiKeys')}
+                                        </h3>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setNewKeyName('');
+                                                setCreatedKey(null);
+                                                setIsApiKeyModalOpen(true);
+                                            }}
+                                            className="px-3 py-1.5 bg-amber-600 text-white rounded-lg text-sm font-medium hover:bg-amber-700 transition-colors flex items-center gap-1"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            {t('createApiKey')}
+                                        </button>
+                                    </div>
+                                    <p className="text-sm text-slate-500 mb-4">{t('apiKeysDesc')}</p>
+
+                                    {apiKeys.filter((k: any) => k.isActive).length === 0 ? (
+                                        <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 border border-dashed border-slate-200 rounded-lg text-slate-400 text-sm">
+                                            <Info className="w-4 h-4 opacity-50" />
+                                            <span>{t('noApiKeys')}</span>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {apiKeys.filter((k: any) => k.isActive).map((key: any) => (
+                                                <div key={key.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="font-medium text-slate-900">{key.name}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-4 text-xs text-slate-500 mt-1">
+                                                            <span className="font-mono bg-slate-200 px-2 py-0.5 rounded">{key.prefix}...</span>
+                                                            <span>{t('lastUsed')}: {key.lastUsedAt ? new Date(key.lastUsedAt).toLocaleDateString() : t('neverUsed')}</span>
+                                                            <span>{t('permissions')}: {key.permissions?.join(', ')}</span>
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            e.stopPropagation();
+                                                            setKeyToRevoke(key);
+                                                            setIsRevokeModalOpen(true);
+                                                        }}
+                                                        className="px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg text-sm font-medium transition-colors"
+                                                    >
+                                                        {t('revokeKey')}
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
 
                             {/* User Management Link */}
                             {(isAdmin || isSupervisor) && (
@@ -2811,6 +2894,231 @@ export default function SettingsPage() {
                     </div>
                 )
             }
+
+            {/* API Key Creation Modal */}
+            {isApiKeyModalOpen && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-amber-50/50">
+                            <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                                <Key className="w-6 h-6 text-amber-600" />
+                                {t('createApiKey')}
+                            </h3>
+                            <button
+                                onClick={() => setIsApiKeyModalOpen(false)}
+                                className="p-1 hover:bg-slate-200 rounded-full transition-colors text-slate-400"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-6">
+                            {!createdKey ? (
+                                <>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                            {t('keyName')}
+                                        </label>
+                                        <input
+                                            type="text"
+                                            autoFocus
+                                            value={newKeyName}
+                                            onChange={(e) => setNewKeyName(e.target.value)}
+                                            placeholder="e.g. ERP Integration"
+                                            className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 transition-all text-slate-900 font-medium"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && newKeyName.trim()) {
+                                                    document.getElementById('createApiKeyBtn')?.click();
+                                                }
+                                            }}
+                                        />
+                                    </div>
+
+                                    <div className="space-y-3">
+                                        <h4 className="text-sm font-semibold text-slate-700">{t('permissions')}</h4>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {[
+                                                { id: 'orders:read', label: t('ordersRead') || 'Orders: Read' },
+                                                { id: 'orders:write', label: t('ordersWrite') || 'Orders: Write' },
+                                                { id: 'products:read', label: t('productsRead') || 'Products: Read' },
+                                                { id: 'reports:read', label: t('reportsRead') || 'Reports: Read' }
+                                            ].map(perm => (
+                                                <button
+                                                    key={perm.id}
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        setSelectedPermissions(prev =>
+                                                            prev.includes(perm.id)
+                                                                ? prev.filter(p => p !== perm.id)
+                                                                : [...prev, perm.id]
+                                                        );
+                                                    }}
+                                                    className={`px-3 py-2.5 rounded-xl border text-left transition-all flex items-center gap-2 ${selectedPermissions.includes(perm.id)
+                                                        ? 'bg-amber-50 border-amber-500 text-amber-700 shadow-sm'
+                                                        : 'bg-white border-slate-200 text-slate-500 hover:border-slate-300'
+                                                        }`}
+                                                >
+                                                    <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-colors ${selectedPermissions.includes(perm.id)
+                                                        ? 'bg-amber-500 border-amber-500 text-white'
+                                                        : 'bg-white border-slate-300'
+                                                        }`}>
+                                                        {selectedPermissions.includes(perm.id) && <Check className="w-3 h-3 stroke-[3]" />}
+                                                    </div>
+                                                    <span className="text-[10px] font-bold uppercase tracking-tight">{perm.label}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="pt-2">
+                                        <button
+                                            id="createApiKeyBtn"
+                                            disabled={!newKeyName.trim() || selectedPermissions.length === 0 || saving}
+                                            onClick={async (e) => {
+                                                e.preventDefault();
+                                                setSaving(true);
+                                                try {
+                                                    const res = await fetch('/api/v1/keys', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({
+                                                            name: newKeyName,
+                                                            permissions: selectedPermissions
+                                                        })
+                                                    });
+                                                    const data = await res.json();
+                                                    if (data.key?.rawKey) {
+                                                        setCreatedKey(data.key);
+                                                        // Refresh list
+                                                        const keysRes = await fetch('/api/v1/keys');
+                                                        const keysData = await keysRes.json();
+                                                        setApiKeys(keysData.keys || []);
+                                                    } else {
+                                                        alert(data.error || 'Failed to create key');
+                                                    }
+                                                } catch (e) {
+                                                    console.error(e);
+                                                } finally {
+                                                    setSaving(false);
+                                                }
+                                            }}
+                                            className="w-full py-3.5 bg-amber-600 text-white rounded-xl font-bold hover:bg-amber-700 transition-all shadow-lg shadow-amber-600/20 disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
+                                        >
+                                            {saving ? t('creating') : t('createApiKey')}
+                                        </button>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                                    <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                                        <p className="text-green-800 text-sm font-medium flex items-center gap-2">
+                                            <Check className="w-4 h-4" />
+                                            {t('keyCreatedWarning')}
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-slate-500 uppercase tracking-wider px-1">API Key</label>
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex-1 p-4 bg-slate-900 text-amber-400 font-mono text-sm rounded-xl overflow-x-auto break-all shadow-inner border border-slate-800">
+                                                {createdKey.rawKey}
+                                            </div>
+                                            <button
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(createdKey.rawKey);
+                                                    setPassMsg('Copied!');
+                                                    setTimeout(() => setPassMsg(''), 2000);
+                                                }}
+                                                className="p-4 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors relative"
+                                            >
+                                                <Copy className="w-5 h-5" />
+                                                {passMsg === 'Copied!' && (
+                                                    <span className="absolute -top-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 text-white text-[10px] rounded animate-bounce whitespace-nowrap">
+                                                        Copied!
+                                                    </span>
+                                                )}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        onClick={() => setIsApiKeyModalOpen(false)}
+                                        className="w-full py-3.5 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all mt-4"
+                                    >
+                                        {t('done')}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* API Key Revocation Modal */}
+            {isRevokeModalOpen && keyToRevoke && (
+                <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-red-50/50">
+                            <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
+                                <AlertTriangle className="w-6 h-6 text-red-600" />
+                                {t('revokeKey')}
+                            </h3>
+                            <button
+                                onClick={() => setIsRevokeModalOpen(false)}
+                                className="p-1 hover:bg-slate-200 rounded-full transition-colors text-slate-400"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="p-6 space-y-4">
+                            <p className="text-slate-600 text-sm leading-relaxed">
+                                {t('revokeKeyConfirm')}
+                            </p>
+                            <div className="p-3 bg-red-50 border border-red-100 rounded-lg">
+                                <p className="text-xs font-bold text-red-800 uppercase tracking-wider mb-1">Key to Revoke</p>
+                                <p className="text-sm font-mono text-red-700 bg-white/50 px-2 py-1 rounded inline-block">{keyToRevoke.name} ({keyToRevoke.prefix}...)</p>
+                            </div>
+
+                            <div className="flex gap-3 pt-4">
+                                <button
+                                    onClick={() => setIsRevokeModalOpen(false)}
+                                    className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-all"
+                                >
+                                    {tCommon('cancel')}
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        setSaving(true);
+                                        try {
+                                            await fetch('/api/v1/keys', {
+                                                method: 'DELETE',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ id: keyToRevoke.id })
+                                            });
+                                            // Refresh
+                                            const keysRes = await fetch('/api/v1/keys');
+                                            const keysData = await keysRes.json();
+                                            setApiKeys(keysData.keys || []);
+                                            setIsRevokeModalOpen(false);
+                                        } catch (e) {
+                                            console.error(e);
+                                            alert('Failed to revoke key');
+                                        } finally {
+                                            setSaving(false);
+                                        }
+                                    }}
+                                    disabled={saving}
+                                    className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-600/20 disabled:opacity-50"
+                                >
+                                    {saving ? tCommon('loading') : t('confirm')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 }

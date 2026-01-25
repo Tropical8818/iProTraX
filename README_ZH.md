@@ -48,6 +48,7 @@ flowchart TB
     SAP -- "1. Auto-Import Orders" --> App
     Worker -- "2. Track Time & Output (工时/产出)" --> App
     App -- "3. Live Progress & Efficiency" --> Kiosk
+    App <--> DB
     App <--> AI
     AI -- "4. Bottleneck Analysis" --> Supervisor
     App -- "5. Efficiency Reports (效率报表)" --> Supervisor
@@ -55,7 +56,8 @@ flowchart TB
     Worker -- "7. Smart Comments" --> Supervisor
     App -- "8. Audit Logs" --> Admin
     Supervisor -. "9. Reconciliation" .-> SAP
-
+    ExternalApps -- "10. Query/Update" --> App
+    
      SAP:::sap
      Worker:::shop
      Kiosk:::shop
@@ -64,6 +66,7 @@ flowchart TB
      AI:::ai
      Supervisor:::manage
      Admin:::manage
+     ExternalApps:::core
      
     classDef sap fill:#1e3a8a,stroke:#333,stroke-width:2px,color:white
     classDef core fill:#4f46e5,stroke:#333,stroke-width:2px,color:white
@@ -134,6 +137,13 @@ npm run dev
     *   **标准工时管理**：管理员可为每个工序设定标准工时（HH:MM）和目标数量。
     *   **效率报表 (Analytics)**：主管专属的生产力仪表盘，通过热力图和排名表直观展示当日产出与效率。
 
+### 5. 🔌 外部 REST API v1
+*   **目标**：安全地与其他工厂系统（MES、WMS、BI）集成。
+*   **特性**：
+    *   **管理界面**：创建和撤销具有细粒度权限（如 `orders:read`, `reports:read`）的 API 密钥。
+    *   **Bearer 认证**：标准化的基于令牌的身份验证，用于安全的机器对机器访问。
+    *   **完整文档**：内置测试指南，实现快速集成。
+
 ---
 
 ## 🛠️ 技术栈 (Technology Stack)
@@ -154,10 +164,10 @@ flowchart TB
     end
 
     subgraph Data ["Data Persistence (数据持久化)"]
-        SQLite[(SQLite Database)]
+        Postgres[(PostgreSQL Database)]
         Excel["Excel Files (.xlsx)"]
+        ApiKeyStore["ApiKey Store (加密存储)"]
     end
-
     subgraph AI ["Intelligence (智能)"]
         OpenAI["OpenAI / DeepSeek / Ollama"]
     end
@@ -165,7 +175,8 @@ flowchart TB
     %% Connections
     UI --> API
     API --> Prisma
-    Prisma --> SQLite
+    Prisma --> Postgres
+    Prisma --> ApiKeyStore
     Watcher -->|Auto-Import| Excel
     Watcher -->|Write| Prisma
     API -->|Context| OpenAI

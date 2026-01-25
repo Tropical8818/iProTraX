@@ -137,3 +137,20 @@ model StepProgress {
   @@index([orderId, stepName])
   @@index([userId])
 }
+
+// API Key for external REST API access
+model ApiKey {
+  id          String    @id @default(uuid())
+  name        String    // Display name: "ERP Integration", "Mobile App"
+  keyHash     String    @unique // SHA-256 hash of actual key
+  prefix      String    // First 8 chars for identification: "sk_live_"
+  permissions String[]  // ["orders:read", "orders:write", "products:read"]
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  createdById String    // User ID who created
+  isActive    Boolean   @default(true)
+  
+  @@index([keyHash])
+  @@index([createdById])
+}

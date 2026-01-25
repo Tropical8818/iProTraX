@@ -49,6 +49,7 @@ flowchart TB
     SAP -- "1. Auto-Import Orders" --> App
     Worker -- "2. Track Time & Output" --> App
     App -- "3. Live Progress & Efficiency" --> Kiosk
+    App <--> DB
     App <--> AI
     AI -- "4. Bottleneck Analysis" --> Supervisor
     App -- "5. Efficiency Reports" --> Supervisor
@@ -57,7 +58,8 @@ flowchart TB
     Worker -- "7. Smart Comments" --> Supervisor
     App -- "8. Audit Logs" --> Admin
     Supervisor -. "9. Reconciliation" .-> SAP
-
+    ExternalApps -- "10. Query/Update" --> App
+    
      SAP:::sap
      Worker:::shop
      Kiosk:::shop
@@ -66,6 +68,7 @@ flowchart TB
      AI:::ai
      Supervisor:::manage
      Admin:::manage
+     ExternalApps:::core
      
     classDef sap fill:#1e3a8a,stroke:#333,stroke-width:2px,color:white
     classDef core fill:#4f46e5,stroke:#333,stroke-width:2px,color:white
@@ -151,6 +154,13 @@ After the initial deployment, use the following credentials to access the **Supe
     *   **Smart Triggers**: Alert Supervisors on **Hold/QN**, notify Planners on **Done**, and send **Daily Morning Reports**.
     *   **Dynamic Config**: Customize payloads, headers, and endpoints for any system integration.
 
+### 7. 🔌 External REST API v1
+*   **Purpose**: Securely integrate with other factory systems (MES, WMS, BI).
+*   **Features**:
+    *   **Management UI**: Create and revoke API keys with granular permissions (e.g., `orders:read`, `reports:read`).
+    *   **Bearer Auth**: Standardized token-based authentication for secure machine-to-machine access.
+    *   **Comprehensive Docs**: Built-in testing guide for rapid integration.
+
 ---
 
 ## 🛠️ Technology Stack
@@ -171,8 +181,9 @@ flowchart TB
     end
 
     subgraph Data ["Data Persistence"]
-        SQLite[(SQLite Database)]
+        Postgres[(PostgreSQL Database)]
         Excel["Excel Files (.xlsx)"]
+        ApiKeyStore["ApiKey Store (Encrypted)"]
     end
 
     subgraph AI ["Intelligence"]
@@ -183,6 +194,7 @@ flowchart TB
     UI --> API
     API --> Prisma
     Prisma --> Postgres
+    Prisma --> ApiKeyStore
     Watcher -->|Auto-Import| Excel
     Watcher -->|Write| Prisma
     API -->|Context| OpenAI
