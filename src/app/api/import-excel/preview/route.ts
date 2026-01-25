@@ -67,12 +67,20 @@ export async function POST(request: NextRequest) {
         const headerMapping: Record<string, string> = {}; // Empty since no normalization
 
         // Validate required columns (case-insensitive)
-        const hasWoId = headers.some(h => h.toLowerCase() === 'wo id');
-        if (!hasWoId) {
-            return NextResponse.json({
-                error: 'Missing required column: WO ID',
-                detectedHeaders
-            }, { status: 400 });
+        // Validate required columns (case-insensitive)
+        // FLEXIBLE: If explicit 'WO ID' is missing, fallback to the FIRST COLUMN available.
+        let woIdColumnName = headers.find(h => h.toLowerCase() === 'wo id') || '';
+
+        if (!woIdColumnName) {
+            // Fallback to first column as ID if available
+            if (headers.length > 0) {
+                woIdColumnName = headers[0];
+            } else {
+                return NextResponse.json({
+                    error: 'Missing required column: WO ID (or any identifier column)',
+                    detectedHeaders
+                }, { status: 400 });
+            }
         }
 
         // SIMPLIFIED: Check for missing columns using case-insensitive matching
@@ -89,6 +97,8 @@ export async function POST(request: NextRequest) {
 
                 missingColumns = expectedColumns.filter(col => {
                     const colLower = String(col).toLowerCase().trim();
+                    // Don't mark as missing if it's the WO ID column
+                    if (colLower === 'wo id' && woIdColumnName) return false;
                     return !foundHeadersLower.has(colLower);
                 });
 
@@ -141,7 +151,8 @@ export async function POST(request: NextRequest) {
                 rowData[header] = String(value).trim();
             });
 
-            const woId = rowData['WO ID'];
+            // Use the determined column name for ID extraction
+            const woId = rowData[woIdColumnName];
             if (!woId || woId.length === 0) continue;
 
             // Validate row data

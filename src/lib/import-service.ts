@@ -78,9 +78,18 @@ export async function importFromBuffer(buffer: Buffer, options: ImportOptions): 
     const headerMapping: Record<string, string> = {}; // Empty since no normalization
 
     // Validate required columns (case-insensitive check for WO ID)
-    const hasWoId = headers.some(h => h.toLowerCase() === 'wo id');
-    if (!hasWoId) {
-        return createErrorResult('Missing required column: WO ID');
+    // FLEXIBLE: If explicit 'WO ID' is missing, fallback to the FIRST COLUMN available.
+    // User requirement: "No presets". The first column is effectively the Primary Key.
+
+    let woIdColumnName = headers.find(h => h.toLowerCase() === 'wo id') || '';
+    if (!woIdColumnName) {
+        // Fallback to first column
+        if (headers.length > 0) {
+            woIdColumnName = headers[0]; // Auto-select first column
+            console.log(`[Import] 'WO ID' column not found. Defaulting to first column: '${woIdColumnName}' as ID.`);
+        } else {
+            return createErrorResult('Excel file has no columns to use as ID.');
+        }
     }
 
     // Parse data rows (starting from row 3, index 2)
@@ -132,7 +141,8 @@ export async function importFromBuffer(buffer: Buffer, options: ImportOptions): 
             rowData[header] = String(value).trim();
         });
 
-        const woId = rowData['WO ID'];
+        // Use the determined column name for ID extraction
+        const woId = rowData[woIdColumnName];
         if (!woId || woId.length === 0) continue; // Skip empty rows
 
         // Auto-set WO Rel timestamp if column exists and is empty
@@ -166,10 +176,10 @@ export async function importFromBuffer(buffer: Buffer, options: ImportOptions): 
             return targetColumns.some(col => col.toLowerCase() === keyLower);
         };
 
-        // Only keep columns that are in detailColumns OR are WO ID
+        // Only keep columns that are in detailColumns OR are WO ID (or whatever column is acting as ID)
         Object.keys(rowData).forEach(key => {
             const keyLower = key.toLowerCase();
-            const isWoId = keyLower === 'wo id';
+            const isWoId = keyLower === woIdColumnName.toLowerCase();
             const isConfiguredDetail = matchesColumn(key, detailColumns);
 
             // Include common important fields as fallback

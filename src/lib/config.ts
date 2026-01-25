@@ -55,13 +55,14 @@ const DEFAULT_STEPS = [
     'Step 6', 'Step 7', 'Step 8', 'Step 9', 'Step 10'
 ];
 
-const DEFAULT_DETAIL_COLUMNS = ['WO ID', 'PN', 'Description', 'WO DUE', 'Priority'];
+// Removed DEFAULT_DETAIL_COLUMNS to support fully flexible column names
+const DEFAULT_DETAIL_COLUMNS: string[] = [];
 
 const DEFAULT_PRODUCT: Product = {
     id: 'default',
     name: 'Standard Production Line',
     excelPath: '',
-    detailColumns: DEFAULT_DETAIL_COLUMNS,
+    detailColumns: [], // Start empty, populated by Import
     steps: DEFAULT_STEPS,
     monthlyTarget: 100, // Default target
     aiContextLimit: 60,
@@ -98,7 +99,7 @@ function migrateConfig(parsed: Record<string, unknown>): Config {
         id: 'default',
         name: 'Standard Production Line',
         excelPath: (parsed.EXCEL_FILE_PATH as string) || '',
-        detailColumns: DEFAULT_DETAIL_COLUMNS,
+        detailColumns: [], // DEFAULT_DETAIL_COLUMNS removed
         steps: DEFAULT_STEPS,
         monthlyTarget: 100,
         aiContextLimit: 60,

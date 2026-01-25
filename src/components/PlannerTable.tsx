@@ -435,22 +435,21 @@ export default function PlannerTable({
         return result;
     }, [orders, filters, sortKey, sortDir]);
 
-    // Use provided detail columns or fallback to defaults
+    // Use provided detail columns or fallback to defaults (NOW REMOVED)
     // Combine columns: Details + Steps
     // Integrate extraColumns (ECD) into details after WO DUE
-    let effectiveDetailColumns = detailColumns.length > 0 ? detailColumns : ['WO ID', 'PN', 'Description', 'WO DUE', 'Priority'];
+    let effectiveDetailColumns = detailColumns.length > 0 ? detailColumns : [];
 
-    // Insert extraColumns (like ECD) after WO DUE if present
+    // Ensure at least one column exists if empty (fallback to WO ID only if absolutely nothing)
+    if (effectiveDetailColumns.length === 0 && orders.length > 0) {
+        // Try to guess from first order
+        effectiveDetailColumns = ['WO ID'];
+    }
+
+    // Insert extraColumns (like ECD) if present
+    // Since we don't assume 'WO DUE' exists, just append them or insert at reasonable position (e.g. at end of details)
     if (extraColumns.length > 0) {
-        const woDueIndex = effectiveDetailColumns.indexOf('WO DUE');
-        if (woDueIndex !== -1) {
-            const newCols = [...effectiveDetailColumns];
-            newCols.splice(woDueIndex + 1, 0, ...extraColumns);
-            effectiveDetailColumns = newCols;
-        } else {
-            // Fallback: append if WO DUE not found
-            effectiveDetailColumns = [...effectiveDetailColumns, ...extraColumns];
-        }
+        effectiveDetailColumns = [...effectiveDetailColumns, ...extraColumns];
     }
 
     const columns = [...effectiveDetailColumns, ...orderedSteps];
@@ -460,58 +459,19 @@ export default function PlannerTable({
     const columnWidths = useMemo(() => {
         const widths: Record<string, string> = {};
 
-        // Calculate base WO ID width first as it's the reference for others
-        // Exact fit: No multiplier, char width 7
-        const woIdRawWidth = Math.max(70, parseInt(calculateColumnWidth('WO ID', processedOrders, false)));
-        // WO ID: Dynamic, min 70px, max 150px
-        const woIdWidthVal = Math.min(150, Math.max(70, woIdRawWidth));
-        const woIdWidthStr = `${woIdWidthVal}px`;
-
-        // FIXED widths for detail columns - minimal to maximize step space
-        // FIXED widths for detail columns - minimal to maximize step space
+        // Calculate widths dynamically since columns are not known ahead of time
         effectiveDetailColumns.forEach((col, index) => {
-            // 1st Column (WO ID)
+            // First Column (ID Column): Usually critical, give it good space
             if (index === 0) {
-                widths[col] = woIdWidthStr;
-            }
-            // 3rd Column (Description) - Index 2
-            // User Request: "3 col is 1.5x of 1st" (4th col removed from this rule per user)
-            else if (index === 2) {
-                const widthVal = Math.floor(woIdWidthVal * 1.5);
+                const dynamicWidth = calculateColumnWidth(col, processedOrders, false);
+                const widthVal = Math.min(150, Math.max(70, parseInt(dynamicWidth)));
                 widths[col] = `${widthVal}px`;
-            }
-            // 4th Column - Index 3
-            // User Request: "Lock dead to equal 1st column width"
-            else if (index === 3) {
-                widths[col] = woIdWidthStr;
-            }
-            // 2nd Column (PN - Index 1) - Must be visible
-            else if (index === 1) {
-                // PN: Dynamic, min 60px (was 25), max 120px
+            } else {
+                // Other detail columns: Auto-fit with reasonable bounds
+                // Default: min 50, max 120
                 const dynamicWidth = calculateColumnWidth(col, processedOrders, false);
-                const widthValue = Math.min(120, Math.max(60, parseInt(dynamicWidth)));
-                widths[col] = `${widthValue}px`;
-            }
-            // Cols 5, 6, 7, 8 (Indices 4, 5, 6, 7) - User: "Too narrow"
-            else if (index >= 4 && index <= 7) {
-                // Min 50px to ensure visibility
-                const dynamicWidth = calculateColumnWidth(col, processedOrders, false);
-                const widthValue = Math.min(120, Math.max(50, parseInt(dynamicWidth)));
-                widths[col] = `${widthValue}px`;
-            }
-            // Col 9 (Index 8) - User: "Too wide"
-            else if (index === 8) {
-                // Cap max at 60px
-                const dynamicWidth = calculateColumnWidth(col, processedOrders, false);
-                const widthValue = Math.min(60, Math.max(25, parseInt(dynamicWidth)));
-                widths[col] = `${widthValue}px`;
-            }
-            // Any other columns (10+...)
-            else {
-                // Dynamic Tight Fit
-                const dynamicWidth = calculateColumnWidth(col, processedOrders, false);
-                const widthValue = Math.min(100, Math.max(25, parseInt(dynamicWidth)));
-                widths[col] = `${widthValue}px`;
+                const widthVal = Math.min(150, Math.max(50, parseInt(dynamicWidth)));
+                widths[col] = `${widthVal}px`;
             }
         });
 
@@ -552,7 +512,7 @@ export default function PlannerTable({
                     {/* Summary Row */}
                     <tr className="bg-slate-50 border-b border-slate-200">
                         <td
-                            style={{ width: columnWidths['WO ID'] }}
+                            style={{ width: columnWidths[effectiveDetailColumns[0]] }}
                             className="px-1 py-0.5 text-center font-bold text-amber-600 bg-slate-50 sticky left-0 z-30 group relative"
                         >
                             <div className="flex items-center justify-center gap-1">
