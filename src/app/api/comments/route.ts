@@ -69,12 +69,12 @@ export async function POST(req: NextRequest) {
                 } else {
                     // Assume it's a specific User ID or Username
                     // Check if it looks like a UUID
-                    const byId = allUsers.find(u => u.id === mention);
+                    const byId = allUsers.find((u: any) => u.id === mention);
                     if (byId) {
                         targetUserIds.push(byId.id);
                     } else {
                         // Check by username
-                        const byName = allUsers.find(u => u.username === mention.replace('@', '')); // Remove @ if present
+                        const byName = allUsers.find((u: any) => u.username === mention.replace('@', '')); // Remove @ if present
                         if (byName) targetUserIds.push(byName.id);
                     }
                 }
@@ -157,7 +157,7 @@ export async function GET(req: NextRequest) {
 
         // Collect all mentioned user IDs
         const allMentionedIds = new Set<string>();
-        comments.forEach(c => {
+        comments.forEach((c: any) => {
             const ids = c.mentionedUserIds ? JSON.parse(c.mentionedUserIds) : [];
             ids.forEach((id: string) => allMentionedIds.add(id));
         });
