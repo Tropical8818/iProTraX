@@ -80,14 +80,14 @@ export async function GET() {
             allKeys.add('Created At');
             allKeys.add('Updated At');
 
-            const flattenedOrders = orders.map(order => {
+            const flattenedOrders = orders.map((order: any) => {
                 let data: any = {};
                 try {
                     data = JSON.parse(order.data);
                 } catch (e) {
                     console.error('Error parsing order data:', e);
                 }
-                Object.keys(data).forEach(k => allKeys.add(k));
+                Object.keys(data).forEach((k: string) => allKeys.add(k));
 
                 return {
                     'Order ID': order.id,
@@ -101,8 +101,8 @@ export async function GET() {
 
             const headers = Array.from(allKeys);
             csvContent += headers.join(',') + '\n';
-            csvContent += flattenedOrders.map(row => {
-                return headers.map(header => {
+            csvContent += flattenedOrders.map((row: any) => {
+                return headers.map((header: string) => {
                     const val = row[header] ?? '';
                     const strVal = String(val);
                     if (strVal.includes(',') || strVal.includes('"') || strVal.includes('\n')) {
@@ -123,7 +123,7 @@ export async function GET() {
             ];
             csvContent += logsHeaders.join(',') + '\n';
 
-            const flattenedLogs = logs.map(log => {
+            const flattenedLogs = logs.map((log: any) => {
                 const details = log.details ? JSON.parse(log.details) : {};
                 const snapshot = log.snapshot ? JSON.parse(log.snapshot) : {};
 
@@ -140,8 +140,8 @@ export async function GET() {
                 };
             });
 
-            csvContent += flattenedLogs.map(row => {
-                return logsHeaders.map(header => {
+            csvContent += flattenedLogs.map((row: any) => {
+                return logsHeaders.map((header: string) => {
                     const val = (row as any)[header] ?? '';
                     const strVal = String(val);
                     if (strVal.includes(',') || strVal.includes('"') || strVal.includes('\n')) {
@@ -162,7 +162,7 @@ export async function GET() {
             ];
             csvContent += commentsHeaders.join(',') + '\n';
 
-            const flattenedComments = comments.map(comment => {
+            const flattenedComments = comments.map((comment: any) => {
                 const readByList = comment.readBy ? JSON.parse(comment.readBy) : [];
 
                 return {
@@ -179,8 +179,8 @@ export async function GET() {
                 };
             });
 
-            csvContent += flattenedComments.map(row => {
-                return commentsHeaders.map(header => {
+            csvContent += flattenedComments.map((row: any) => {
+                return commentsHeaders.map((header: string) => {
                     const val = (row as any)[header] ?? '';
                     const strVal = String(val);
                     if (strVal.includes(',') || strVal.includes('"') || strVal.includes('\n')) {
