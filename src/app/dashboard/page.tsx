@@ -1319,7 +1319,7 @@ export default function DashboardPage() {
                                                 orders={ordersToRender}
                                                 steps={steps}
                                                 detailColumns={detailColumns}
-                                                extraColumns={['ECD']}
+                                                extraColumns={orders.length > 0 ? ['ECD'] : []}
                                                 onNavigate={handleNavigate}
                                                 pMode={pMode}
                                                 onSetP={handleSetP}
