@@ -90,7 +90,7 @@ export async function GET(request: Request) {
         }));
 
         // 3. 7-Day Trend (Daily final step completion)
-        const trendData = last7Days.map(dateStr => {
+        const trendData = last7Days.map((dateStr: string) => {
             const count = (logs as any).filter((log: any) => {
                 const details = JSON.parse(log.details);
                 return details.step === finalStep && format(log.timestamp, 'yyyy-MM-dd') === dateStr;

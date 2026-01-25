@@ -31,7 +31,7 @@ export async function POST(request: Request) {
         // Update or add OPENAI_API_KEY
         const lines = envContent.split('\n');
         let found = false;
-        const updatedLines = lines.map(line => {
+        const updatedLines = lines.map((line: string) => {
             if (line.startsWith('OPENAI_API_KEY=')) {
                 found = true;
                 return `OPENAI_API_KEY="${apiKey}"`;

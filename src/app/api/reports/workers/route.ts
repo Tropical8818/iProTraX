@@ -101,7 +101,7 @@ export async function GET(request: NextRequest) {
         }
 
         // Calculate efficiency and format
-        const result = Object.values(workerStats).map(stat => {
+        const result = Object.values(workerStats).map((stat: any) => {
             const activeTimeHours = stat.activeTimeMs / (1000 * 60 * 60);
             const efficiency = stat.standardTimeMs > 0 && stat.activeTimeMs > 0
                 ? (stat.standardTimeMs / stat.activeTimeMs) * 100

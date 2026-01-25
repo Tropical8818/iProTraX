@@ -63,7 +63,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
                 priority: order.priority,
                 data: JSON.parse(order.data || '{}'),
                 steps: productConfig.steps || [],
-                comments: order.comments.map(c => ({
+                comments: order.comments.map((c: any) => ({
                     id: c.id,
                     content: c.content,
                     stepName: c.stepName,
@@ -71,14 +71,14 @@ export async function GET(request: NextRequest, context: RouteContext) {
                     user: c.user.username,
                     createdAt: c.createdAt.toISOString()
                 })),
-                stepProgress: order.stepProgress.map(sp => ({
+                stepProgress: order.stepProgress.map((sp: any) => ({
                     stepName: sp.stepName,
                     startTime: sp.startTime.toISOString(),
                     endTime: sp.endTime?.toISOString(),
                     quantity: sp.quantity,
                     operator: sp.user.username
                 })),
-                recentLogs: order.logs.map(log => ({
+                recentLogs: order.logs.map((log: any) => ({
                     action: log.action,
                     details: JSON.parse(log.details || '{}'),
                     timestamp: log.timestamp.toISOString()

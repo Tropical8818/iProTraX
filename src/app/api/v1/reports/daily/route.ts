@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
                     qnIssues: qnToday,
                     activeOperators: activeOperators.length
                 },
-                stepBreakdown: stepProgress.map(sp => ({
+                stepBreakdown: (stepProgress as any[]).map((sp: any) => ({
                     stepName: sp.stepName,
                     sessionsCount: sp._count.id,
                     totalQuantity: sp._sum.quantity || 0

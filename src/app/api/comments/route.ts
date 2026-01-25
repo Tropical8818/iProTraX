@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
             // Fetch all users to map roles/names
             const allUsers = await prisma.user.findMany({ select: { id: true, role: true, username: true } });
 
-            mentions.forEach(mention => {
+            mentions.forEach((mention: string) => {
                 if (mention === '@Supervisor') {
                     // Add all admins and supervisors
                     const supervisors = allUsers.filter((u: any) => u.role === 'admin' || u.role === 'supervisor').map((u: any) => u.id);
