@@ -1,7 +1,7 @@
 import { WebhookConfig, getConfig } from '@/lib/config';
 import { createHmac } from 'node:crypto';
 
-type NotificationEvent = 'on_hold' | 'on_qn' | 'on_done' | 'on_step_update' | 'on_message';
+type NotificationEvent = 'on_hold' | 'on_qn' | 'on_done' | 'on_step_update' | 'on_message' | 'on_morning_report';
 
 interface OrderPayload {
     orderId: string;
@@ -46,20 +46,61 @@ export class NotificationService {
 
     /**
      * Send a test notification to a specific webhook config (saved or unsaved).
+     * Uses the first configured event trigger to generate a realistic payload.
      */
     public async sendTest(webhook: WebhookConfig) {
+        // Use the first configured event, or default to 'on_hold'
+        const testEvent: NotificationEvent = (webhook.events?.[0] as NotificationEvent) || 'on_hold';
+
+        // Generate realistic test payload based on event type
+        const now = new Date();
         const testPayload: OrderPayload = {
-            orderId: 'TEST-123456',
-            step: 'Test Step',
-            status: 'Testing',
-            productName: 'Test Product',
-            operator: 'Test Operator',
-            message: 'This is a test notification from iProTraX.'
+            orderId: `WO-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-001`,
+            step: this.getTestStepForEvent(testEvent),
+            status: this.getTestStatusForEvent(testEvent),
+            productName: 'Standard Production Line',
+            operator: 'System Test',
+            message: this.getTestMessageForEvent(testEvent)
         };
 
-        // We use 'on_message' or a generic event for testing
-        // Let's use 'on_message' as it's the most generic
-        await this.dispatchWebhook(webhook, 'on_message', testPayload);
+        console.log(`[Notification/Test] Sending ${testEvent} test to ${webhook.name}`);
+        await this.dispatchWebhook(webhook, testEvent, testPayload);
+    }
+
+    private getTestStepForEvent(event: NotificationEvent): string {
+        const stepMap: Record<NotificationEvent, string> = {
+            'on_hold': 'QC Inspection',
+            'on_qn': 'Assembly',
+            'on_done': 'Final Packaging',
+            'on_step_update': 'Machining',
+            'on_morning_report': 'Daily Summary',
+            'on_message': 'General'
+        };
+        return stepMap[event] || 'Processing';
+    }
+
+    private getTestStatusForEvent(event: NotificationEvent): string {
+        const statusMap: Record<NotificationEvent, string> = {
+            'on_hold': 'ON HOLD',
+            'on_qn': 'QN RAISED',
+            'on_done': 'COMPLETED',
+            'on_step_update': 'IN PROGRESS',
+            'on_morning_report': 'REPORT',
+            'on_message': 'INFO'
+        };
+        return statusMap[event] || 'Updated';
+    }
+
+    private getTestMessageForEvent(event: NotificationEvent): string {
+        const msgMap: Record<NotificationEvent, string> = {
+            'on_hold': '⚠️ Order paused at QC Inspection due to material shortage.',
+            'on_qn': '🔴 Quality issue detected in Assembly step. Review required.',
+            'on_done': '✅ Order completed successfully and ready for shipment.',
+            'on_step_update': '🔄 Machining step completed. Moving to next stage.',
+            'on_morning_report': '📊 Daily production summary for ' + new Date().toLocaleDateString(),
+            'on_message': '📨 New message from production team.'
+        };
+        return msgMap[event] || 'Test notification from iProTraX.';
     }
 
     // Helper: Generate DingTalk Signature
