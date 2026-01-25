@@ -55,7 +55,8 @@
             "pendingComments": "Unread Comments",
             "activeWOs": "Active WOs",
             "overdue": "Overdue",
-            "dueToday": "Due Today"
+            "dueToday": "Due Today",
+            "holdQn": "Held / QN"
         },
         "noChartData": "No production data found for the last 7 days.",
         "loadingOrders": "Loading orders...",

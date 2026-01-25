@@ -55,7 +55,8 @@
             "pendingComments": "未读备注",
             "activeWOs": "活动工单",
             "overdue": "已逾期",
-            "dueToday": "今日到期"
+            "dueToday": "今日到期",
+            "holdQn": "暂停 / QN"
         },
         "noChartData": "最近 7 天没有产出数据",
         "loadingOrders": "工单加载中...",
