@@ -44,7 +44,7 @@ export async function GET(request: Request) {
         allKeys.add('Product Line');
         allKeys.add('Created At');
 
-        const flattenedOrders = orders.map(order => {
+        const flattenedOrders = orders.map((order: any) => {
             let data: any = {};
             try {
                 data = JSON.parse(order.data);
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
             }
 
             // Add keys to Set
-            Object.keys(data).forEach(k => allKeys.add(k));
+            Object.keys(data).forEach((k: string) => allKeys.add(k));
 
             return {
                 'WO ID': order.woId,
@@ -68,8 +68,8 @@ export async function GET(request: Request) {
         // Create CSV Content
         const csvRows = [
             headers.join(','), // Header row
-            ...flattenedOrders.map(row => {
-                return headers.map(header => {
+            ...flattenedOrders.map((row: any) => {
+                return headers.map((header: string) => {
                     const val = row[header] ?? '';
                     // Escape quotes and wrap in quotes if contains comma or newline
                     const strVal = String(val);

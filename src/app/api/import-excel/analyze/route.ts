@@ -62,8 +62,8 @@ export async function POST(request: NextRequest) {
 
         // Extract headers (assume row 2 is headers)
         const headers = (rawData[1] as (string | null)[])
-            .map(h => h ? String(h).trim() : '')
-            .filter(h => h && h.length > 0 && !h.includes('null'));
+            .map((h: string | null) => h ? String(h).trim() : '')
+            .filter((h: string) => h && h.length > 0 && !h.includes('null'));
 
         // Get existing product config (if any) for context
         let existingSteps: string[] = [];
@@ -107,9 +107,9 @@ export async function POST(request: NextRequest) {
         }
 
         // Preview: Get first 5 data rows
-        const previewRows = rawData.slice(2, 7).map(row => {
+        const previewRows = rawData.slice(2, 7).map((row: any) => {
             const rowObj: Record<string, string> = {};
-            headers.forEach((h, i) => {
+            headers.forEach((h: string, i: number) => {
                 rowObj[h] = row[i] ? String(row[i]) : '';
             });
             return rowObj;

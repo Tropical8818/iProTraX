@@ -30,7 +30,7 @@ export async function GET(request: Request) {
             take: 200 // Kiosk usually only needs recent/active ones
         });
 
-        const filteredOrders = allOrders.filter(order => {
+        const filteredOrders = (allOrders as any[]).filter((order: any) => {
             const config = JSON.parse(order.product.config);
             const data = JSON.parse(order.data);
             const steps = config.steps || [];
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
                 return !isDone;
             }
             return true;
-        }).map(order => {
+        }).map((order: any) => {
             const config = JSON.parse(order.product.config);
             return {
                 id: order.id,
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
             // 1. Primary Sort: Due Date (Matches "DUE")
             const getDueDate = (data: any) => {
                 const keys = Object.keys(data);
-                const dueKey = keys.find(k =>
+                const dueKey = keys.find((k: string) =>
                     k.toUpperCase().includes('DUE') && !k.toUpperCase().includes('ECD')
                 );
                 if (!dueKey || !data[dueKey]) return null;
@@ -79,7 +79,7 @@ export async function GET(request: Request) {
             // 2. Secondary Sort: Priority weight (!!! -> !! -> !)
             const getPriorityWeight = (data: any) => {
                 const keys = Object.keys(data);
-                const priorityKey = keys.find(k =>
+                const priorityKey = keys.find((k: string) =>
                     k.toUpperCase().includes('PRIORITY')
                 );
                 const val = priorityKey ? String(data[priorityKey] || '') : '';
@@ -115,8 +115,8 @@ export async function GET(request: Request) {
 
         // Collect all unique steps from all products
         const allStepsSet = new Set<string>();
-        filteredOrders.forEach(order => {
-            order.steps.forEach((step: string) => allStepsSet.add(step));
+        filteredOrders.forEach((order: any) => {
+            (order.steps as any[]).forEach((step: string) => allStepsSet.add(step));
         });
 
         return NextResponse.json({

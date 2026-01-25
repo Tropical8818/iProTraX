@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
         });
 
         const total = comments.length;
-        const unread = comments.filter(c => {
+        const unread = (comments as any).filter((c: any) => {
             const readByList = c.readBy ? JSON.parse(c.readBy) : [];
             return !readByList.includes(session.userId);
         }).length;

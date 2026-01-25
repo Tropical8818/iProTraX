@@ -18,7 +18,7 @@ export async function GET() {
 
         const products = await prisma.product.findMany();
 
-        const formattedProducts = products.map(p => {
+        const formattedProducts = products.map((p: any) => {
             const config = JSON.parse(p.config);
             return {
                 id: p.id,
@@ -32,8 +32,8 @@ export async function GET() {
         const limitedProducts = formattedProducts.slice(0, licenseLimits.maxProductLines);
 
         // Find active product - must be within allowed products
-        const activeProduct = products.find(p => p.isActive);
-        const allowedIds = limitedProducts.map(p => p.id);
+        const activeProduct = products.find((p: any) => p.isActive);
+        const allowedIds = limitedProducts.map((p: any) => p.id);
         const effectiveActiveId = activeProduct && allowedIds.includes(activeProduct.id)
             ? activeProduct.id
             : limitedProducts[0]?.id;

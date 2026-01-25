@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
         });
 
         // Filter for unread messages only
-        const unreadMessages = comments.map(msg => {
+        const unreadMessages = comments.map((msg: any) => {
             const readBy = msg.readBy ? JSON.parse(msg.readBy) : [];
             const isUnread = !readBy.includes(userId);
 
@@ -56,7 +56,7 @@ export async function GET(req: NextRequest) {
                 structuredData: msg.structuredData ? JSON.parse(msg.structuredData) : null,
                 isUnread
             };
-        }).filter(m => m.isUnread);
+        }).filter((m: any) => m.isUnread);
 
         const unreadCount = unreadMessages.length;
 

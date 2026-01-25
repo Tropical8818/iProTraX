@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
 
         // Filter for current user's active sessions (My Active Tasks)
         // @ts-ignore
-        const myActiveSessions = activeSessions.filter(s => s.userId === session.userId);
+        const myActiveSessions = (activeSessions as any[]).filter((s: any) => s.userId === session.userId);
 
         const sessionMap = myActiveSessions.reduce((acc: any, curr: any) => {
             acc[curr.stepName] = curr;

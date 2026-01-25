@@ -36,10 +36,10 @@ export async function POST(request: NextRequest) {
         }
 
         // Row 2 (index 1) contains headers - return ALL headers
-        const headers = (rawData[1] as (string | null)[]).map(h => h ? String(h).trim() : '');
+        const headers = (rawData[1] as (string | null)[]).map((h: string | null) => h ? String(h).trim() : '');
 
         // Return all non-empty headers, user will choose which to keep
-        const steps = headers.filter(h =>
+        const steps = headers.filter((h: string) =>
             h &&
             h.length > 0 &&
             !h.includes('null') &&

@@ -59,8 +59,8 @@ export async function POST(request: NextRequest) {
         }
 
         const detectedHeaders = (rawData[1] as (string | null)[])
-            .map(h => h ? String(h).trim() : '')
-            .filter(h => h && h.length > 0 && !h.includes('null') && !h.toLowerCase().includes('unnamed'));
+            .map((h: string | null) => h ? String(h).trim() : '')
+            .filter((h: string) => h && h.length > 0 && !h.includes('null') && !h.toLowerCase().includes('unnamed'));
 
         // SIMPLIFIED: Use original column names directly (no normalization)
         const headers = detectedHeaders;
@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
         // Validate required columns (case-insensitive)
         // Validate required columns (case-insensitive)
         // FLEXIBLE: If explicit 'WO ID' is missing, fallback to the FIRST COLUMN available.
-        let woIdColumnName = headers.find(h => h.toLowerCase() === 'wo id') || '';
+        let woIdColumnName = headers.find((h: string) => h.toLowerCase() === 'wo id') || '';
 
         if (!woIdColumnName) {
             // Fallback to first column as ID if available
@@ -93,9 +93,9 @@ export async function POST(request: NextRequest) {
                     ...(config.steps || [])
                 ];
 
-                const foundHeadersLower = new Set(headers.map(h => h.toLowerCase().trim()));
+                const foundHeadersLower = new Set(headers.map((h: string) => h.toLowerCase().trim()));
 
-                missingColumns = expectedColumns.filter(col => {
+                missingColumns = (expectedColumns as any[]).filter((col: any) => {
                     const colLower = String(col).toLowerCase().trim();
                     // Don't mark as missing if it's the WO ID column
                     if (colLower === 'wo id' && woIdColumnName) return false;
@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
             const rowNumber = rowIndex + 3;
             const rowData: Record<string, string> = {};
 
-            headers.forEach((header, index) => {
+            headers.forEach((header: string, index: number) => {
                 const value = row[index];
 
                 if (value == null || value === '') {

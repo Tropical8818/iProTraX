@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
         });
 
         // 2. Filter for unread ones
-        const unreadComments = comments.filter(c => {
+        const unreadComments = comments.filter((c: any) => {
             const readBy = c.readBy ? JSON.parse(c.readBy) : [];
             return !readBy.includes(userId);
         });
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
         // (Though bulk operations are better, JSON array manipulation requires this in prisma usually)
 
         let updatedCount = 0;
-        const updates = unreadComments.map(async (comment) => {
+        const updates = unreadComments.map(async (comment: any) => {
             const readBy = comment.readBy ? JSON.parse(comment.readBy) : [];
             // Generic check again just in case
             if (!readBy.includes(userId)) {
@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
 
         // 4. Update stats for affected orders (optional optimization: group by order)
         // Use a set to avoid duplicate updates
-        const orderIds = new Set(unreadComments.map(c => c.orderId));
+        const orderIds: Set<string> = new Set(unreadComments.map((c: any) => c.orderId as string));
         for (const orderId of orderIds) {
             await updateOrderCommentStats(orderId);
         }
@@ -88,7 +88,7 @@ async function updateOrderCommentStats(orderId: string) {
 
         const statsByStep: Record<string, { total: number; unread: number }> = {};
 
-        comments.forEach(comment => {
+        comments.forEach((comment: any) => {
             if (!statsByStep[comment.stepName]) {
                 statsByStep[comment.stepName] = { total: 0, unread: 0 };
             }
