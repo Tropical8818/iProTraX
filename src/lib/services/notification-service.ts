@@ -1,4 +1,5 @@
 import { WebhookConfig, getConfig } from '@/lib/config';
+import { createHmac } from 'node:crypto';
 
 type NotificationEvent = 'on_hold' | 'on_qn' | 'on_done' | 'on_step_update' | 'on_message';
 
@@ -43,32 +44,114 @@ export class NotificationService {
         await Promise.allSettled(promises);
     }
 
+    /**
+     * Send a test notification to a specific webhook config (saved or unsaved).
+     */
+    public async sendTest(webhook: WebhookConfig) {
+        const testPayload: OrderPayload = {
+            orderId: 'TEST-123456',
+            step: 'Test Step',
+            status: 'Testing',
+            productName: 'Test Product',
+            operator: 'Test Operator',
+            message: 'This is a test notification from iProTraX.'
+        };
+
+        // We use 'on_message' or a generic event for testing
+        // Let's use 'on_message' as it's the most generic
+        await this.dispatchWebhook(webhook, 'on_message', testPayload);
+    }
+
+    // Helper: Generate DingTalk Signature
+    private signDingTalk(secret: string): { timestamp: number, sign: string } {
+        const timestamp = Date.now();
+        const stringToSign = `${timestamp}\n${secret}`;
+        const sign = createHmac('sha256', secret)
+            .update(stringToSign)
+            .digest('base64');
+        return { timestamp, sign: encodeURIComponent(sign) };
+    }
+
+    // Helper: Generate Feishu Signature
+    private signFeishu(secret: string): { timestamp: string, sign: string } {
+        const timestamp = Math.floor(Date.now() / 1000).toString();
+        const stringToSign = `${timestamp}\n${secret}`;
+        const sign = createHmac('sha256', stringToSign)
+            .update('')
+            .digest('base64');
+        return { timestamp, sign };
+    }
+
     private async dispatchWebhook(webhook: WebhookConfig, event: NotificationEvent, payload: OrderPayload) {
         try {
             let url = webhook.url;
             let body = this.buildPayload(webhook, event, payload);
-            let headers = { 'Content-Type': 'application/json' };
+            let headers: any = { 'Content-Type': 'application/json' };
 
             // Dynamic URL Construction & Provider Specifics
+            // Dynamic URL Construction & Provider Specifics
             if (webhook.provider === 'bark' && webhook.settings?.deviceKey) {
-                // Bark: https://api.day.app/{key}/{title}/{body}?sound={sound}
-                const serverUrl = webhook.settings.serverUrl?.replace(/\/$/, '') || 'https://api.day.app';
+                const rawServerUrl = webhook.settings.serverUrl?.replace(/\/+$/, '') || 'https://api.day.app';
                 const deviceKey = webhook.settings.deviceKey;
-                const title = encodeURIComponent(`ProTracker: ${event.toUpperCase()}`);
-                const textBody = encodeURIComponent(`Order: ${payload.orderId} - ${payload.status}`);
-                const sound = webhook.settings.sound || 'default';
+
+                // Intelligent URL Construction:
+                // Case 1: Server URL already contains the Device Key (user pasted full URL)
+                //         → Use the URL directly as the base, just append Title/Body
+                // Case 2: Server URL is just the host (e.g., https://api.day.app)
+                //         → Append Key/Title/Body as usual
+
+                let baseUrl: string;
+                if (rawServerUrl.includes(deviceKey)) {
+                    // User's URL already has the key embedded, use it directly
+                    baseUrl = rawServerUrl;
+                    console.log(`[Notification/Bark] Server URL contains Key, using directly.`);
+                } else {
+                    // Standard case: append key
+                    baseUrl = `${rawServerUrl}/${deviceKey}`;
+                }
+                // Ensure no trailing slashes
+                baseUrl = baseUrl.replace(/\/+$/, '');
+
+                // Build Title and Body
+                const titleStr = webhook.name || body?.title || `iProTraX: ${event}`;
+                const bodyStr = body?.body || body?.text || `Order: ${payload.orderId}`;
+
+                const title = encodeURIComponent(titleStr);
+                const textBody = encodeURIComponent(bodyStr);
+
+                const sound = webhook.settings.sound || 'minuet';
                 const icon = webhook.settings.icon ? `&icon=${encodeURIComponent(webhook.settings.icon)}` : '';
+                const group = body?.group ? `&group=${encodeURIComponent(body.group)}` : '&group=iProTraX';
 
-                url = `${serverUrl}/${deviceKey}/${title}/${textBody}?sound=${sound}${icon}`;
+                url = `${baseUrl}/${title}/${textBody}?sound=${sound}${icon}${group}`;
 
-                // Bark can accept GET or POST. If POST, body is JSON. 
-                // Let's use GET for simplicity if no complex body needed, but POST is robust.
-                // Re-using buildPayload for structure if we decide to POST.
-                // For this implementation, we'll use the URL method for Bark as it is simplest.
-                body = undefined; // GET request implies no body usually, or let's double check Bark API.
-                // Actually Bark supports POST with JSON body for rich notification.
-                // Let's stick to the user's requested fields.
+                console.log(`[Notification/Bark] GET: [BASE]/${title}/${textBody}`);
+
+                // Body must be undefined for GET
+                body = undefined;
+
+            } else if (webhook.provider === 'dingtalk') {
+                // Handle optional Sign Secret
+                if (webhook.settings?.signSecret) {
+                    const { timestamp, sign } = this.signDingTalk(webhook.settings.signSecret);
+                    // Append valid query params
+                    const separator = url.includes('?') ? '&' : '?';
+                    url = `${url}${separator}timestamp=${timestamp}&sign=${sign}`;
+                }
+
+            } else if (webhook.provider === 'feishu') {
+                // Handle optional Sign Secret (Inject into Body)
+                if (webhook.settings?.signSecret) {
+                    const { timestamp, sign } = this.signFeishu(webhook.settings.signSecret);
+                    body = {
+                        timestamp,
+                        sign,
+                        ...body // Spread original card/msg_type
+                    };
+                }
+
             } else if (webhook.provider === 'telegram' && webhook.settings?.botToken && webhook.settings?.chatId) {
+                // ... (Telegram existing logic) ...
                 url = `https://api.telegram.org/bot${webhook.settings.botToken}/sendMessage`;
                 body = {
                     chat_id: webhook.settings.chatId,
@@ -78,6 +161,8 @@ export class NotificationService {
                 const serverUrl = webhook.settings.serverUrl.replace(/\/$/, '');
                 url = `${serverUrl}/message?token=${webhook.settings.appToken}`;
             }
+
+            // ... (rest of logic) ...
 
             // Custom Headers
             if (webhook.provider === 'custom' && webhook.customHeaders) {

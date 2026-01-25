@@ -204,6 +204,8 @@
             "matrix": "Matrix",
             "custom": "Custom"
         },
+        "signSecret": "Sign Secret (Optional)",
+        "signSecretHelp": "Recommended for security. Copy from DingTalk/Feishu bot settings.",
         "events": {
             "on_hold": "On Hold (Critical)",
             "on_qn": "QN Issue (Critical)",

@@ -2051,7 +2051,21 @@ export default function SettingsPage() {
                                                             <div className="relative">
                                                                 <select
                                                                     value={editingWebhook.provider}
-                                                                    onChange={e => setEditingWebhook({ ...editingWebhook, provider: e.target.value as any })}
+                                                                    onChange={e => {
+                                                                        const newProvider = e.target.value as any;
+                                                                        let newSettings = { ...editingWebhook.settings };
+
+                                                                        // Set defaults for specific providers
+                                                                        if (newProvider === 'bark' && !newSettings.serverUrl) {
+                                                                            newSettings.serverUrl = 'https://api.day.app';
+                                                                        }
+
+                                                                        setEditingWebhook({
+                                                                            ...editingWebhook,
+                                                                            provider: newProvider,
+                                                                            settings: newSettings
+                                                                        });
+                                                                    }}
                                                                     className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white appearance-none pr-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
                                                                 >
                                                                     {['dingtalk', 'wecom', 'feishu', 'slack', 'teams', 'telegram', 'discord', 'bark', 'gotify', 'serverchan', 'pushdeer', 'matrix', 'custom'].map(p => (
@@ -2075,7 +2089,7 @@ export default function SettingsPage() {
                                                                         <label className="block text-xs font-medium text-slate-500 mb-1">{t('serverUrl') || 'Server URL'}</label>
                                                                         <input
                                                                             type="text"
-                                                                            value={editingWebhook.settings?.serverUrl || 'https://api.day.app'}
+                                                                            value={editingWebhook.settings?.serverUrl ?? 'https://api.day.app'}
                                                                             onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, serverUrl: e.target.value } })}
                                                                             className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
                                                                             placeholder="https://api.day.app"
@@ -2096,7 +2110,7 @@ export default function SettingsPage() {
                                                                             <label className="block text-xs font-medium text-slate-500 mb-1">{t('sound') || 'Sound'}</label>
                                                                             <input
                                                                                 type="text"
-                                                                                value={editingWebhook.settings?.sound || 'default'}
+                                                                                value={editingWebhook.settings?.sound ?? 'minuet'}
                                                                                 onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, sound: e.target.value } })}
                                                                                 className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
                                                                                 placeholder="minuet"
@@ -2220,14 +2234,39 @@ export default function SettingsPage() {
                                                                     </div>
                                                                 </div>
                                                             );
+                                                        } else if (['dingtalk', 'wecom', 'feishu'].includes(p)) {
+                                                            return (
+                                                                <div className="space-y-3">
+                                                                    <div>
+                                                                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('webhookUrl') || 'Webhook URL'} <span className="text-red-500">*</span></label>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={editingWebhook.url || ''}
+                                                                            onChange={e => setEditingWebhook({ ...editingWebhook, url: e.target.value })}
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            placeholder="https://..."
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('signSecret') || 'Sign Secret (Optional)'}</label>
+                                                                        <input
+                                                                            type="password"
+                                                                            value={editingWebhook.settings?.signSecret || ''}
+                                                                            onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, signSecret: e.target.value } })}
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            placeholder="SEC..."
+                                                                        />
+                                                                        <p className="text-[10px] text-slate-400 mt-1">{t('signSecretHelp') || 'Required for secure chatbots (DingTalk/Feishu)'}</p>
+                                                                    </div>
+                                                                </div>
+                                                            );
                                                         } else {
-                                                            // Standard Webhook URL for others
                                                             return (
                                                                 <div>
                                                                     <label className="block text-xs font-medium text-slate-500 mb-1">{t('webhookUrl') || 'Webhook URL'} <span className="text-red-500">*</span></label>
                                                                     <input
                                                                         type="text"
-                                                                        value={editingWebhook.url}
+                                                                        value={editingWebhook.url || ''}
                                                                         onChange={e => setEditingWebhook({ ...editingWebhook, url: e.target.value })}
                                                                         className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
                                                                         placeholder="https://..."
@@ -2280,8 +2319,21 @@ export default function SettingsPage() {
                                                                 onClick={async () => {
                                                                     setWebhookTestStatus({ status: 'idle', message: t('testSending') || 'Sending...' });
                                                                     // For now, mockup success
-                                                                    // TODO: Call API endpoint to test
-                                                                    setTimeout(() => setWebhookTestStatus({ status: 'success', message: t('testSentParams') || 'Test sent!' }), 1000);
+                                                                    try {
+                                                                        const res = await fetch('/api/webhooks/test', {
+                                                                            method: 'POST',
+                                                                            headers: { 'Content-Type': 'application/json' },
+                                                                            body: JSON.stringify(editingWebhook)
+                                                                        });
+                                                                        const data = await res.json();
+                                                                        if (res.ok) {
+                                                                            setWebhookTestStatus({ status: 'success', message: t('testSentParams') || 'Test sent!' });
+                                                                        } else {
+                                                                            setWebhookTestStatus({ status: 'error', message: data.error || 'Failed' });
+                                                                        }
+                                                                    } catch (e) {
+                                                                        setWebhookTestStatus({ status: 'error', message: 'Network error' });
+                                                                    }
                                                                 }}
                                                                 className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
                                                             >
@@ -2300,18 +2352,71 @@ export default function SettingsPage() {
                                                     </button>
                                                     <button
                                                         onClick={() => {
-                                                            if (!editingWebhook.name || !editingWebhook.url) return;
-                                                            let newWebhooks = config.webhooks ? [...config.webhooks] : [];
-                                                            const index = newWebhooks.findIndex(w => w.id === editingWebhook.id);
-                                                            if (index >= 0) {
-                                                                newWebhooks[index] = editingWebhook;
+                                                            // Validation logic
+                                                            if (!editingWebhook.name) return;
+
+                                                            let isValid = false;
+                                                            if (['bark', 'telegram', 'gotify'].includes(editingWebhook.provider)) {
+                                                                if (editingWebhook.provider === 'bark') isValid = !!editingWebhook.settings?.deviceKey;
+                                                                else if (editingWebhook.provider === 'telegram') isValid = !!editingWebhook.settings?.botToken && !!editingWebhook.settings?.chatId;
+                                                                else if (editingWebhook.provider === 'gotify') isValid = !!editingWebhook.settings?.serverUrl && !!editingWebhook.settings?.appToken;
                                                             } else {
-                                                                newWebhooks.push(editingWebhook);
+                                                                // Generic / Custom requires URL
+                                                                isValid = !!editingWebhook.url;
                                                             }
-                                                            setConfig({ ...config, webhooks: newWebhooks });
+
+                                                            if (!isValid) return;
+
+                                                            // Clean up URL if using a dynamic provider to avoid confusion
+                                                            const finalWebhook = { ...editingWebhook };
+                                                            if (['bark', 'telegram', 'gotify'].includes(finalWebhook.provider)) {
+                                                                finalWebhook.url = '';
+                                                            }
+
+                                                            let newWebhooks = config.webhooks ? [...config.webhooks] : [];
+                                                            const index = newWebhooks.findIndex(w => w.id === finalWebhook.id);
+                                                            if (index >= 0) {
+                                                                newWebhooks[index] = finalWebhook;
+                                                            } else {
+                                                                newWebhooks.push(finalWebhook);
+                                                            }
+
+                                                            const newConfig = { ...config, webhooks: newWebhooks };
+                                                            setConfig(newConfig);
                                                             setIsWebhookModalOpen(false);
+
+                                                            // Auto-save to backend
+                                                            fetch('/api/config', {
+                                                                method: 'POST',
+                                                                headers: { 'Content-Type': 'application/json' },
+                                                                body: JSON.stringify(newConfig)
+                                                            }).then(res => {
+                                                                if (res.ok) {
+                                                                    setMessage({ type: 'success', text: 'Webhook saved successfully!' });
+                                                                } else {
+                                                                    setMessage({ type: 'error', text: 'Failed to save webhook.' });
+                                                                }
+                                                            }).catch(() => {
+                                                                setMessage({ type: 'error', text: 'Failed to save webhook.' });
+                                                            });
                                                         }}
-                                                        className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-sm shadow-indigo-200 transition-all font-medium"
+                                                        // Disable button visually if invalid (optional, but good UX)
+                                                        disabled={!editingWebhook.name ||
+                                                            (['bark', 'telegram', 'gotify'].includes(editingWebhook.provider)
+                                                                ? (editingWebhook.provider === 'bark' ? !editingWebhook.settings?.deviceKey
+                                                                    : editingWebhook.provider === 'telegram' ? (!editingWebhook.settings?.botToken || !editingWebhook.settings?.chatId)
+                                                                        : (!editingWebhook.settings?.serverUrl || !editingWebhook.settings?.appToken))
+                                                                : !editingWebhook.url)
+                                                        }
+                                                        className={`px-4 py-2 text-sm text-white rounded-lg shadow-sm font-medium transition-all ${(!editingWebhook.name ||
+                                                            (['bark', 'telegram', 'gotify'].includes(editingWebhook.provider)
+                                                                ? (editingWebhook.provider === 'bark' ? !editingWebhook.settings?.deviceKey
+                                                                    : editingWebhook.provider === 'telegram' ? (!editingWebhook.settings?.botToken || !editingWebhook.settings?.chatId)
+                                                                        : (!editingWebhook.settings?.serverUrl || !editingWebhook.settings?.appToken))
+                                                                : !editingWebhook.url))
+                                                            ? 'bg-slate-300 cursor-not-allowed'
+                                                            : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200'
+                                                            }`}
                                                     >
                                                         {t('saveWebhook') || 'Save Webhook'}
                                                     </button>

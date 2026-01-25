@@ -204,6 +204,8 @@
             "matrix": "Matrix",
             "custom": "自定义 (Custom)"
         },
+        "signSecret": "加签密钥 (Sign Secret)",
+        "signSecretHelp": "为了安全，建议在钉钉/飞书后台开启'加签'功能并在此填入密钥",
         "events": {
             "on_hold": "暂停报警 (Hold)",
             "on_qn": "质量报警 (QN)",

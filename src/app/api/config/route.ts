@@ -61,7 +61,8 @@ export async function GET() {
             includeSaturday: globalConfig.includeSaturday,
             includeSunday: globalConfig.includeSunday,
             systemPrompt: globalConfig.systemPrompt,
-            rolePrompts: globalConfig.rolePrompts
+            rolePrompts: globalConfig.rolePrompts,
+            webhooks: globalConfig.webhooks
         });
     } catch (error) {
         console.error('Config fetch error:', error);
@@ -107,6 +108,7 @@ export async function POST(request: Request) {
         if (body.includeSunday !== undefined) globalUpdates.includeSunday = body.includeSunday;
         if (body.systemPrompt !== undefined) globalUpdates.systemPrompt = body.systemPrompt;
         if (body.rolePrompts !== undefined) globalUpdates.rolePrompts = body.rolePrompts;
+        if (body.webhooks !== undefined) globalUpdates.webhooks = body.webhooks;
 
         if (Object.keys(globalUpdates).length > 0) {
             updateConfig(globalUpdates);
