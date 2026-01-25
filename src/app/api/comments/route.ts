@@ -57,14 +57,14 @@ export async function POST(req: NextRequest) {
             mentions.forEach(mention => {
                 if (mention === '@Supervisor') {
                     // Add all admins and supervisors
-                    const supervisors = allUsers.filter(u => u.role === 'admin' || u.role === 'supervisor').map(u => u.id);
+                    const supervisors = allUsers.filter((u: any) => u.role === 'admin' || u.role === 'supervisor').map((u: any) => u.id);
                     targetUserIds.push(...supervisors);
                 } else if (mention === '@Everyone') {
                     // Add all users
-                    targetUserIds.push(...allUsers.map(u => u.id));
+                    targetUserIds.push(...allUsers.map((u: any) => u.id));
                 } else if (mention === '@Operator') {
                     // Add all operators
-                    const operators = allUsers.filter(u => u.role === 'user').map(u => u.id);
+                    const operators = allUsers.filter((u: any) => u.role === 'user').map((u: any) => u.id);
                     targetUserIds.push(...operators);
                 } else {
                     // Assume it's a specific User ID or Username
@@ -169,7 +169,7 @@ export async function GET(req: NextRequest) {
         });
 
         // Create user map for quick lookup
-        const userMap = new Map(mentionedUsers.map(u => [u.id, u]));
+        const userMap = new Map(mentionedUsers.map((u: any) => [u.id, u] as [string, any]));
 
         // Parse JSON fields and add mentionedUsers array
         const parsedComments = comments.map((c: typeof comments[number]) => {
