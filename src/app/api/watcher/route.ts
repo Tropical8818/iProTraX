@@ -50,20 +50,20 @@ export async function POST() {
         console.log(`[Watcher API] Spawned process with PID: ${pid}`);
 
         // Log output for debugging
-        watcherProcess.stdout?.on('data', (data) => {
+        watcherProcess.stdout?.on('data', (data: any) => {
             console.log(`[Watcher] ${data.toString().trim()}`);
         });
 
-        watcherProcess.stderr?.on('data', (data) => {
+        watcherProcess.stderr?.on('data', (data: any) => {
             console.error(`[Watcher Error] ${data.toString().trim()}`);
         });
 
-        watcherProcess.on('exit', (code) => {
+        watcherProcess.on('exit', (code: any) => {
             console.log(`[Watcher API] Process exited with code ${code}`);
             watcherProcess = null;
         });
 
-        watcherProcess.on('error', (err) => {
+        watcherProcess.on('error', (err: any) => {
             console.error(`[Watcher API] Failed to spawn process:`, err);
         });
 

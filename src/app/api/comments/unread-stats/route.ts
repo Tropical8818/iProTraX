@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
         // Group by stepName and count unread
         const statsByStep: Record<string, { unread: number }> = {};
 
-        comments.forEach((comment) => {
+        comments.forEach((comment: any) => {
             const readByList = comment.readBy ? JSON.parse(comment.readBy) : [];
             const isUnread = !readByList.includes(userId);
 
