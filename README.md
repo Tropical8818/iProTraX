@@ -52,6 +52,7 @@ flowchart TB
     App <--> AI
     AI -- "4. Bottleneck Analysis" --> Supervisor
     App -- "5. Efficiency Reports" --> Supervisor
+    App -.->|Webhooks| ExternalApps["External Apps (DingTalk/Slack/Telegram)"]
     Supervisor -- "6. Shift Planning" --> Worker
     Worker -- "7. Smart Comments" --> Supervisor
     App -- "8. Audit Logs" --> Admin
@@ -140,7 +141,15 @@ After the initial deployment, use the following credentials to access the **Supe
 *   **Purpose**: Zero-latency collaboration.
 *   **Features**:
     *   **Instant Sync**: Updates appear on all screens (Kiosk, Dashboard) effectively instantly (<50ms).
+    *   **Instant Sync**: Updates appear on all screens (Kiosk, Dashboard) effectively instantly (<50ms).
     *   **No Polling**: Replaced old "refresh every minute" mechanism with efficient Server-Sent Events.
+
+### 6. 🔔 Real-time Notifications (Webhook)
+*   **Purpose**: Keep stakeholders informed without checking the dashboard.
+*   **Features**:
+    *   **Multi-Channel**: Built-in support for **DingTalk, WeCom, Feishu, Slack, Telegram, Discord, Bark** and more.
+    *   **Smart Triggers**: Alert Supervisors on **Hold/QN**, notify Planners on **Done**, and send **Daily Morning Reports**.
+    *   **Dynamic Config**: Customize payloads, headers, and endpoints for any system integration.
 
 ---
 

@@ -373,6 +373,43 @@ AI 自动按类别聚合评论以提供深入见解：
 
 ---
 
+## 通知与集成 (Notifications & Webhooks)
+
+*(v8.1.0 新功能)*
+
+iProTraX 可以将生产现场的关键事件通过 Webhook 实时推送到您的协作工具（如钉钉、企业微信、飞书、Telegram 等）。
+
+### 配置指南
+
+前往 **设置 (Settings) → 通知 (Notifications)**：
+
+1.  **添加 Webhook**：点击右上角的 "添加 Webhook" 按钮。
+2.  **选择服务商 (Provider)**：支持 13+ 种内置服务商及自定义模式。
+    *   **通用** (钉钉, 企业微信, 飞书, Slack, Discord 等)：仅需输入 `Webhook URL`。
+    *   **Bark (iOS)**：输入 `服务器地址`, `设备 Key`, `提示音`, `图标 URL`。
+    *   **Telegram**：输入 `Bot Token` 和 `Chat ID`。
+    *   **Gotify**：输入 `服务器地址` 和 `应用 Token`。
+    *   **自定义 (Custom)**：配置 `Webhook URL`, `请求方法` (POST/GET), `请求头` (JSON), `消息体模板` (JSON)。
+3.  **选择触发事件 (Triggers)**：
+    *   **暂停报警 (Hold)**：订单暂停时的紧急通知。
+    *   **质量报警 (QN)**：发生质量问题时的紧急通知。
+    *   **完工通知 (Done)**：订单完成所有工序时的通知。
+    *   **工序更新 (Step Update)**：实时工步进度更新（可选）。
+    *   **每日晨报 (Morning Report)**：每天早上 8:00 自动发送生产日报。
+    *   **有新消息 (New Message)**：当收到系统消息或被 @提及时的通知。
+
+### 自定义 Webhook 模板变量
+
+如果您使用 **自定义 (Custom)** 模式，可以在消息体模板中使用以下变量：
+*   `{{orderId}}`: 工单号 (如 WO-1234)
+*   `{{status}}`: 当前状态 (如 Hold, QN)
+*   `{{step}}`: 当前工序
+*   `{{productName}}`: 产品线名称
+*   `{{sender}}`: 发送者姓名 (仅限消息事件)
+*   `{{message}}`: 消息内容
+
+---
+
 ## 用户角色与权限
 
 | 角色 | 权限 |

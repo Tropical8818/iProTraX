@@ -384,6 +384,43 @@ Navigate to **Settings → User Management** to:
 
 ---
 
+## Notifications & Webhooks
+
+*(New in v8.1.0)*
+
+iProTraX can send real-time alerts to your external collaboration tools (Slack, Teams, DingTalk, Telegram, etc.) when critical events occur on the production floor.
+
+### Configuration
+
+Navigate to **Settings → Notifications**:
+
+1.  **Add Webhook**: Click the "Add Webhook" button.
+2.  **Select Provider**: Choose from 13+ built-in providers or use Custom.
+    *   **Generic** (DingTalk, WeCom, Slack, Teams, Feishu, Discord): Enter the `Webhook URL`.
+    *   **Bark (iOS)**: Enter `Server URL` (e.g., `https://api.day.app`), `Device Key`, `Sound`, and `Icon`.
+    *   **Telegram**: Enter `Bot Token` and `Chat ID`.
+    *   **Gotify**: Enter `Server URL` and `App Token`.
+    *   **Custom**: Configure `Webhook URL`, `HTTP Method` (POST/GET), `Headers` (JSON), and `Body Template` (JSON).
+3.  **Select Triggers**:
+    *   **On Hold**: Critical alert when an order is put on hold.
+    *   **QN Issue**: Critical alert for quality issues.
+    *   **Order Completed**: Notification when an order finishes the last step.
+    *   **Step Update**: Real-time progress updates (optional).
+    *   **Daily Morning Report**: Automated daily summary at 8:00 AM.
+    *   **New Message**: Notification when you receive a message or are @mentioned in the system.
+
+### Custom Webhook Template Variables
+
+If using the **Custom** provider, you can use these placeholders in your Body Template:
+*   `{{orderId}}`: Order ID (e.g., WO-1234)
+*   `{{status}}`: Current status (e.g., Hold, QN)
+*   `{{step}}`: Current production step
+*   `{{productName}}`: Name of the product line
+*   `{{sender}}`: Name of the message sender (for message events)
+*   `{{message}}`: Content of the message
+
+---
+
 ---
 
 ## Unified Analytics

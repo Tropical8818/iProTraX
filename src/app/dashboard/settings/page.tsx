@@ -7,52 +7,7 @@ import { Table2, HardHat, Settings, LogOut, Save, FileSpreadsheet, Lock, Plus, T
 import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
 import { APP_VERSION } from '@/lib/version';
 
-interface Product {
-    id: string;
-    name: string;
-    excelPath: string;
-    detailColumns: string[];
-    steps: string[];
-    stepDurations?: Record<string, number>;
-    monthlyTarget?: number;
-    watchFolder?: string;
-    includeSaturday?: boolean;
-    includeSunday?: boolean;
-    aiModel?: string;
-    customInstructions?: string;
-    aiProvider?: 'openai' | 'ollama' | 'deepseek';
-    aiVisibleColumns?: string[];
-    aiVisibleSteps?: string[];
-    aiContextLimit?: number;
-    aiMaxTokens?: number;
-    stepQuantities?: Record<string, number>;
-    stepUnits?: Record<string, string>;
-    shifts?: { name: string; start: string; end: string }[];
-    overtimeThreshold?: number;
-}
-
-interface Config {
-    products: Product[];
-    activeProductId: string;
-    includeSaturday?: boolean;
-    includeSunday?: boolean;
-    aiProvider?: 'openai' | 'ollama' | 'deepseek';
-    openAIApiKey?: string;
-    ollamaUrl?: string;
-    ollamaModel?: string;
-    deepseekApiKey?: string;
-    deepseekModel?: string;
-    openaiModel?: string;  // User-configurable OpenAI model
-    systemPrompt?: string;
-    rolePrompts?: Record<string, string>;
-    kioskPin?: string;
-    license?: {
-        maxProductLines: number;
-        totalProducts: number;
-        isLimited: boolean;
-        warning?: string;
-    };
-}
+import { Product, Config, WebhookConfig } from '@/lib/types/config';
 
 function PasswordInput({
     label,
@@ -168,6 +123,11 @@ export default function SettingsPage() {
     const [watcherPid, setWatcherPid] = useState<number | null>(null);
     const [showAnalytics, setShowAnalytics] = useState(false);
     const [selectedProductId, setSelectedProductId] = useState<string>('');
+
+    // Webhook State
+    const [editingWebhook, setEditingWebhook] = useState<WebhookConfig | null>(null);
+    const [isWebhookModalOpen, setIsWebhookModalOpen] = useState(false);
+    const [webhookTestStatus, setWebhookTestStatus] = useState<{ status: 'idle' | 'success' | 'error', message: string }>({ status: 'idle', message: '' });
 
     // Fetch Machine ID (Enterprise)
     useEffect(() => {
@@ -1972,6 +1932,393 @@ export default function SettingsPage() {
                                             </div>
                                         )}
                                     </div>
+                                </div>
+                            )}
+
+                            {/* Notifications & Webhooks */}
+                            {isAdmin && (
+                                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md mb-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h3 className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+                                            <Bot className="w-5 h-5 text-indigo-600" />
+                                            {t('notifications') || 'Notifications'}
+                                        </h3>
+                                        <button
+                                            onClick={() => {
+                                                setEditingWebhook({
+                                                    id: `wh_${Date.now()}`,
+                                                    name: t('newWebhook') || 'New Webhook',
+                                                    url: '',
+                                                    enabled: true,
+                                                    provider: 'dingtalk',
+                                                    events: ['on_hold', 'on_qn']
+                                                });
+                                                setIsWebhookModalOpen(true);
+                                                setWebhookTestStatus({ status: 'idle', message: '' });
+                                            }}
+                                            className="text-sm px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-md hover:bg-indigo-100 font-medium transition-colors flex items-center gap-1"
+                                        >
+                                            <Plus className="w-4 h-4" />
+                                            {t('addWebhook') || 'Add Webhook'}
+                                        </button>
+                                    </div>
+
+                                    {!config.webhooks || config.webhooks.length === 0 ? (
+                                        <div className="text-center py-6 text-slate-500 bg-slate-50 rounded-lg border border-dashed border-slate-200">
+                                            <p>{t('noWebhooks') || 'No webhooks configured.'}</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {config.webhooks.map((wh) => (
+                                                <div key={wh.id} className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg hover:border-indigo-200 transition-colors">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`w-2 h-2 rounded-full ${wh.enabled ? 'bg-green-500' : 'bg-slate-300'}`} />
+                                                        <div>
+                                                            <div className="font-medium text-slate-900">{wh.name}</div>
+                                                            <div className="text-xs text-slate-500 flex items-center gap-2">
+                                                                <span className="uppercase bg-slate-100 px-1.5 py-0.5 rounded text-[10px] tracking-wide">{t(`providers.${wh.provider}`) || wh.provider}</span>
+                                                                <span>{wh.events.length} events</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        <button
+                                                            onClick={() => {
+                                                                setEditingWebhook({ ...wh });
+                                                                setIsWebhookModalOpen(true);
+                                                                setWebhookTestStatus({ status: 'idle', message: '' });
+                                                            }}
+                                                            className="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md"
+                                                        >
+                                                            <Settings className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => {
+                                                                const newWebhooks = config.webhooks?.filter(w => w.id !== wh.id) || [];
+                                                                setConfig({ ...config, webhooks: newWebhooks });
+                                                            }}
+                                                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Webhook Edit Modal (Inline for now to save space) */}
+                                    {isWebhookModalOpen && editingWebhook && (
+                                        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                                            <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                                                <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                                                    <h4 className="font-semibold text-slate-900">
+                                                        {config.webhooks?.some(w => w.id === editingWebhook.id) ? t('editWebhook') : t('newWebhook')}
+                                                    </h4>
+                                                    <button onClick={() => setIsWebhookModalOpen(false)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+                                                </div>
+
+                                                <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+                                                    {/* Name & Enabled */}
+                                                    <div className="flex gap-4">
+                                                        <div className="flex-1">
+                                                            <label className="block text-xs font-medium text-slate-500 mb-1">{t('webhookName') || 'Name'}</label>
+                                                            <input
+                                                                type="text"
+                                                                value={editingWebhook.name}
+                                                                onChange={e => setEditingWebhook({ ...editingWebhook, name: e.target.value })}
+                                                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                                                                placeholder="Alerts Channel"
+                                                            />
+                                                        </div>
+                                                        <div className="flex items-end pb-2">
+                                                            <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={editingWebhook.enabled}
+                                                                    onChange={e => setEditingWebhook({ ...editingWebhook, enabled: e.target.checked })}
+                                                                    className="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                                                                />
+                                                                <span className="text-slate-700">{t('enabled') || 'Enabled'}</span>
+                                                            </label>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Provider & URL */}
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('provider') || 'Provider'}</label>
+                                                        <div className="mb-2">
+                                                            <div className="relative">
+                                                                <select
+                                                                    value={editingWebhook.provider}
+                                                                    onChange={e => setEditingWebhook({ ...editingWebhook, provider: e.target.value as any })}
+                                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white appearance-none pr-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
+                                                                >
+                                                                    {['dingtalk', 'wecom', 'feishu', 'slack', 'teams', 'telegram', 'discord', 'bark', 'gotify', 'serverchan', 'pushdeer', 'matrix', 'custom'].map(p => (
+                                                                        <option key={p} value={p}>
+                                                                            {t(`providers.${p}`) || p}
+                                                                        </option>
+                                                                    ))}
+                                                                </select>
+                                                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Dynamic Provider Settings */}
+                                                    {(() => {
+                                                        const p = editingWebhook.provider;
+                                                        if (p === 'bark') {
+                                                            return (
+                                                                <div className="space-y-3">
+                                                                    <div>
+                                                                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('serverUrl') || 'Server URL'}</label>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={editingWebhook.settings?.serverUrl || 'https://api.day.app'}
+                                                                            onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, serverUrl: e.target.value } })}
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            placeholder="https://api.day.app"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('deviceKey') || 'Device Key'} <span className="text-red-500">*</span></label>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={editingWebhook.settings?.deviceKey || ''}
+                                                                            onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, deviceKey: e.target.value } })}
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            placeholder="Your BN..."
+                                                                        />
+                                                                    </div>
+                                                                    <div className="flex gap-2">
+                                                                        <div className="flex-1">
+                                                                            <label className="block text-xs font-medium text-slate-500 mb-1">{t('sound') || 'Sound'}</label>
+                                                                            <input
+                                                                                type="text"
+                                                                                value={editingWebhook.settings?.sound || 'default'}
+                                                                                onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, sound: e.target.value } })}
+                                                                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                                                                                placeholder="minuet"
+                                                                            />
+                                                                        </div>
+                                                                        <div className="flex-1">
+                                                                            <label className="block text-xs font-medium text-slate-500 mb-1">{t('icon') || 'Icon URL'}</label>
+                                                                            <input
+                                                                                type="text"
+                                                                                value={editingWebhook.settings?.icon || ''}
+                                                                                onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, icon: e.target.value } })}
+                                                                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                                                                                placeholder="https://..."
+                                                                            />
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        } else if (p === 'telegram') {
+                                                            return (
+                                                                <div className="space-y-3">
+                                                                    <div>
+                                                                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('botToken') || 'Bot Token'} <span className="text-red-500">*</span></label>
+                                                                        <input
+                                                                            type="password"
+                                                                            value={editingWebhook.settings?.botToken || ''}
+                                                                            onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, botToken: e.target.value } })}
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            placeholder="123456:ABC-DEF..."
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('chatId') || 'Chat ID'} <span className="text-red-500">*</span></label>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={editingWebhook.settings?.chatId || ''}
+                                                                            onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, chatId: e.target.value } })}
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            placeholder="-100..."
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        } else if (p === 'gotify') {
+                                                            return (
+                                                                <div className="space-y-3">
+                                                                    <div>
+                                                                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('serverUrl') || 'Server URL'} <span className="text-red-500">*</span></label>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={editingWebhook.settings?.serverUrl || ''}
+                                                                            onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, serverUrl: e.target.value } })}
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            placeholder="https://gotify.example.com"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('appToken') || 'App Token'} <span className="text-red-500">*</span></label>
+                                                                        <input
+                                                                            type="password"
+                                                                            value={editingWebhook.settings?.appToken || ''}
+                                                                            onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, appToken: e.target.value } })}
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            placeholder="A1..."
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            );
+
+                                                        } else if (p === 'custom') {
+                                                            return (
+                                                                <div className="space-y-3">
+                                                                    <div>
+                                                                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('webhookUrl') || 'Webhook URL'} <span className="text-red-500">*</span></label>
+                                                                        <input
+                                                                            type="text"
+                                                                            value={editingWebhook.url}
+                                                                            onChange={e => setEditingWebhook({ ...editingWebhook, url: e.target.value })}
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            placeholder="https://example.com/webhook"
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('httpMethod') || 'HTTP Method'}</label>
+                                                                        <select
+                                                                            value={editingWebhook.settings?.method || 'POST'}
+                                                                            onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, method: e.target.value } })}
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600 bg-white"
+                                                                        >
+                                                                            {['POST', 'GET', 'PUT', 'PATCH'].map(m => (
+                                                                                <option key={m} value={m}>{m}</option>
+                                                                            ))}
+                                                                        </select>
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('headers') || 'Custom Headers (JSON)'}</label>
+                                                                        <textarea
+                                                                            rows={3}
+                                                                            value={JSON.stringify(editingWebhook.customHeaders || {}, null, 2)}
+                                                                            onChange={e => {
+                                                                                try {
+                                                                                    const val = JSON.parse(e.target.value);
+                                                                                    setEditingWebhook({ ...editingWebhook, customHeaders: val });
+                                                                                } catch (err) {
+                                                                                    // Allow typing invalid JSON temporarily (managed via raw state usually, but simplified here)
+                                                                                }
+                                                                            }}
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-mono text-slate-600"
+                                                                            placeholder='{"Authorization": "Bearer token"}'
+                                                                        />
+                                                                    </div>
+                                                                    <div>
+                                                                        <label className="block text-xs font-medium text-slate-500 mb-1">{t('bodyTemplate') || 'Body Template (JSON)'}</label>
+                                                                        <textarea
+                                                                            rows={5}
+                                                                            value={editingWebhook.customPayload || ''}
+                                                                            onChange={e => setEditingWebhook({ ...editingWebhook, customPayload: e.target.value })}
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs font-mono text-slate-600"
+                                                                            placeholder='{"text": "Order {{orderId}} status: {{status}}"}'
+                                                                        />
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        } else {
+                                                            // Standard Webhook URL for others
+                                                            return (
+                                                                <div>
+                                                                    <label className="block text-xs font-medium text-slate-500 mb-1">{t('webhookUrl') || 'Webhook URL'} <span className="text-red-500">*</span></label>
+                                                                    <input
+                                                                        type="text"
+                                                                        value={editingWebhook.url}
+                                                                        onChange={e => setEditingWebhook({ ...editingWebhook, url: e.target.value })}
+                                                                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                        placeholder="https://..."
+                                                                    />
+                                                                </div>
+                                                            );
+                                                        }
+                                                    })()}
+
+                                                    {/* Events */}
+                                                    <div>
+                                                        <label className="block text-xs font-medium text-slate-500 mb-2">{t('triggers') || 'Triggers'}</label>
+                                                        <div className="grid grid-cols-2 gap-2">
+                                                            {[
+                                                                { id: 'on_hold', label: t('events.on_hold') || 'On Hold' },
+                                                                { id: 'on_qn', label: t('events.on_qn') || 'QN Issue' },
+                                                                { id: 'on_done', label: t('events.on_done') || 'Order Completed' },
+                                                                { id: 'on_step_update', label: t('events.on_step_update') || 'Step Update' },
+                                                                { id: 'on_morning_report', label: t('events.on_morning_report') || 'Daily Morning Report' },
+                                                                { id: 'on_message', label: t('events.on_message') || 'New Message' }
+                                                            ].map(evt => (
+                                                                <label key={evt.id} className="flex items-center gap-2 p-2 border border-slate-100 rounded bg-slate-50 cursor-pointer hover:bg-slate-100">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={editingWebhook.events.includes(evt.id as any)}
+                                                                        onChange={e => {
+                                                                            const newEvents = e.target.checked
+                                                                                ? [...editingWebhook.events, evt.id]
+                                                                                : editingWebhook.events.filter(x => x !== evt.id);
+                                                                            setEditingWebhook({ ...editingWebhook, events: newEvents as any });
+                                                                        }}
+                                                                        className="rounded border-slate-300 text-indigo-600"
+                                                                    />
+                                                                    <span className="text-xs text-slate-700">{evt.label}</span>
+                                                                </label>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Test Section */}
+                                                    <div className="pt-2 border-t border-slate-100">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className={`text-xs ${webhookTestStatus.status === 'success' ? 'text-green-600' :
+                                                                webhookTestStatus.status === 'error' ? 'text-red-600' : 'text-slate-400'
+                                                                }`}>
+                                                                {webhookTestStatus.message}
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={async () => {
+                                                                    setWebhookTestStatus({ status: 'idle', message: t('testSending') || 'Sending...' });
+                                                                    // For now, mockup success
+                                                                    // TODO: Call API endpoint to test
+                                                                    setTimeout(() => setWebhookTestStatus({ status: 'success', message: t('testSentParams') || 'Test sent!' }), 1000);
+                                                                }}
+                                                                className="text-xs text-indigo-600 hover:text-indigo-700 font-medium"
+                                                            >
+                                                                {t('sendTestPayload') || 'Send Test Payload'}
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-2">
+                                                    <button
+                                                        onClick={() => setIsWebhookModalOpen(false)}
+                                                        className="px-4 py-2 text-sm text-slate-600 hover:bg-white hover:shadow-sm rounded-lg transition-all"
+                                                    >
+                                                        {t('cancel') || 'Cancel'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            if (!editingWebhook.name || !editingWebhook.url) return;
+                                                            let newWebhooks = config.webhooks ? [...config.webhooks] : [];
+                                                            const index = newWebhooks.findIndex(w => w.id === editingWebhook.id);
+                                                            if (index >= 0) {
+                                                                newWebhooks[index] = editingWebhook;
+                                                            } else {
+                                                                newWebhooks.push(editingWebhook);
+                                                            }
+                                                            setConfig({ ...config, webhooks: newWebhooks });
+                                                            setIsWebhookModalOpen(false);
+                                                        }}
+                                                        className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 shadow-sm shadow-indigo-200 transition-all font-medium"
+                                                    >
+                                                        {t('saveWebhook') || 'Save Webhook'}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

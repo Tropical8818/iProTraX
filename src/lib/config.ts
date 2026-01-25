@@ -1,53 +1,13 @@
 import fs from 'fs';
 import path from 'path';
+import { Config, Product, Shift, WebhookConfig } from './types/config';
+
+// Re-export types for backward compatibility
+export type { Config, Product, Shift, WebhookConfig };
 
 // In standalone mode, use /app/data or fallback to relative path
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), 'data');
 const CONFIG_PATH = path.join(DATA_DIR, '.config.json');
-
-// Shift Definition
-export interface Shift {
-    name: string;
-    start: string; // HH:mm
-    end: string;   // HH:mm
-}
-
-// Product configuration
-export interface Product {
-    id: string;           // Unique identifier (e.g., "stator")
-    name: string;         // Display name (e.g., "Standard Production Line")
-    excelPath: string;    // Path to Excel file
-    detailColumns: string[]; // Work order detail columns (e.g., WO ID, PN, Description)
-    steps: string[];      // Process step column names
-    stepDurations?: Record<string, number>; // Estimated duration for each step in hours
-    monthlyTarget?: number; // Target quantity for the current month
-    customInstructions?: string; // Custom instructions for AI to understand this product line
-    aiProvider?: 'openai' | 'ollama' | 'deepseek'; // AI Provider for this specific product
-    aiContextLimit?: number; // How many recent orders to fetch for context (default: 60)
-    aiMaxTokens?: number; // Max tokens for AI response (default: 4000)
-
-    // Partial Completion & Shift Settings
-    stepQuantities?: Record<string, number>; // StepName -> Target Quantity (if tracked by qty)
-    stepUnits?: Record<string, string>;      // StepName -> Unit (e.g. "pcs", "m")
-    shifts?: Shift[];                        // Product-specific shifts
-    overtimeThreshold?: number;              // Minutes after shift end to count as overtime
-}
-
-export interface Config {
-    products: Product[];
-    activeProductId: string;
-    includeSaturday?: boolean; // Include Saturday in ECD calculation (default: false)
-    includeSunday?: boolean;   // Include Sunday in ECD calculation (default: false)
-    aiProvider?: 'openai' | 'ollama' | 'deepseek';
-    openAIApiKey?: string; // Stored in config instead of .env for persistence
-    openaiModel?: string;  // Default: gpt-4o-mini (user configurable)
-    ollamaUrl?: string;
-    ollamaModel?: string;
-    deepseekApiKey?: string; // DeepSeek API key (for China mainland)
-    deepseekModel?: string;  // Default: deepseek-chat
-    systemPrompt?: string;
-    rolePrompts?: Record<string, string>;
-}
 
 // Default steps for new product lines (Generic)
 const DEFAULT_STEPS = [
@@ -78,7 +38,8 @@ const DEFAULT_CONFIG: Config = {
     openaiModel: 'gpt-4o-mini', // Default OpenAI model (user can change)
     ollamaUrl: 'http://localhost:11434/v1',
     ollamaModel: 'llama3.1',
-    deepseekModel: 'deepseek-chat' // DeepSeek default model
+    deepseekModel: 'deepseek-chat', // DeepSeek default model
+    webhooks: []
 };
 
 // Migrate from old config format (v2) to new format (v3)

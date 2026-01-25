@@ -3,6 +3,7 @@ import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { format } from 'date-fns';
 import { formatToExcelTimestamp, formatToShortTimestamp, formatToFullTimestamp } from '@/lib/date-utils';
+import { NotificationService } from '@/lib/services/notification-service';
 
 export async function PATCH(
     request: Request,
@@ -145,6 +146,38 @@ export async function PATCH(
             } catch (notifyError) {
                 // Don't fail the main operation if notification fails
                 console.error('Failed to send supervisor notification:', notifyError);
+            }
+
+            // Webhook Integrations
+            try {
+                const notifService = NotificationService.getInstance();
+                const operator = session.username || 'Unknown';
+                const details = {
+                    step,
+                    previousValue,
+                    newValue: status
+                };
+
+                const payload = {
+                    orderId: woId,
+                    step,
+                    status,
+                    productName,
+                    operator,
+                    details
+                };
+
+                if (status === 'Hold') {
+                    await notifService.send('on_hold', payload);
+                } else if (status === 'QN') {
+                    await notifService.send('on_qn', payload);
+                } else if (status === 'Done') {
+                    await notifService.send('on_done', payload);
+                } else {
+                    await notifService.send('on_step_update', payload);
+                }
+            } catch (webhookErr) {
+                console.error('[Webhook] Error triggering webhooks:', webhookErr);
             }
         }
 
