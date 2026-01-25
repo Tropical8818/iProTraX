@@ -73,8 +73,8 @@ export async function POST(request: Request) {
                     _count: true,
                 });
 
-                result = groupResult.map(item => ({
-                    name: item[groupBy] || 'N/A',
+                result = groupResult.map((item: any) => ({
+                    name: (item as any)[groupBy] || 'N/A',
                     value: item._count
                 }));
             } else {
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
                     where,
                     _count: true,
                 });
-                result = groupResult.map(item => ({
+                result = groupResult.map((item: any) => ({
                     name: (item as any)[groupBy] || 'N/A',
                     value: item._count
                 }));
@@ -102,7 +102,7 @@ export async function POST(request: Request) {
 
             // Map operatorId to username if needed? 
             // For now return raw ID. Frontend can perhaps map if it has user list.
-            result = groupResult.map(item => ({
+            result = groupResult.map((item: any) => ({
                 name: (item as any)[groupBy] || 'Unknown',
                 value: item._count
             }));

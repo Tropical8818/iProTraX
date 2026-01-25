@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
         ]);
 
         // Parse JSON data field for each order
-        const formattedOrders = orders.map(order => ({
+        const formattedOrders = orders.map((order: any) => ({
             id: order.id,
             woId: order.woId,
             productId: order.productId,

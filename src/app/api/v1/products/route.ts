@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
             orderBy: { name: 'asc' }
         });
 
-        const formattedProducts = products.map(p => {
+        const formattedProducts = products.map((p: any) => {
             const config = JSON.parse(p.config || '{}');
             return {
                 id: p.id,

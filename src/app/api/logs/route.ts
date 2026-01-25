@@ -43,7 +43,7 @@ export async function GET(request: Request) {
         });
 
         // Transform to expected format
-        const logs = dbLogs.map(log => {
+        const logs = dbLogs.map((log: any) => {
             const details = log.details ? JSON.parse(log.details) : {};
             const snapshot = log.snapshot ? JSON.parse(log.snapshot) : {};
 

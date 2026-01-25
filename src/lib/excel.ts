@@ -48,7 +48,7 @@ export async function parseExcelBuffer(buffer: Buffer): Promise<{ sheetName: str
     const rawData: unknown[][] = [];
 
     // ExcelJS is 1-based. We want to return 0-indexed array where index 0 = Row 1
-    sheet.eachRow({ includeEmpty: true }, (row, _rowNumber) => {
+    sheet.eachRow({ includeEmpty: true }, (row) => {
         const rowValues = row.values;
         if (Array.isArray(rowValues)) {
             // row.values has a dummy item at index 0, so slice(1) gets correct columns A, B, C...
@@ -104,7 +104,7 @@ export async function readOrders(productId?: string): Promise<ExcelData> {
 
         // Convert sheet to array of arrays to mimic sheet_to_json({header: 1})
         const rawData: unknown[][] = [];
-        sheet.eachRow({ includeEmpty: true }, (row, _rowNumber) => {
+        sheet.eachRow({ includeEmpty: true }, (row) => {
             const rowValues = row.values;
             if (Array.isArray(rowValues)) {
                 // slice(1) because exceljs row.values has a dummy item at index 0
