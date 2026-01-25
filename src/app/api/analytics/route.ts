@@ -48,7 +48,7 @@ export async function GET(request: Request) {
         });
 
         const stepProductivity: Record<string, number> = {};
-        steps.forEach(s => stepProductivity[s] = 0);
+        steps.forEach((s: string) => stepProductivity[s] = 0);
 
         logs.forEach((log: any) => {
             const details = JSON.parse(log.details);
@@ -57,7 +57,7 @@ export async function GET(request: Request) {
             }
         });
 
-        const productivityData = steps.map(s => ({
+        const productivityData = steps.map((s: string) => ({
             name: s,
             count: stepProductivity[s]
         }));
@@ -68,7 +68,7 @@ export async function GET(request: Request) {
         });
 
         const wipCounts: Record<string, number> = {};
-        steps.forEach(s => wipCounts[s] = 0);
+        steps.forEach((s: string) => wipCounts[s] = 0);
 
         orders.forEach((order: any) => {
             const data = JSON.parse(order.data);
@@ -84,7 +84,7 @@ export async function GET(request: Request) {
             }
         });
 
-        const bottleneckData = steps.map(s => ({
+        const bottleneckData = steps.map((s: string) => ({
             name: s,
             count: wipCounts[s]
         }));

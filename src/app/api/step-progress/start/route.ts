@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-        console.log('API Start: prisma keys:', Object.keys(prisma).filter(k => !k.startsWith('_')));
+        console.log('API Start: prisma keys:', Object.keys(prisma).filter((k: string) => !k.startsWith('_')));
         let { orderId, stepName, standardTime } = await request.json();
 
         if (!orderId || !stepName) {
@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
     } catch (error: any) {
         console.error('Start step error details:', error);
         // @ts-ignore
-        const models = Object.keys(prisma).filter(k => !k.startsWith('$') && !k.startsWith('_')).join(', ');
+        const models = Object.keys(prisma).filter((k: string) => !k.startsWith('$') && !k.startsWith('_')).join(', ');
         return NextResponse.json({
             error: `Internal Server Error: ${error?.message || 'Unknown'}. Models found: ${models}`
         }, { status: 500 });

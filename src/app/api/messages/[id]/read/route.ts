@@ -61,12 +61,10 @@ async function updateOrderCommentStats(orderId: string) {
 
         const statsByStep: Record<string, { total: number; unread: number }> = {};
 
-        comments.forEach(comment => {
+        comments.forEach((comment: any) => {
             if (!statsByStep[comment.stepName]) {
                 statsByStep[comment.stepName] = { total: 0, unread: 0 };
             }
-            statsByStep[comment.stepName].total++;
-
             statsByStep[comment.stepName].total++;
         });
 

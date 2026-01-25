@@ -148,7 +148,7 @@ export async function POST(request: Request) {
         }
 
         // Get active Max Tokens setting
-        const activeProduct = context.products.find(p => p.id === productId);
+        const activeProduct = context.products.find((p: any) => p.id === productId);
         const maxTokens = (activeProduct as any)?.aiMaxTokens || 4000;
 
         // Get AI response
