@@ -50,7 +50,7 @@ export async function GET(request: Request) {
         const stepProductivity: Record<string, number> = {};
         steps.forEach(s => stepProductivity[s] = 0);
 
-        logs.forEach(log => {
+        logs.forEach((log: any) => {
             const details = JSON.parse(log.details);
             if (details.step && stepProductivity[details.step] !== undefined) {
                 stepProductivity[details.step]++;
@@ -70,7 +70,7 @@ export async function GET(request: Request) {
         const wipCounts: Record<string, number> = {};
         steps.forEach(s => wipCounts[s] = 0);
 
-        orders.forEach(order => {
+        orders.forEach((order: any) => {
             const data = JSON.parse(order.data);
             // An order is "at" a step if it's the first step that isn't a date
             // or if it's specifically marked WIP.
@@ -91,7 +91,7 @@ export async function GET(request: Request) {
 
         // 3. 7-Day Trend (Daily final step completion)
         const trendData = last7Days.map(dateStr => {
-            const count = logs.filter(log => {
+            const count = (logs as any).filter((log: any) => {
                 const details = JSON.parse(log.details);
                 return details.step === finalStep && format(log.timestamp, 'yyyy-MM-dd') === dateStr;
             }).length;
