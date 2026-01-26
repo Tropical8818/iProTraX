@@ -19,7 +19,14 @@ export async function GET() {
         const products = await prisma.product.findMany();
 
         const formattedProducts = products.map((p: any) => {
-            const config = JSON.parse(p.config);
+            let config = {};
+            try {
+                config = p.config ? JSON.parse(p.config) : {};
+            } catch (e) {
+                console.error(`Failed to parse config for product ${p.name} (${p.id}):`, e);
+                // Fallback to empty config to prevent API crash
+                config = {};
+            }
             return {
                 id: p.id,
                 name: p.name,

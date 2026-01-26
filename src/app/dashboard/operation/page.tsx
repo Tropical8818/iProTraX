@@ -118,23 +118,8 @@ function OperationContent() {
     const fetchData = async () => {
         try {
             // Fetch auth first
-            // Fetch auth first
             const authRes = await fetch('/api/auth');
-            let authData;
-
-            try {
-                const contentType = authRes.headers.get("content-type");
-                if (contentType && contentType.includes("application/json")) {
-                    authData = await authRes.json();
-                } else {
-                    const text = await authRes.text();
-                    console.warn("Non-JSON auth response:", text.substring(0, 100));
-                    authData = { authenticated: false }; // Fallback
-                }
-            } catch (jsonErr) {
-                console.error("Auth JSON parse error:", jsonErr);
-                authData = { authenticated: false };
-            }
+            const authData = await authRes.json();
 
             if (!authData.authenticated) {
                 router.push('/login');

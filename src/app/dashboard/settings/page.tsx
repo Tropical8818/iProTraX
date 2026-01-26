@@ -142,7 +142,9 @@ export default function SettingsPage() {
             try {
                 const res = await fetch('/api/system/id');
                 if (res.ok) {
-                    const data = await res.json();
+                    const text = await res.text();
+                    if (!text) return;
+                    const data = JSON.parse(text);
                     setMachineId(data.machineId);
                     setFingerprintHash(data.fingerprintHash);
                 }
@@ -160,7 +162,12 @@ export default function SettingsPage() {
             try {
                 const res = await fetch('/api/config');
                 if (res.ok) {
-                    const data = await res.json();
+                    const text = await res.text();
+                    if (!text) {
+                        setLoading(false);
+                        return;
+                    }
+                    const data = JSON.parse(text);
                     setConfig(data);
                     if (data.activeProductId) {
                         setSelectedProductId(data.activeProductId);
@@ -175,12 +182,18 @@ export default function SettingsPage() {
             }
         };
         const fetchUser = async () => {
-            const res = await fetch('/api/auth');
-            if (res.ok) {
-                const data = await res.json();
-                if (data.authenticated) {
-                    setCurrentUser({ id: data.id, username: data.username, role: data.role });
+            try {
+                const res = await fetch('/api/auth');
+                if (res.ok) {
+                    const text = await res.text();
+                    if (!text) return; // Handle empty body
+                    const data = JSON.parse(text);
+                    if (data.authenticated) {
+                        setCurrentUser({ id: data.id, username: data.username, role: data.role });
+                    }
                 }
+            } catch (e) {
+                console.error('Fetch user failed', e);
             }
         };
         fetchConfig();
@@ -192,8 +205,11 @@ export default function SettingsPage() {
             try {
                 const res = await fetch('/api/v1/keys');
                 if (res.ok) {
-                    const data = await res.json();
-                    setApiKeys(data.keys || []);
+                    const text = await res.text();
+                    if (text) {
+                        const data = JSON.parse(text);
+                        setApiKeys(data.keys || []);
+                    }
                 }
             } catch (e) {
                 console.error('Failed to fetch API keys:', e);
