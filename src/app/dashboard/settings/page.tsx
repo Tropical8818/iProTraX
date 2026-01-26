@@ -1727,231 +1727,171 @@ export default function SettingsPage() {
                                 </div>
                             )}
 
-                            {/* AI Settings (Admin Only) */}
+                            {/* AI Intelligence Hub (Admin Only) */}
                             {isAdmin && (
-                                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md">
-                                    <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                                        <Sparkles className="w-5 h-5 text-purple-600" />
-                                        {t('aiSettings')}
+                                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md mb-6">
+                                    <h3 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                                        <Bot className="w-6 h-6 text-indigo-600" />
+                                        {t('aiIntelligenceHub') || 'AI Intelligence Hub'}
                                     </h3>
 
-                                    <div className="space-y-6">
-                                        {/* Provider Toggle */}
-                                        <div className="flex bg-slate-100 p-1 rounded-lg">
-                                            <button
-                                                onClick={() => {
-                                                    const newConfig = { ...config, aiProvider: 'openai' as const };
-                                                    setConfig(newConfig);
-                                                    fetchModels('openai');
-                                                }}
-                                                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${config.aiProvider === 'openai' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                                            >
-                                                OpenAI
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    const newConfig = { ...config, aiProvider: 'ollama' as const };
-                                                    setConfig(newConfig);
-                                                    fetchModels('ollama');
-                                                }}
-                                                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${config.aiProvider === 'ollama' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                                            >
-                                                Ollama
-                                            </button>
-                                            <button
-                                                onClick={() => {
-                                                    const newConfig = { ...config, aiProvider: 'deepseek' as const };
-                                                    setConfig(newConfig);
-                                                }}
-                                                className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${config.aiProvider === 'deepseek' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                                            >
-                                                DeepSeek
-                                            </button>
-                                        </div>
-
-                                        {/* Provider Settings */}
-                                        <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-                                            {config.aiProvider === 'ollama' ? (
-                                                <>
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('ollamaUrl')}</label>
-                                                        <div className="flex gap-2">
-                                                            <input
-                                                                type="text"
-                                                                value={config.ollamaUrl || 'http://localhost:11434/v1'}
-                                                                onChange={(e) => setConfig({ ...config, ollamaUrl: e.target.value })}
-                                                                placeholder="http://localhost:11434/v1"
-                                                                className="flex-1 px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 font-mono text-sm text-slate-800"
-                                                            />
-                                                            <button
-                                                                onClick={() => fetchModels('ollama')}
-                                                                className="px-3 py-2.5 border border-slate-200 rounded-lg hover:bg-slate-50 text-slate-600"
-                                                                title={t('testConnectionListModels')}
-                                                            >
-                                                                <RefreshCw className={`w-4 h-4 ${loadingModels ? 'animate-spin' : ''}`} />
-                                                            </button>
-                                                        </div>
-                                                        <p className="text-xs text-slate-500 mt-1">
-                                                            {t('foundModels', { count: localModels.length })}
-                                                            {localModels.length > 0 && (
-                                                                <span className="ml-1 text-green-600">✓ {t('connectionSuccessful')}</span>
-                                                            )}
-                                                        </p>
-                                                    </div>
-                                                </>
-                                            ) : config.aiProvider === 'deepseek' ? (
-                                                <>
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('deepseekApiKey')}</label>
-                                                        <div className="flex gap-2">
-                                                            <div className="relative flex-1">
-                                                                <input
-                                                                    type={aiApiKeyVisible ? 'text' : 'password'}
-                                                                    value={config.deepseekApiKey || ''}
-                                                                    onChange={(e) => setConfig({ ...config, deepseekApiKey: e.target.value })}
-                                                                    placeholder="sk-..."
-                                                                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 font-mono text-sm text-slate-800 pr-10"
-                                                                />
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setAiApiKeyVisible(!aiApiKeyVisible)}
-                                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                                                                >
-                                                                    {aiApiKeyVisible ? <EyeOff size={16} /> : <Eye size={16} />}
-                                                                </button>
-                                                            </div>
-                                                            {config.deepseekApiKey && (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setConfig({ ...config, deepseekApiKey: '' })}
-                                                                    className="px-3 py-2.5 border border-red-200 rounded-lg hover:bg-red-50 text-red-500"
-                                                                    title={t('clearApiKey') || 'Clear API Key'}
-                                                                >
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                        <p className="text-xs text-slate-500 mt-1">{t('deepseekApiKeyHelp')}</p>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <div>
-                                                        <label className="block text-sm font-medium text-slate-700 mb-1">{t('openAIApiKey')}</label>
-                                                        <div className="flex gap-2">
-                                                            <div className="relative flex-1">
-                                                                <input
-                                                                    type={aiApiKeyVisible ? 'text' : 'password'}
-                                                                    value={config.openAIApiKey || ''}
-                                                                    onChange={(e) => setConfig({ ...config, openAIApiKey: e.target.value })}
-                                                                    placeholder="sk-proj-..."
-                                                                    className="w-full px-4 py-2.5 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 font-mono text-sm text-slate-800 pr-10"
-                                                                />
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setAiApiKeyVisible(!aiApiKeyVisible)}
-                                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                                                                >
-                                                                    {aiApiKeyVisible ? <EyeOff size={16} /> : <Eye size={16} />}
-                                                                </button>
-                                                            </div>
-                                                            {config.openAIApiKey && (
-                                                                <button
-                                                                    type="button"
-                                                                    onClick={() => setConfig({ ...config, openAIApiKey: '' })}
-                                                                    className="px-3 py-2.5 border border-red-200 rounded-lg hover:bg-red-50 text-red-500"
-                                                                    title={t('clearApiKey') || 'Clear API Key'}
-                                                                >
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                </button>
-                                                            )}
-                                                        </div>
-                                                        <p className="text-xs text-slate-500 mt-1">{t('apiKeyHelp')}</p>
-                                                    </div>
-                                                </>
-                                            )}
-
-                                            {/* Unified Save Button */}
-                                            <button
-                                                onClick={async () => {
-                                                    setSavingAiKey(true);
-                                                    try {
-                                                        if (config.aiProvider === 'ollama') {
-                                                            const res = await fetch('/api/config', {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({
-                                                                    aiProvider: 'ollama',
-                                                                    ollamaUrl: config.ollamaUrl
-                                                                })
-                                                            });
-                                                            if (res.ok) {
-                                                                setAiTestResult({ status: 'success', message: t('ollamaSettingsSaved') });
-                                                                fetchModels();
-                                                            } else {
-                                                                setAiTestResult({ status: 'error', message: t('failedToSaveSettings') });
-                                                            }
-                                                        } else if (config.aiProvider === 'deepseek') {
-                                                            const res = await fetch('/api/config', {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({
-                                                                    aiProvider: 'deepseek',
-                                                                    deepseekApiKey: config.deepseekApiKey
-                                                                })
-                                                            });
-                                                            if (res.ok) {
-                                                                setAiTestResult({ status: 'success', message: t('keySaved') });
-                                                            } else {
-                                                                setAiTestResult({ status: 'error', message: t('failedToSaveSettings') });
-                                                            }
-                                                        } else {
-                                                            // OpenAI
-                                                            const apiKeyToSave = config.openAIApiKey || '';
-                                                            /* Allow saving empty key to clear it
-                                                            if (!apiKeyToSave.trim()) {
-                                                                setAiTestResult({ status: 'error', message: t('enterApiKey') });
-                                                                return;
-                                                            }
-                                                            */
-
-                                                            const res = await fetch('/api/config', {
-                                                                method: 'POST',
-                                                                headers: { 'Content-Type': 'application/json' },
-                                                                body: JSON.stringify({
-                                                                    aiProvider: 'openai',
-                                                                    openAIApiKey: apiKeyToSave
-                                                                })
-                                                            });
-
-                                                            if (res.ok) {
-                                                                setAiTestResult({ status: 'success', message: t('keySaved') });
-                                                            } else {
-                                                                setAiTestResult({ status: 'error', message: t('saveFailed') });
-                                                            }
-                                                        }
-                                                    } catch (e) {
-                                                        setAiTestResult({ status: 'error', message: t('errorSavingSettings') });
-                                                    } finally {
-                                                        setSavingAiKey(false);
-                                                    }
-                                                }}
-                                                disabled={savingAiKey}
-                                                className="w-full py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                                            >
-                                                <Save className="w-4 h-4" />
-                                                {savingAiKey ? t('saving') : tCommon('save')}
-                                            </button>
-                                        </div>
-
-                                        {aiTestResult.message && (
-                                            <div className={`text-sm px-3 py-2 rounded-lg ${aiTestResult.status === 'success' ? 'bg-green-50 text-green-700' :
-                                                aiTestResult.status === 'error' ? 'bg-red-50 text-red-700' :
-                                                    'bg-slate-50 text-slate-600'
-                                                }`}>
-                                                {aiTestResult.message}
+                                    <div className="space-y-8">
+                                        {/* Sub-section 1: Model Configuration */}
+                                        <section className="space-y-4">
+                                            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 uppercase tracking-wider mb-2">
+                                                <Monitor className="w-4 h-4 text-slate-400" />
+                                                {t('modelConfiguration') || 'Model Configuration'}
                                             </div>
-                                        )}
+
+                                            {/* Provider Toggle */}
+                                            <div className="flex bg-slate-100 p-1 rounded-lg">
+                                                {['openai', 'ollama', 'deepseek'].map((provider) => (
+                                                    <button
+                                                        key={provider}
+                                                        onClick={() => {
+                                                            const newConfig = { ...config, aiProvider: provider as any };
+                                                            setConfig(newConfig);
+                                                            if (provider !== 'deepseek') fetchModels(provider as any);
+                                                        }}
+                                                        className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all capitalize ${config.aiProvider === provider ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                                    >
+                                                        {provider}
+                                                    </button>
+                                                ))}
+                                            </div>
+
+                                            {/* Provider-specific fields */}
+                                            <div className="animate-in fade-in slide-in-from-top-2">
+                                                {config.aiProvider === 'ollama' ? (
+                                                    <div className="space-y-4">
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-slate-500 mb-1">{t('ollamaUrl')}</label>
+                                                            <div className="flex gap-2">
+                                                                <input
+                                                                    type="text"
+                                                                    value={config.ollamaUrl || 'http://localhost:11434/v1'}
+                                                                    onChange={(e) => setConfig({ ...config, ollamaUrl: e.target.value })}
+                                                                    placeholder="http://localhost:11434/v1"
+                                                                    className="flex-1 px-4 py-2 border border-slate-200 rounded-lg font-mono text-sm"
+                                                                />
+                                                                <button
+                                                                    onClick={() => fetchModels('ollama')}
+                                                                    className="px-3 border border-slate-200 rounded-lg hover:bg-slate-50"
+                                                                >
+                                                                    <RefreshCw className={`w-4 h-4 ${loadingModels ? 'animate-spin' : ''}`} />
+                                                                </button>
+                                                            </div>
+                                                            <p className="text-[10px] text-slate-400 mt-1">
+                                                                {t('foundModels', { count: localModels.length })}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    <div className="space-y-4">
+                                                        <div>
+                                                            <label className="block text-xs font-medium text-slate-500 mb-1">
+                                                                {config.aiProvider === 'openai' ? t('openAIApiKey') : t('deepseekApiKey')}
+                                                            </label>
+                                                            <div className="relative">
+                                                                <input
+                                                                    type={aiApiKeyVisible ? 'text' : 'password'}
+                                                                    value={config.aiProvider === 'openai' ? (config.openAIApiKey || '') : (config.deepseekApiKey || '')}
+                                                                    onChange={(e) => {
+                                                                        if (config.aiProvider === 'openai') setConfig({ ...config, openAIApiKey: e.target.value });
+                                                                        else setConfig({ ...config, deepseekApiKey: e.target.value });
+                                                                    }}
+                                                                    placeholder="sk-..."
+                                                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg font-mono text-sm pr-10"
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setAiApiKeyVisible(!aiApiKeyVisible)}
+                                                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
+                                                                >
+                                                                    {aiApiKeyVisible ? <EyeOff size={16} /> : <Eye size={16} />}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </section>
+
+                                        {/* Sub-section 2: Prompt Engineering */}
+                                        <section className="space-y-4 border-t border-slate-100 pt-6">
+                                            <div className="flex items-center gap-2 text-sm font-semibold text-slate-900 uppercase tracking-wider mb-2">
+                                                <Sparkles className="w-4 h-4 text-purple-600" />
+                                                {t('aiPromptEngineering')}
+                                            </div>
+
+                                            <div className="bg-amber-50 border border-amber-100 rounded-lg p-3 text-xs text-amber-800">
+                                                {t('aiPromptCaution')}
+                                            </div>
+
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <div className="flex justify-between items-center mb-1">
+                                                        <label className="block text-xs font-medium text-slate-500">{t('systemPromptGlobal')}</label>
+                                                        <button onClick={() => setConfig({ ...config, systemPrompt: '' })} className="text-[10px] text-slate-400 hover:text-red-500">{t('resetToDefault')}</button>
+                                                    </div>
+                                                    <textarea
+                                                        value={config.systemPrompt || ''}
+                                                        onChange={(e) => setConfig({ ...config, systemPrompt: e.target.value })}
+                                                        placeholder={t('defaultSystemPromptPlaceholder')}
+                                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg font-mono text-sm h-28"
+                                                    />
+                                                </div>
+
+                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                    {['admin', 'supervisor', 'user'].map((role) => (
+                                                        <div key={role}>
+                                                            <div className="flex justify-between items-center mb-1">
+                                                                <label className="block text-xs font-medium text-slate-500 capitalize">{t('persona', { role })}</label>
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const newRolePrompts = { ...(config.rolePrompts || {}) };
+                                                                        delete newRolePrompts[role];
+                                                                        setConfig({ ...config, rolePrompts: newRolePrompts });
+                                                                    }}
+                                                                    className="text-[10px] text-slate-400 hover:text-red-500"
+                                                                >
+                                                                    {t('default')}
+                                                                </button>
+                                                            </div>
+                                                            <textarea
+                                                                value={config.rolePrompts?.[role] || ''}
+                                                                onChange={(e) => {
+                                                                    const newRolePrompts = { ...(config.rolePrompts || {}) };
+                                                                    newRolePrompts[role] = e.target.value;
+                                                                    setConfig({ ...config, rolePrompts: newRolePrompts });
+                                                                }}
+                                                                placeholder={t('defaultRoleInstructionsPlaceholder', { role })}
+                                                                className="w-full px-4 py-2 border border-slate-200 rounded-lg font-mono text-xs h-28"
+                                                            />
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </section>
+
+                                        {/* Final Unified Save Button */}
+                                        <div className="pt-6 border-t border-slate-100">
+                                            <button
+                                                onClick={handleSave}
+                                                disabled={saving}
+                                                className="w-full py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-500 font-bold transition-all shadow-md flex items-center justify-center gap-2 active:scale-[0.98]"
+                                            >
+                                                <Save className="w-5 h-5" />
+                                                {saving ? t('saving') : t('saveAiConfiguration') || 'Save AI Configuration'}
+                                            </button>
+
+                                            {message && message.text && (
+                                                <div className={`mt-4 text-sm font-medium px-4 py-3 rounded-lg flex items-center gap-2 ${message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+                                                    {message.type === 'success' ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
+                                                    <span>{message.text}</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -2450,93 +2390,6 @@ export default function SettingsPage() {
 
 
 
-                            {/* AI Prompt Engineering (Admin Only) */}
-                            {currentUser?.role === 'admin' && (
-                                <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 transition-all hover:shadow-md mb-6">
-                                    <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                                        <Sparkles className="w-5 h-5 text-purple-600" />
-                                        {t('aiPromptEngineering')}
-                                    </h3>
-                                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6 text-sm text-amber-800">
-                                        {t('aiPromptCaution')}
-                                    </div>
-
-                                    <div className="space-y-6">
-                                        <div>
-                                            <div className="flex justify-between items-center mb-1.5">
-                                                <label className="block text-sm font-medium text-slate-700">{t('systemPromptGlobal')}</label>
-                                                <button
-                                                    onClick={() => setConfig({ ...config, systemPrompt: '' })}
-                                                    className="text-xs text-slate-400 hover:text-red-500"
-                                                >
-                                                    {t('resetToDefault')}
-                                                </button>
-                                            </div>
-                                            <textarea
-                                                value={config.systemPrompt || ''}
-                                                onChange={(e) => setConfig({ ...config, systemPrompt: e.target.value })}
-                                                placeholder={t('defaultSystemPromptPlaceholder')}
-                                                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200 font-mono text-sm h-32 text-slate-900"
-                                            />
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            {['admin', 'supervisor', 'user'].map((role) => (
-                                                <div key={role}>
-                                                    <div className="flex justify-between items-center mb-1.5">
-                                                        <label className="block text-sm font-medium text-slate-700 capitalize">{t('persona', { role })}</label>
-                                                        <button
-                                                            onClick={() => {
-                                                                const newRolePrompts = { ...(config.rolePrompts || {}) };
-                                                                delete newRolePrompts[role];
-                                                                setConfig({ ...config, rolePrompts: newRolePrompts });
-                                                            }}
-                                                            className="text-xs text-slate-400 hover:text-red-500"
-                                                        >
-                                                            {t('default')}
-                                                        </button>
-                                                    </div>
-                                                    <textarea
-                                                        value={config.rolePrompts?.[role] || ''}
-                                                        onChange={(e) => {
-                                                            const newRolePrompts = { ...(config.rolePrompts || {}) };
-                                                            newRolePrompts[role] = e.target.value;
-                                                            setConfig({ ...config, rolePrompts: newRolePrompts });
-                                                        }}
-                                                        placeholder={t('defaultRoleInstructionsPlaceholder', { role })}
-                                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-200 font-mono text-xs h-32 text-slate-900"
-                                                    />
-                                                </div>
-                                            ))}
-                                        </div>
-
-                                        {/* Save Button */}
-                                        <div className="pt-4 border-t border-slate-100">
-                                            <button
-                                                onClick={handleSave}
-                                                disabled={saving}
-                                                className="w-full py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-500 font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                                            >
-                                                <Save className="w-4 h-4" />
-                                                {saving ? t('saving') : t('saveAiPrompts')}
-                                            </button>
-
-                                            {/* Save Status Message */}
-                                            {message && (
-                                                <div className={`mt-3 text-sm font-medium px-4 py-2 rounded-lg flex items-center gap-2 ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                                                    }`}>
-                                                    {message.type === 'success' ? (
-                                                        <Check className="w-4 h-4 flex-shrink-0" />
-                                                    ) : (
-                                                        <X className="w-4 h-4 flex-shrink-0" />
-                                                    )}
-                                                    <span>{message.text}</span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
 
 
 

@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { MessageCircle } from 'lucide-react';
+import { UnifiedMessageButton } from './common/UnifiedMessageButton';
 
 interface Props {
     orderId: string;
@@ -44,8 +44,8 @@ export function StepCommentIndicator({ orderId, stepName, onClick }: Props) {
 
     if (loading) {
         return (
-            <div className="inline-flex items-center gap-1 px-2 py-1 rounded-lg opacity-50">
-                <MessageCircle size={14} className="text-gray-300" />
+            <div className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg opacity-50">
+                <UnifiedMessageButton variant="table" count={0} unreadCount={0} className="pointer-events-none" />
             </div>
         );
     }
@@ -53,25 +53,15 @@ export function StepCommentIndicator({ orderId, stepName, onClick }: Props) {
     const hasUnread = stats && stats.unread > 0;
 
     return (
-        <button
-            onClick={onClick}
-            className="relative inline-flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-slate-100 transition-colors"
+        <UnifiedMessageButton
+            variant="table"
+            count={stats!.total}
+            unreadCount={stats!.unread}
+            onClick={(e) => {
+                e.stopPropagation();
+                onClick?.();
+            }}
             title={`${stats!.total} messages${hasUnread ? `, ${stats!.unread} unread` : ''}`}
-        >
-            <MessageCircle
-                size={16}
-                className={hasUnread ? 'text-blue-600' : 'text-gray-400'}
-            />
-
-            {/* Message count */}
-            <span className={`text-xs ${hasUnread ? 'text-blue-600 font-semibold' : 'text-gray-500'}`}>
-                {stats!.total}
-            </span>
-
-            {/* Unread indicator (red dot) */}
-            {hasUnread && (
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            )}
-        </button>
+        />
     );
 }

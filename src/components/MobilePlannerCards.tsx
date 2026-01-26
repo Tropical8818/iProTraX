@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { format, isValid } from 'date-fns';
-import { ChevronDown, ChevronUp, AlertCircle, CheckCircle, Clock, MessageCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import type { Order } from '@/lib/excel';
+import { UnifiedMessageButton } from './common/UnifiedMessageButton';
 
 interface Props {
     orders: Order[];
@@ -164,15 +165,13 @@ export default function MobilePlannerCards({
                                 </div>
 
                                 {onChat && nextAction && (
-                                    <button
+                                    <UnifiedMessageButton
+                                        variant="mobile"
                                         onClick={(e) => {
                                             e.stopPropagation();
                                             onChat(order['WO ID'], nextAction.step);
                                         }}
-                                        className="p-3 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-indigo-600 hover:bg-slate-50 transition-colors flex items-center justify-center"
-                                    >
-                                        <MessageCircle className="w-5 h-5" />
-                                    </button>
+                                    />
                                 )}
                             </div>
                         </div>

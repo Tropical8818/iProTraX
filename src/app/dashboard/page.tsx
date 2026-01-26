@@ -98,6 +98,7 @@ export default function DashboardPage() {
     const [error, setError] = useState('');
     const [showCompleted, setShowCompleted] = useState(false);
     const [role, setRole] = useState<'user' | 'supervisor' | 'admin'>('user');
+    const [username, setUsername] = useState('');
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [pMode, setPMode] = useState(false);
     const [naMode, setNaMode] = useState(false);
@@ -398,6 +399,9 @@ export default function DashboardPage() {
             if (authData.role) {
                 setRole(authData.role);
             }
+            if (authData.username) {
+                setUsername(authData.username);
+            }
 
             const configData = await configRes.json();
             if (configData.products && configData.products.length > 0) {
@@ -458,6 +462,9 @@ export default function DashboardPage() {
                 const authData = await authRes.json();
                 if (authData.role) {
                     setRole(authData.role);
+                }
+                if (authData.username) {
+                    setUsername(authData.username);
                 }
 
                 const configData = await configRes.json();
@@ -766,299 +773,310 @@ export default function DashboardPage() {
                     {/* Left: Logo */}
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="flex items-center hover:opacity-80 transition-opacity cursor-pointer"
+                        className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer shrink-0"
                         title="Return to Home"
                     >
-                        { }
                         <img src="/logo.png" alt="iProTraX" className="h-9 w-auto" />
                     </button>
 
-                    {/* Right: Product Selector & Nav */}
-                    <div className="flex items-center gap-2 justify-end min-w-0">
-                        {/* Product Selector - Outside overflow container to prevent clipping */}
-                        <div className="relative shrink-0">
-                            <button
-                                onClick={() => setProductMenuOpen(!productMenuOpen)}
-                                className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-200 bg-white"
-                            >
-                                <span className="max-w-[150px] truncate">{selectedProduct?.name || t('selectProduct')}</span>
-                                <ChevronDown className={`w-4 h-4 transition-transform ${productMenuOpen ? 'rotate-180' : ''}`} />
-                            </button>
-
-                            {productMenuOpen && products.length > 0 && (
-                                <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-lg border border-slate-200 py-1 min-w-[200px] z-50 max-h-[80vh] overflow-y-auto">
-                                    {products.map(product => (
-                                        <button
-                                            key={product.id}
-                                            onClick={() => handleProductChange(product.id)}
-                                            className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${product.id === selectedProductId
-                                                ? 'bg-indigo-50 text-indigo-700 font-medium border-r-4 border-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-400'
-                                                : 'text-slate-700 dark:text-slate-400'
-                                                }`}
-                                        >
-                                            {product.name}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {(role === 'admin' || role === 'supervisor') && (
-                            <div className="shrink-0 ml-1 mr-2">
-                                <input
-                                    type="file"
-                                    id="dashboard-import-input"
-                                    accept=".xlsx,.xls"
-                                    className="hidden"
-                                    onChange={handleImportFileSelect}
-                                />
-                                <button
-                                    onClick={() => {
-                                        if (!selectedProductId) { alert('Select a product line first'); return; }
-                                        document.getElementById('dashboard-import-input')?.click();
-                                    }}
-                                    disabled={isImporting}
-                                    className="flex items-center gap-2 px-3 py-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-blue-600 rounded-lg text-sm font-medium transition-colors shadow-sm"
-                                    title={t('import')}
-                                >
-                                    <Upload className="w-4 h-4" />
-                                    {t('import')}
-                                </button>
+                    <div className="flex items-center gap-4 ml-4">
+                        {/* Operator Display */}
+                        {username && (
+                            <div className="hidden md:flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-3 py-2 rounded-lg">
+                                <Users className="w-4 h-4 text-indigo-500" />
+                                <span className="text-sm font-medium text-indigo-700">{username}</span>
                             </div>
                         )}
 
-                        {/* DESKTOP NAV - Hidden on Mobile */}
-                        <nav className="hidden md:flex items-center gap-2 px-1">
+                        {/* Message Notification moved here */}
+                        <div className="hidden md:block">
+                            <MessageNotification />
+                        </div>
+                    </div>
 
-                            <div className="w-px h-6 bg-slate-200" />
-
-                            <button className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium">
-                                <Table2 className="w-4 h-4" />
-                                <span className="hidden sm:inline">{t('home')}</span>
-                            </button>
-
-
-
-                            <button
-                                onClick={() => router.push(`/dashboard/operation?product=${selectedProductId}`)}
-                                className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
-                                title={t('operation')}
-                            >
-                                <HardHat className="w-5 h-5 sm:w-4 sm:h-4" />
-                                <span className="hidden sm:inline">{t('operation')}</span>
-                            </button>
-
-
-
-                            {(role === 'supervisor' || role === 'admin') && (
+                    <div className="flex-1 overflow-x-auto no-scrollbar flex items-center justify-end px-2">
+                        <nav className="flex items-center gap-1 sm:gap-2">
+                            {/* Product Selector - Outside overflow container to prevent clipping */}
+                            <div className="relative shrink-0">
                                 <button
-                                    onClick={() => setShowAnalytics(!showAnalytics)}
-                                    className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${showAnalytics
-                                        ? 'bg-indigo-600 text-white shadow-sm dark:bg-indigo-500'
-                                        : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800'
-                                        }`}
-                                    title={t('reports')}
+                                    onClick={() => setProductMenuOpen(!productMenuOpen)}
+                                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-200 bg-white"
                                 >
-                                    <BarChart2 className="w-4 h-4" />
-                                    <span className="hidden sm:inline">{t('reports')}</span>
+                                    <span className="max-w-[150px] truncate">{selectedProduct?.name || t('selectProduct')}</span>
+                                    <ChevronDown className={`w-4 h-4 transition-transform ${productMenuOpen ? 'rotate-180' : ''}`} />
                                 </button>
-                            )}
 
-                            {/* Batch Operations Dropdown */}
+                                {productMenuOpen && products.length > 0 && (
+                                    <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-lg border border-slate-200 py-1 min-w-[200px] z-50 max-h-[80vh] overflow-y-auto">
+                                        {products.map(product => (
+                                            <button
+                                                key={product.id}
+                                                onClick={() => handleProductChange(product.id)}
+                                                className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${product.id === selectedProductId
+                                                    ? 'bg-indigo-50 text-indigo-700 font-medium border-r-4 border-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-400'
+                                                    : 'text-slate-700 dark:text-slate-400'
+                                                    }`}
+                                            >
+                                                {product.name}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
                             {(role === 'admin' || role === 'supervisor') && (
-                                <div className="relative">
+                                <div className="shrink-0 ml-1 mr-2">
+                                    <input
+                                        type="file"
+                                        id="dashboard-import-input"
+                                        accept=".xlsx,.xls"
+                                        className="hidden"
+                                        onChange={handleImportFileSelect}
+                                    />
                                     <button
-                                        onClick={() => setBatchMenuOpen(!batchMenuOpen)}
-                                        className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${pMode || naMode || holdMode || qnMode || wipMode || completeMode || eraseMode
-                                            ? 'bg-indigo-600 text-white shadow-sm'
-                                            : 'text-slate-700 hover:bg-slate-50 border border-slate-200'
-                                            }`}
+                                        onClick={() => {
+                                            if (!selectedProductId) { alert('Select a product line first'); return; }
+                                            document.getElementById('dashboard-import-input')?.click();
+                                        }}
+                                        disabled={isImporting}
+                                        className="flex items-center gap-2 px-3 py-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-blue-600 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                                        title={t('import')}
                                     >
-                                        <Layers className="w-4 h-4" />
-                                        <span className="hidden sm:inline">
-                                            {pMode ? t('batch.plan') : naMode ? t('batch.na') : holdMode ? t('batch.hold') : qnMode ? t('batch.qn') : wipMode ? t('batch.wip') : completeMode ? t('batch.complete') : eraseMode ? t('batch.erase') : t('batch.edit')}
-                                        </span>
-                                        <ChevronDown className={`w-3.5 h-3.5 transition-transform ${batchMenuOpen ? 'rotate-180' : ''}`} />
+                                        <Upload className="w-4 h-4" />
+                                        {t('import')}
                                     </button>
-
-                                    {batchMenuOpen && (
-                                        <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 min-w-[140px] z-[100]">
-                                            <button onClick={() => { setPMode(!pMode); if (!pMode) { setNaMode(false); setEraseMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${pMode ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                <Pencil className="w-4 h-4" /> Plan
-                                            </button>
-                                            <button onClick={() => { setNaMode(!naMode); if (!naMode) { setPMode(false); setEraseMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${naMode ? 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                <Ban className="w-4 h-4" /> N/A
-                                            </button>
-                                            <button onClick={() => { setHoldMode(!holdMode); if (!holdMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${holdMode ? 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                <PauseCircle className="w-4 h-4" /> Hold
-                                            </button>
-                                            <button onClick={() => { setQnMode(!qnMode); if (!qnMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setHoldMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${qnMode ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                <AlertTriangle className="w-4 h-4" /> QN
-                                            </button>
-                                            <button onClick={() => { setWipMode(!wipMode); if (!wipMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setHoldMode(false); setQnMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${wipMode ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                <Clock className="w-4 h-4" /> WIP
-                                            </button>
-                                            <button onClick={() => { setCompleteMode(!completeMode); if (!completeMode) { setPMode(false); setNaMode(false); setEraseMode(false); setHoldMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${completeMode ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                <CheckCircle2 className="w-4 h-4" /> Complete
-                                            </button>
-                                            <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
-                                            <button onClick={() => { if (eraseMode) { setEraseMode(false); } else { if (window.confirm(t('modals.eraseModeDesc'))) { setEraseMode(true); setPMode(false); setNaMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${eraseMode ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-red-500 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30 dark:hover:text-red-200'}`}>
-                                                <Eraser className="w-4 h-4" /> Erase
-                                            </button>
-                                        </div>
-                                    )}
                                 </div>
                             )}
 
-                            {/* Show/Hide Completed Toggle */}
-                            <button
-                                onClick={() => setShowCompleted(!showCompleted)}
-                                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${showCompleted
-                                    ? 'bg-slate-600 text-white shadow-md'
-                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                    }`}
-                                title={showCompleted ? 'Hide Completed Orders' : 'Show Completed Orders'}
-                            >
-                                {showCompleted ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                                <span className="hidden sm:inline">Completed</span>
-                                <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-200 text-slate-600">
-                                    {orders.filter(o => {
-                                        let completionStep = steps.find(s => s.toLowerCase() === 'receipt');
-                                        if (!completionStep) {
-                                            completionStep = steps.find(s =>
-                                                s.toLowerCase() === 'outgoing' ||
-                                                s.toLowerCase() === 'completion'
-                                            ) || steps[steps.length - 1];
-                                        }
-                                        const val = o[completionStep] || '';
-                                        return /\d{4}-\d{2}-\d{2}/.test(val) || /\d{2}[-\/]\w{3}/.test(val);
-                                    }).length}
-                                </span>
-                            </button>
+                            {/* DESKTOP NAV - Hidden on Mobile */}
+                            <div className="hidden md:flex items-center gap-2 px-1">
 
+                                <div className="w-px h-6 bg-slate-200" />
 
-
-                            <div className="w-px h-6 bg-slate-200 mx-1" />
-
-                            {/* Message Notification */}
-                            <div className="hidden md:block">
-                                <MessageNotification />
-                            </div>
-
-                            <button
-                                onClick={openLogsModal}
-                                className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
-                                title={t('modals.operationLogs')}
-                            >
-                                <ClipboardList className="w-5 h-5" />
-                            </button>
-
-                            <button
-                                onClick={fetchOrders}
-                                disabled={refreshing}
-                                className={`p-2 rounded-lg transition-colors ${refreshing
-                                    ? 'text-indigo-500 bg-indigo-50 dark:text-indigo-300 dark:bg-indigo-900/30'
-                                    : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
-                                    }`}
-                                title={t('refresh')}
-                            >
-                                <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-                            </button>
-
-                            {/* Barcode Scanner - Mobile only */}
-                            <button
-                                onClick={() => setScannerOpen(true)}
-                                className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg md:hidden"
-                                title="Scan Barcode"
-                            >
-                                <ScanBarcode className="w-6 h-6" />
-                            </button>
-
-                            <button
-                                onClick={toggleFullscreen}
-                                className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
-                                title={t('fullscreen')}
-                            >
-                                {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
-                            </button>
-
-                            {/* View Toggle */}
-                            <div className="flex bg-slate-100 rounded-lg p-1 hidden md:flex">
-                                <button
-                                    onClick={() => toggleViewMode()}
-                                    className={`p-1.5 rounded transition-all ${viewMode === 'table' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                                    title="Table View"
-                                >
-                                    <List className="w-4 h-4" />
+                                <button className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium">
+                                    <Table2 className="w-4 h-4" />
+                                    <span className="hidden sm:inline">{t('home')}</span>
                                 </button>
-                                <button
-                                    onClick={() => toggleViewMode()}
-                                    className={`p-1.5 rounded transition-all ${viewMode === 'board' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                                    title="Kanban Board View"
-                                >
-                                    <LayoutGrid className="w-4 h-4" />
-                                </button>
-                            </div>
 
-                            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-                                <button
-                                    onClick={() => updateFontSize(-0.1)}
-                                    className="p-1 text-slate-500 hover:bg-white hover:text-indigo-600 rounded"
-                                    title="Zoom Out"
-                                >
-                                    <ZoomOut className="w-4 h-4" />
-                                </button>
-                                <span className="text-xs font-mono w-8 text-center text-slate-500">{Math.round(fontSizeScale * 100)}%</span>
-                                <button
-                                    onClick={() => updateFontSize(0.1)}
-                                    className="p-1 text-slate-500 hover:bg-white hover:text-indigo-600 rounded"
-                                    title="Zoom In"
-                                >
-                                    <ZoomIn className="w-4 h-4" />
-                                </button>
-                            </div>
 
-                            {/* Theme Switcher */}
-                            {/* Theme Switcher - Desktop only */}
-                            <ThemeSwitcher className="hidden md:flex text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700" />
 
-                            {/* SVG Flag Language Switcher - Matching Login Page */}
-                            <button
-                                suppressHydrationWarning
-                                onClick={() => {
-                                    const locale = document.cookie
-                                        .split('; ')
-                                        .find(row => row.startsWith('NEXT_LOCALE='))
-                                        ?.split('=')[1] || 'en';
-                                    const newLocale = locale === 'en' ? 'zh' : 'en';
-                                    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
-                                    window.location.reload();
-                                }}
-                                className="flex items-center gap-1 px-2.5 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
-                                title={currentLocale === 'en' ? '切换到中文' : 'Switch to English'}
-                            >
-                                <div className="w-7 h-5 flex items-center justify-center" suppressHydrationWarning>
-                                    {mounted ? (
-                                        currentLocale === 'en' ? (
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" className="w-7 h-5 rounded-sm shadow-sm">
-                                                <rect width="30" height="20" fill="#de2910" /><path fill="#ffde00" d="M5 5l-1.123.816.429-1.321-1.123-.816h1.388L5 2.358l.429 1.321h1.388l-1.123.816.429 1.321L5 5z" /><circle fill="#ffde00" cx="10" cy="2" r="0.4" /><circle fill="#ffde00" cx="12" cy="4" r="0.4" /><circle fill="#ffde00" cx="12" cy="7" r="0.4" /><circle fill="#ffde00" cx="10" cy="9" r="0.4" />
-                                            </svg>
-                                        ) : (
-                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 741 390" className="w-7 h-5 rounded-sm shadow-sm">
-                                                <path fill="#b22234" d="M0 0h741v30H0zM0 60h741v30H0zM0 120h741v30H0zM0 180h741v30H0zM0 240h741v30H0zM0 300h741v30H0zM0 360h741v30H0z" /><path fill="#fff" d="M0 30h741v30H0zM0 90h741v30H0zM0 150h741v30H0zM0 210h741v30H0zM0 270h741v30H0zM0 330h741v30H0z" /><path fill="#3c3b6e" d="M0 0h296.4v210H0z" /><g fill="#fff"><path d="M24.7 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M74.1 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M123.5 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M172.9 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M222.3 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M271.7 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /></g>
-                                            </svg>
-                                        )
-                                    ) : null}
+                                <button
+                                    onClick={() => router.push(`/dashboard/operation?product=${selectedProductId}`)}
+                                    className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
+                                    title={t('operation')}
+                                >
+                                    <HardHat className="w-5 h-5 sm:w-4 sm:h-4" />
+                                    <span className="hidden sm:inline">{t('operation')}</span>
+                                </button>
+
+
+
+                                {(role === 'supervisor' || role === 'admin') && (
+                                    <button
+                                        onClick={() => setShowAnalytics(!showAnalytics)}
+                                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${showAnalytics
+                                            ? 'bg-indigo-600 text-white shadow-sm dark:bg-indigo-500'
+                                            : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800'
+                                            }`}
+                                        title={t('reports')}
+                                    >
+                                        <BarChart2 className="w-4 h-4" />
+                                        <span className="hidden sm:inline">{t('reports')}</span>
+                                    </button>
+                                )}
+
+                                {/* Batch Operations Dropdown */}
+                                {(role === 'admin' || role === 'supervisor') && (
+                                    <div className="relative">
+                                        <button
+                                            onClick={() => setBatchMenuOpen(!batchMenuOpen)}
+                                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${pMode || naMode || holdMode || qnMode || wipMode || completeMode || eraseMode
+                                                ? 'bg-indigo-600 text-white shadow-sm'
+                                                : 'text-slate-700 hover:bg-slate-50 border border-slate-200'
+                                                }`}
+                                        >
+                                            <Layers className="w-4 h-4" />
+                                            <span className="hidden sm:inline">
+                                                {pMode ? t('batch.plan') : naMode ? t('batch.na') : holdMode ? t('batch.hold') : qnMode ? t('batch.qn') : wipMode ? t('batch.wip') : completeMode ? t('batch.complete') : eraseMode ? t('batch.erase') : t('batch.edit')}
+                                            </span>
+                                            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${batchMenuOpen ? 'rotate-180' : ''}`} />
+                                        </button>
+
+                                        {batchMenuOpen && (
+                                            <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 min-w-[140px] z-[100]">
+                                                <button onClick={() => { setPMode(!pMode); if (!pMode) { setNaMode(false); setEraseMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${pMode ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                    <Pencil className="w-4 h-4" /> Plan
+                                                </button>
+                                                <button onClick={() => { setNaMode(!naMode); if (!naMode) { setPMode(false); setEraseMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${naMode ? 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                    <Ban className="w-4 h-4" /> N/A
+                                                </button>
+                                                <button onClick={() => { setHoldMode(!holdMode); if (!holdMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${holdMode ? 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                    <PauseCircle className="w-4 h-4" /> Hold
+                                                </button>
+                                                <button onClick={() => { setQnMode(!qnMode); if (!qnMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setHoldMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${qnMode ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                    <AlertTriangle className="w-4 h-4" /> QN
+                                                </button>
+                                                <button onClick={() => { setWipMode(!wipMode); if (!wipMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setHoldMode(false); setQnMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${wipMode ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                    <Clock className="w-4 h-4" /> WIP
+                                                </button>
+                                                <button onClick={() => { setCompleteMode(!completeMode); if (!completeMode) { setPMode(false); setNaMode(false); setEraseMode(false); setHoldMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${completeMode ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                    <CheckCircle2 className="w-4 h-4" /> Complete
+                                                </button>
+                                                <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                                                <button onClick={() => { if (eraseMode) { setEraseMode(false); } else { if (window.confirm(t('modals.eraseModeDesc'))) { setEraseMode(true); setPMode(false); setNaMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${eraseMode ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-red-500 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30 dark:hover:text-red-200'}`}>
+                                                    <Eraser className="w-4 h-4" /> Erase
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Show/Hide Completed Toggle */}
+                                <button
+                                    onClick={() => setShowCompleted(!showCompleted)}
+                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${showCompleted
+                                        ? 'bg-slate-600 text-white shadow-md'
+                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                        }`}
+                                    title={showCompleted ? 'Hide Completed Orders' : 'Show Completed Orders'}
+                                >
+                                    {showCompleted ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                    <span className="hidden sm:inline">Completed</span>
+                                    <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-200 text-slate-600">
+                                        {orders.filter(o => {
+                                            let completionStep = steps.find(s => s.toLowerCase() === 'receipt');
+                                            if (!completionStep) {
+                                                completionStep = steps.find(s =>
+                                                    s.toLowerCase() === 'outgoing' ||
+                                                    s.toLowerCase() === 'completion'
+                                                ) || steps[steps.length - 1];
+                                            }
+                                            const val = o[completionStep] || '';
+                                            return /\d{4}-\d{2}-\d{2}/.test(val) || /\d{2}[-\/]\w{3}/.test(val);
+                                        }).length}
+                                    </span>
+                                </button>
+
+
+
+                                <div className="w-px h-6 bg-slate-200 mx-1" />
+
+
+                                <button
+                                    onClick={openLogsModal}
+                                    className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
+                                    title={t('modals.operationLogs')}
+                                >
+                                    <ClipboardList className="w-5 h-5" />
+                                </button>
+
+                                <button
+                                    onClick={fetchOrders}
+                                    disabled={refreshing}
+                                    className={`p-2 rounded-lg transition-colors ${refreshing
+                                        ? 'text-indigo-500 bg-indigo-50 dark:text-indigo-300 dark:bg-indigo-900/30'
+                                        : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
+                                        }`}
+                                    title={t('refresh')}
+                                >
+                                    <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
+                                </button>
+
+                                {/* Barcode Scanner - Mobile only */}
+                                <button
+                                    onClick={() => setScannerOpen(true)}
+                                    className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg md:hidden"
+                                    title="Scan Barcode"
+                                >
+                                    <ScanBarcode className="w-6 h-6" />
+                                </button>
+
+                                <button
+                                    onClick={toggleFullscreen}
+                                    className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
+                                    title={t('fullscreen')}
+                                >
+                                    {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+                                </button>
+
+                                {/* View Toggle */}
+                                <div className="flex bg-slate-100 rounded-lg p-1 hidden md:flex">
+                                    <button
+                                        onClick={() => toggleViewMode()}
+                                        className={`p-1.5 rounded transition-all ${viewMode === 'table' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                        title="Table View"
+                                    >
+                                        <List className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => toggleViewMode()}
+                                        className={`p-1.5 rounded transition-all ${viewMode === 'board' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                        title="Kanban Board View"
+                                    >
+                                        <LayoutGrid className="w-4 h-4" />
+                                    </button>
                                 </div>
-                            </button>
 
-                            <button
-                                onClick={() => router.push('/dashboard/settings')}
-                                className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
-                            >
-                                <Settings className="w-4 h-4" />
-                                <span className="hidden sm:inline">{t('settings')}</span>
-                            </button>
+                                <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+                                    <button
+                                        onClick={() => updateFontSize(-0.1)}
+                                        className="p-1 text-slate-500 hover:bg-white hover:text-indigo-600 rounded"
+                                        title="Zoom Out"
+                                    >
+                                        <ZoomOut className="w-4 h-4" />
+                                    </button>
+                                    <span className="text-xs font-mono w-8 text-center text-slate-500">{Math.round(fontSizeScale * 100)}%</span>
+                                    <button
+                                        onClick={() => updateFontSize(0.1)}
+                                        className="p-1 text-slate-500 hover:bg-white hover:text-indigo-600 rounded"
+                                        title="Zoom In"
+                                    >
+                                        <ZoomIn className="w-4 h-4" />
+                                    </button>
+                                </div>
+
+                                {/* Theme Switcher */}
+                                {/* Theme Switcher - Desktop only */}
+                                <ThemeSwitcher className="hidden md:flex text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700" />
+
+                                {/* SVG Flag Language Switcher - Matching Login Page */}
+                                <button
+                                    suppressHydrationWarning
+                                    onClick={() => {
+                                        const locale = document.cookie
+                                            .split('; ')
+                                            .find(row => row.startsWith('NEXT_LOCALE='))
+                                            ?.split('=')[1] || 'en';
+                                        const newLocale = locale === 'en' ? 'zh' : 'en';
+                                        document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
+                                        window.location.reload();
+                                    }}
+                                    className="flex items-center gap-1 px-2.5 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
+                                    title={currentLocale === 'en' ? '切换到中文' : 'Switch to English'}
+                                >
+                                    <div className="w-7 h-5 flex items-center justify-center" suppressHydrationWarning>
+                                        {mounted ? (
+                                            currentLocale === 'en' ? (
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" className="w-7 h-5 rounded-sm shadow-sm">
+                                                    <rect width="30" height="20" fill="#de2910" /><path fill="#ffde00" d="M5 5l-1.123.816.429-1.321-1.123-.816h1.388L5 2.358l.429 1.321h1.388l-1.123.816.429 1.321L5 5z" /><circle fill="#ffde00" cx="10" cy="2" r="0.4" /><circle fill="#ffde00" cx="12" cy="4" r="0.4" /><circle fill="#ffde00" cx="12" cy="7" r="0.4" /><circle fill="#ffde00" cx="10" cy="9" r="0.4" />
+                                                </svg>
+                                            ) : (
+                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 741 390" className="w-7 h-5 rounded-sm shadow-sm">
+                                                    <path fill="#b22234" d="M0 0h741v30H0zM0 60h741v30H0zM0 120h741v30H0zM0 180h741v30H0zM0 240h741v30H0zM0 300h741v30H0zM0 360h741v30H0z" /><path fill="#fff" d="M0 30h741v30H0zM0 90h741v30H0zM0 150h741v30H0zM0 210h741v30H0zM0 270h741v30H0zM0 330h741v30H0z" /><path fill="#3c3b6e" d="M0 0h296.4v210H0z" /><g fill="#fff"><path d="M24.7 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M74.1 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M123.5 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M172.9 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M222.3 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M271.7 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /></g>
+                                                </svg>
+                                            )
+                                        ) : null}
+                                    </div>
+                                </button>
+
+                                <button
+                                    onClick={() => router.push('/dashboard/settings')}
+                                    className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
+                                >
+                                    <Settings className="w-4 h-4" />
+                                    <span className="hidden sm:inline">{t('settings')}</span>
+                                </button>
+                            </div>
                         </nav>
 
                         {/* Fixed Actions (Logout) */}
