@@ -30,8 +30,23 @@ export function MessageNotification() {
         try {
             const res = await fetch('/api/messages/my');
             if (res.ok) {
-                const result = await res.json();
-                setData(result);
+                // Check if response is actually JSON
+                const contentType = res.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    const result = await res.json();
+                    setData(result);
+                } else {
+                    // Safety fallback: read text first to avoid "Unexpected end of JSON input"
+                    const text = await res.text();
+                    try {
+                        if (text) {
+                            const result = JSON.parse(text);
+                            setData(result);
+                        }
+                    } catch (e) {
+                        console.warn('Received non-JSON response from messages API:', text.substring(0, 100));
+                    }
+                }
             }
         } catch (error) {
             console.error('Failed to fetch messages:', error);
