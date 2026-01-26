@@ -779,21 +779,6 @@ export default function DashboardPage() {
                         <img src="/logo.png" alt="iProTraX" className="h-9 w-auto" />
                     </button>
 
-                    <div className="flex items-center gap-4 ml-4">
-                        {/* Operator Display */}
-                        {username && (
-                            <div className="hidden md:flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-3 py-2 rounded-lg">
-                                <Users className="w-4 h-4 text-indigo-500" />
-                                <span className="text-sm font-medium text-indigo-700">{username}</span>
-                            </div>
-                        )}
-
-                        {/* Message Notification moved here */}
-                        <div className="hidden md:block">
-                            <MessageNotification />
-                        </div>
-                    </div>
-
                     <div className="flex-1 overflow-x-auto no-scrollbar flex items-center justify-end px-2">
                         <nav className="flex items-center gap-1 sm:gap-2">
                             {/* Product Selector - Outside overflow container to prevent clipping */}
@@ -999,6 +984,9 @@ export default function DashboardPage() {
                                     {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
                                 </button>
 
+                                <div className="w-px h-6 bg-slate-200 mx-1" />
+
+
                                 {/* View Toggle */}
                                 <div className="flex bg-slate-100 rounded-lg p-1 hidden md:flex">
                                     <button
@@ -1078,17 +1066,19 @@ export default function DashboardPage() {
                                 </button>
                             </div>
                         </nav>
+                    </div>
 
-                        {/* Fixed Actions (Logout) */}
-                        <div className="flex items-center shrink-0 ml-1 border-l border-slate-200 pl-2">
-                            <button
-                                onClick={handleLogout}
-                                className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-                                title={t('logout')}
-                            >
-                                <LogOut className="w-5 h-5" />
-                            </button>
-                        </div>
+                    {/* Fixed Actions (Logout) */}
+                    <div className="flex items-center shrink-0 ml-1 border-l border-slate-200 pl-2 gap-1">
+                        <MessageNotification />
+                        <div className="w-px h-6 bg-slate-200 mx-1" />
+                        <button
+                            onClick={handleLogout}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                            title={t('logout')}
+                        >
+                            <LogOut className="w-5 h-5" />
+                        </button>
                     </div>
                 </div>
             </header>
@@ -1904,6 +1894,6 @@ export default function DashboardPage() {
                     {currentDate}
                 </div>
             </footer>
-        </div>
+        </div >
     );
 }

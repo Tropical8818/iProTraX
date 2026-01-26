@@ -528,16 +528,6 @@ function OperationContent() {
                         <img src="/logo.png" alt="iProTraX" className="h-9 w-auto" />
                     </button>
 
-                    {/* Operator Display */}
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 bg-indigo-50 border border-indigo-100 px-3 py-2 rounded-lg">
-                            <User className="w-4 h-4 text-indigo-500" />
-                            <span className="text-sm font-medium text-indigo-700">{username}</span>
-                        </div>
-
-                        {/* Message Notification moved here */}
-                        <MessageNotification />
-                    </div>
 
                     <nav className="flex items-center gap-1 sm:gap-2">
                         <button
@@ -574,6 +564,8 @@ function OperationContent() {
                             <Settings className="w-4 h-4" />
                             <span className="hidden sm:inline">{tDash('settings')}</span>
                         </button>
+
+                        <MessageNotification />
 
                         <button
                             onClick={handleLogout}

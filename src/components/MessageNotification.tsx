@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { MessageCircle } from 'lucide-react';
 import { UnifiedMessageButton } from './common/UnifiedMessageButton';
 
 export function MessageNotification() {
@@ -78,11 +79,11 @@ export function MessageNotification() {
                         onClick={() => setIsOpen(false)}
                     />
 
-                    <div className="absolute right-0 top-12 w-96 bg-white dark:bg-slate-800 rounded-lg shadow-xl border dark:border-slate-700 z-[101]">
-                        <div className="p-4 border-b dark:border-slate-700 flex justify-between items-center">
-                            <h3 className="font-bold text-gray-900 dark:text-white">💬 Messages</h3>
+                    <div className="absolute right-0 top-12 w-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 z-[101] overflow-hidden ring-1 ring-black/5">
+                        <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-white/50 backdrop-blur-sm">
+                            <h3 className="font-bold text-slate-800 dark:text-white">💬 Messages</h3>
                             <div className="flex items-center gap-3">
-                                <span className="text-sm text-gray-500 dark:text-slate-400">{unreadCount} unread</span>
+                                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-full">{unreadCount} unread</span>
                                 {unreadCount > 0 && (
                                     <button
                                         onClick={async (e) => {
@@ -94,7 +95,7 @@ export function MessageNotification() {
                                                 console.error('Failed to mark all as read:', error);
                                             }
                                         }}
-                                        className="text-xs text-indigo-600 hover:text-indigo-800 font-medium hover:underline"
+                                        className="text-xs text-indigo-600 hover:text-indigo-700 font-medium transition-colors"
                                     >
                                         Mark all read
                                     </button>
@@ -102,32 +103,47 @@ export function MessageNotification() {
                             </div>
                         </div>
 
-                        <div className="max-h-96 overflow-y-auto">
+                        <div className="max-h-[450px] overflow-y-auto no-scrollbar">
                             {loading ? (
-                                <div className="p-8 text-center text-gray-400 dark:text-slate-500">Loading...</div>
+                                <div className="p-8 text-center text-slate-400 dark:text-slate-500 text-sm">Loading...</div>
                             ) : messages.length === 0 ? (
-                                <div className="p-8 text-center text-gray-400 dark:text-slate-500">No messages</div>
+                                <div className="p-12 text-center">
+                                    <div className="w-12 h-12 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                                        <MessageCircle className="w-6 h-6 text-slate-300" />
+                                    </div>
+                                    <p className="text-slate-500 text-sm">No new messages</p>
+                                </div>
                             ) : (
                                 messages.slice(0, 10).map((msg: any) => (
                                     <div
                                         key={msg.id}
                                         onClick={() => handleMessageClick(msg)}
-                                        className={`p-3 border-b dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${msg.isUnread ? 'bg-blue-50 dark:bg-blue-900/20' : ''
+                                        className={`group px-4 py-3 border-b border-slate-50 dark:border-slate-700/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all ${msg.isUnread ? 'bg-indigo-50/60 dark:bg-indigo-900/10' : ''
                                             }`}
                                     >
-                                        <div className="flex items-start gap-2">
-                                            {msg.isUnread && (
-                                                <div className="w-2 h-2 bg-blue-500 dark:bg-blue-400 rounded-full mt-2 flex-shrink-0" />
-                                            )}
-                                            <div className="flex-1 min-w-0">
-                                                <div className="text-xs text-gray-500 dark:text-slate-400 mb-1 truncate">
-                                                    [{msg.order?.product?.name}] [{msg.order?.woId}] - {msg.stepName}
+                                        <div className="flex items-start gap-3">
+                                            <div className={`w-2 h-2 rounded-full mt-2 flex-shrink-0 transition-transform group-hover:scale-110 ${msg.isUnread ? 'bg-indigo-500 shadow-sm shadow-indigo-200' : 'bg-slate-200'}`} />
+
+                                            <div className="flex-1 min-w-0 space-y-1">
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 truncate">
+                                                        {msg.user.username}
+                                                    </span>
+                                                    <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                                                        {formatTime(msg.createdAt)}
+                                                    </span>
                                                 </div>
-                                                <div className="text-sm text-gray-900 dark:text-slate-200">
-                                                    <strong className="dark:text-white">{msg.user.username}:</strong> {msg.content || msg.note || '(Structured Message)'}
+
+                                                <div className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed">
+                                                    {msg.content || msg.note || '(Structured Message)'}
                                                 </div>
-                                                <div className="text-xs text-gray-400 dark:text-slate-500 mt-1">
-                                                    {formatTime(msg.createdAt)}
+
+                                                <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
+                                                    <span className="bg-slate-100 dark:bg-slate-700/50 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-600/50">
+                                                        {msg.order?.woId}
+                                                    </span>
+                                                    <span>•</span>
+                                                    <span>{msg.stepName}</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -137,8 +153,8 @@ export function MessageNotification() {
                         </div>
 
                         {messages.length > 10 && (
-                            <div className="p-2 border-t dark:border-slate-700 text-center">
-                                <span className="text-xs text-gray-500 dark:text-slate-400">Showing last 10 messages</span>
+                            <div className="p-2 border-t border-slate-50 dark:border-slate-700 bg-slate-50/50 text-center">
+                                <span className="text-[10px] uppercase tracking-wider font-medium text-slate-400">Showing recent 10</span>
                             </div>
                         )}
                     </div>
