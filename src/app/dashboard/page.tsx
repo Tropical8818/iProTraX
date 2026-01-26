@@ -940,6 +940,11 @@ export default function DashboardPage() {
 
                             <div className="w-px h-6 bg-slate-200 mx-1" />
 
+                            {/* Message Notification */}
+                            <div className="hidden md:block">
+                                <MessageNotification />
+                            </div>
+
                             <button
                                 onClick={openLogsModal}
                                 className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
@@ -1055,11 +1060,6 @@ export default function DashboardPage() {
                                 <span className="hidden sm:inline">{t('settings')}</span>
                             </button>
                         </nav>
-
-                        {/* Message Notification - Outside nav to avoid overflow clipping */}
-                        <div className="hidden md:block mx-2">
-                            <MessageNotification />
-                        </div>
 
                         {/* Fixed Actions (Logout) */}
                         <div className="flex items-center shrink-0 ml-1 border-l border-slate-200 pl-2">
