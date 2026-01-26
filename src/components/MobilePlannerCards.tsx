@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { format, isValid } from 'date-fns';
-import { ChevronDown, ChevronUp, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { ChevronDown, ChevronUp, AlertCircle, CheckCircle, Clock, MessageCircle } from 'lucide-react';
 import type { Order } from '@/lib/excel';
 
 interface Props {
@@ -11,6 +11,7 @@ interface Props {
     onSetP?: (woId: string, step: string, currentValue: string) => void;
     // We only need basic interaction for now
     onNavigate?: (woId: string) => void;
+    onChat?: (woId: string, step: string) => void;
 }
 
 // Abbreviation mapping (Shared with PlannerTable)
@@ -47,7 +48,8 @@ export default function MobilePlannerCards({
     orders,
     steps,
     onSetP,
-    onNavigate
+    onNavigate,
+    onChat
 }: Props) {
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
@@ -153,11 +155,25 @@ export default function MobilePlannerCards({
                                 )}
                             </div>
 
-                            <div className={`p-3 rounded-lg border flex items-center justify-between ${statusColor}`}>
-                                <div className="font-semibold text-sm">{activeStepName}</div>
-                                <div className="text-xs font-bold uppercase tracking-wide bg-white/50 px-2 py-1 rounded">
-                                    {activeStepStatus || (nextAction ? 'Pending' : 'Done')}
+                            <div className="flex gap-2">
+                                <div className={`flex-1 p-3 rounded-lg border flex items-center justify-between ${statusColor}`}>
+                                    <div className="font-semibold text-sm">{activeStepName}</div>
+                                    <div className="text-xs font-bold uppercase tracking-wide bg-white/50 px-2 py-1 rounded">
+                                        {activeStepStatus || (nextAction ? 'Pending' : 'Done')}
+                                    </div>
                                 </div>
+
+                                {onChat && nextAction && (
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            onChat(order['WO ID'], nextAction.step);
+                                        }}
+                                        className="p-3 rounded-lg border border-slate-200 bg-white text-slate-500 hover:text-indigo-600 hover:bg-slate-50 transition-colors flex items-center justify-center"
+                                    >
+                                        <MessageCircle className="w-5 h-5" />
+                                    </button>
+                                )}
                             </div>
                         </div>
 

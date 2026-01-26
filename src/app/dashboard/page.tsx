@@ -25,6 +25,7 @@ import dynamic from 'next/dynamic';
 import AIChatPanel from '@/components/AIChatPanel';
 import KanbanBoard from '@/components/KanbanBoard'; // Import Kanban Board
 import { MessageNotification } from '@/components/MessageNotification';
+import { StructuredCommentDialog } from '@/components/StructuredCommentDialog';
 import { calculateECD } from '@/lib/ecd';
 import { useLocaleDetection } from '@/hooks/useLocaleDetection';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
@@ -138,6 +139,9 @@ export default function DashboardPage() {
     useEffect(() => {
         fetch('/api/license/status').then(r => r.json()).then(setLicenseInfo).catch(console.error);
     }, []);
+
+    // Comment Modal State
+    const [commentModal, setCommentModal] = useState<{ step: string; orderId: string } | null>(null);
 
     const updateFontSize = (delta: number) => {
         const newScale = Math.max(0.8, Math.min(2.0, fontSizeScale + delta));
@@ -1312,6 +1316,12 @@ export default function DashboardPage() {
                                             steps={steps}
                                             onSetP={handleSetP}
                                             onNavigate={handleNavigate}
+                                            onChat={(woId, step) => {
+                                                const order = orders.find(o => o['WO ID'] === woId);
+                                                if (order) {
+                                                    setCommentModal({ orderId: order.id, step });
+                                                }
+                                            }}
                                         />
                                     </div>
 
@@ -1434,6 +1444,42 @@ export default function DashboardPage() {
                                 </>
                             );
                         })()}
+
+                        {/* Comment Modal */}
+                        {commentModal && (
+                            <StructuredCommentDialog
+                                orderId={commentModal.orderId}
+                                stepName={commentModal.step}
+                                onClose={() => setCommentModal(null)}
+                                onSubmit={async (data) => {
+                                    try {
+                                        const res = await fetch('/api/comments', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                orderId: data.orderId,
+                                                stepName: data.stepName,
+                                                category: data.category,
+                                                content: data.note,
+                                                structuredData: data.structuredData,
+                                                triggeredStatus: data.triggeredStatus
+                                            })
+                                        });
+                                        if (res.ok) {
+                                            alert('Comment sent successfully');
+                                            // Refresh orders to show updated status if triggered
+                                            fetchOrders();
+                                        } else {
+                                            const err = await res.json();
+                                            alert('Failed to send comment: ' + (err.error || 'Unknown error'));
+                                        }
+                                    } catch (e) {
+                                        console.error(e);
+                                        alert('Error sending comment');
+                                    }
+                                }}
+                            />
+                        )}
                     </>
                 )
                 }
