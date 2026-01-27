@@ -1817,7 +1817,7 @@ export default function SettingsPage() {
                                                                         else setConfig({ ...config, deepseekApiKey: e.target.value });
                                                                     }}
                                                                     placeholder="sk-..."
-                                                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg font-mono text-sm pr-10"
+                                                                    className="w-full px-4 py-2 border border-slate-200 rounded-lg font-mono text-sm pr-10 text-slate-900 dark:text-white dark:bg-slate-800 dark:border-slate-700"
                                                                 />
                                                                 <button
                                                                     type="button"
@@ -1854,7 +1854,7 @@ export default function SettingsPage() {
                                                         value={config.systemPrompt || ''}
                                                         onChange={(e) => setConfig({ ...config, systemPrompt: e.target.value })}
                                                         placeholder={t('defaultSystemPromptPlaceholder')}
-                                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg font-mono text-sm h-28"
+                                                        className="w-full px-4 py-2 border border-slate-200 rounded-lg font-mono text-sm h-28 text-slate-900 dark:text-white dark:bg-slate-800 dark:border-slate-700"
                                                     />
                                                 </div>
 
@@ -1882,7 +1882,7 @@ export default function SettingsPage() {
                                                                     setConfig({ ...config, rolePrompts: newRolePrompts });
                                                                 }}
                                                                 placeholder={t('defaultRoleInstructionsPlaceholder', { role })}
-                                                                className="w-full px-4 py-2 border border-slate-200 rounded-lg font-mono text-xs h-28"
+                                                                className="w-full px-4 py-2 border border-slate-200 rounded-lg font-mono text-xs h-28 text-slate-900 dark:text-white dark:bg-slate-800 dark:border-slate-700"
                                                             />
                                                         </div>
                                                     ))}
@@ -2004,7 +2004,7 @@ export default function SettingsPage() {
                                                                 type="text"
                                                                 value={editingWebhook.name}
                                                                 onChange={e => setEditingWebhook({ ...editingWebhook, name: e.target.value })}
-                                                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                                                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 dark:text-white dark:bg-slate-800 dark:border-slate-700"
                                                                 placeholder="Alerts Channel"
                                                             />
                                                         </div>
@@ -2043,7 +2043,7 @@ export default function SettingsPage() {
                                                                             settings: newSettings
                                                                         });
                                                                     }}
-                                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white appearance-none pr-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300"
+                                                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm bg-white dark:bg-slate-800 appearance-none pr-8 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-300 text-slate-900 dark:text-white dark:border-slate-700"
                                                                 >
                                                                     {['dingtalk', 'wecom', 'feishu', 'slack', 'teams', 'telegram', 'discord', 'bark', 'gotify', 'serverchan', 'pushdeer', 'matrix', 'custom'].map(p => (
                                                                         <option key={p} value={p}>
@@ -2068,7 +2068,7 @@ export default function SettingsPage() {
                                                                             type="text"
                                                                             value={editingWebhook.settings?.serverUrl ?? 'https://api.day.app'}
                                                                             onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, serverUrl: e.target.value } })}
-                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-900 dark:text-white dark:bg-slate-800 dark:border-slate-700"
                                                                             placeholder="https://api.day.app"
                                                                         />
                                                                     </div>
@@ -2078,7 +2078,7 @@ export default function SettingsPage() {
                                                                             type="text"
                                                                             value={editingWebhook.settings?.deviceKey || ''}
                                                                             onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, deviceKey: e.target.value } })}
-                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-900 dark:text-white dark:bg-slate-800 dark:border-slate-700"
                                                                             placeholder="Your BN..."
                                                                         />
                                                                     </div>
@@ -2089,7 +2089,7 @@ export default function SettingsPage() {
                                                                                 type="text"
                                                                                 value={editingWebhook.settings?.sound ?? 'minuet'}
                                                                                 onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, sound: e.target.value } })}
-                                                                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                                                                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 dark:text-white dark:bg-slate-800 dark:border-slate-700"
                                                                                 placeholder="minuet"
                                                                             />
                                                                         </div>
@@ -2099,7 +2099,7 @@ export default function SettingsPage() {
                                                                                 type="text"
                                                                                 value={editingWebhook.settings?.icon || ''}
                                                                                 onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, icon: e.target.value } })}
-                                                                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm"
+                                                                                className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm text-slate-900 dark:text-white dark:bg-slate-800 dark:border-slate-700"
                                                                                 placeholder="https://..."
                                                                             />
                                                                         </div>
@@ -2115,7 +2115,7 @@ export default function SettingsPage() {
                                                                             type="password"
                                                                             value={editingWebhook.settings?.botToken || ''}
                                                                             onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, botToken: e.target.value } })}
-                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-900 dark:text-white dark:bg-slate-800 dark:border-slate-700"
                                                                             placeholder="123456:ABC-DEF..."
                                                                         />
                                                                     </div>
@@ -2125,7 +2125,7 @@ export default function SettingsPage() {
                                                                             type="text"
                                                                             value={editingWebhook.settings?.chatId || ''}
                                                                             onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, chatId: e.target.value } })}
-                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-900 dark:text-white dark:bg-slate-800 dark:border-slate-700"
                                                                             placeholder="-100..."
                                                                         />
                                                                     </div>
@@ -2140,7 +2140,7 @@ export default function SettingsPage() {
                                                                             type="text"
                                                                             value={editingWebhook.settings?.serverUrl || ''}
                                                                             onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, serverUrl: e.target.value } })}
-                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-900 dark:text-white dark:bg-slate-800 dark:border-slate-700"
                                                                             placeholder="https://gotify.example.com"
                                                                         />
                                                                     </div>
@@ -2150,7 +2150,7 @@ export default function SettingsPage() {
                                                                             type="password"
                                                                             value={editingWebhook.settings?.appToken || ''}
                                                                             onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, appToken: e.target.value } })}
-                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-900 dark:text-white dark:bg-slate-800 dark:border-slate-700"
                                                                             placeholder="A1..."
                                                                         />
                                                                     </div>
@@ -2166,7 +2166,7 @@ export default function SettingsPage() {
                                                                             type="text"
                                                                             value={editingWebhook.url}
                                                                             onChange={e => setEditingWebhook({ ...editingWebhook, url: e.target.value })}
-                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-900 dark:text-white dark:bg-slate-800 dark:border-slate-700"
                                                                             placeholder="https://example.com/webhook"
                                                                         />
                                                                     </div>
@@ -2220,7 +2220,7 @@ export default function SettingsPage() {
                                                                             type="text"
                                                                             value={editingWebhook.url || ''}
                                                                             onChange={e => setEditingWebhook({ ...editingWebhook, url: e.target.value })}
-                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-900 dark:text-white dark:bg-slate-800 dark:border-slate-700"
                                                                             placeholder="https://..."
                                                                         />
                                                                     </div>
@@ -2230,7 +2230,7 @@ export default function SettingsPage() {
                                                                             type="password"
                                                                             value={editingWebhook.settings?.signSecret || ''}
                                                                             onChange={e => setEditingWebhook({ ...editingWebhook, settings: { ...editingWebhook.settings, signSecret: e.target.value } })}
-                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                            className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-900 dark:text-white dark:bg-slate-800 dark:border-slate-700"
                                                                             placeholder="SEC..."
                                                                         />
                                                                         <p className="text-[10px] text-slate-400 mt-1">{t('signSecretHelp') || 'Required for secure chatbots (DingTalk/Feishu)'}</p>
@@ -2245,7 +2245,7 @@ export default function SettingsPage() {
                                                                         type="text"
                                                                         value={editingWebhook.url || ''}
                                                                         onChange={e => setEditingWebhook({ ...editingWebhook, url: e.target.value })}
-                                                                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-600"
+                                                                        className="w-full px-3 py-2 border border-slate-200 rounded-lg text-sm font-mono text-slate-900 dark:text-white dark:bg-slate-800 dark:border-slate-700"
                                                                         placeholder="https://..."
                                                                     />
                                                                 </div>
