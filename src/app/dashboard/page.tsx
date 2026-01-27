@@ -1324,12 +1324,6 @@ export default function DashboardPage() {
                                             steps={steps}
                                             onSetP={handleSetP}
                                             onNavigate={handleNavigate}
-                                            onChat={(woId, step) => {
-                                                const order = orders.find(o => o['WO ID'] === woId);
-                                                if (order) {
-                                                    setCommentModal({ orderId: order.id, step });
-                                                }
-                                            }}
                                         />
                                     </div>
 

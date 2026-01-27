@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { format, isValid } from 'date-fns';
 import { ChevronDown, ChevronUp, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import type { Order } from '@/lib/excel';
-import { UnifiedMessageButton } from './common/UnifiedMessageButton';
+
 
 interface Props {
     orders: Order[];
@@ -12,7 +12,7 @@ interface Props {
     onSetP?: (woId: string, step: string, currentValue: string) => void;
     // We only need basic interaction for now
     onNavigate?: (woId: string) => void;
-    onChat?: (woId: string, step: string) => void;
+
 }
 
 // Abbreviation mapping (Shared with PlannerTable)
@@ -50,7 +50,7 @@ export default function MobilePlannerCards({
     steps,
     onSetP,
     onNavigate,
-    onChat
+
 }: Props) {
     const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
@@ -164,15 +164,6 @@ export default function MobilePlannerCards({
                                     </div>
                                 </div>
 
-                                {onChat && nextAction && (
-                                    <UnifiedMessageButton
-                                        variant="mobile"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            onChat(order['WO ID'], nextAction.step);
-                                        }}
-                                    />
-                                )}
                             </div>
                         </div>
 
