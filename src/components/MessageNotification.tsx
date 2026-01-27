@@ -79,7 +79,7 @@ export function MessageNotification() {
                         onClick={() => setIsOpen(false)}
                     />
 
-                    <div className="absolute right-0 top-12 w-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 z-[101] overflow-hidden ring-1 ring-black/5">
+                    <div className="fixed left-4 right-4 top-20 md:absolute md:left-auto md:right-0 md:top-12 md:w-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-100 dark:border-slate-700 z-[101] overflow-hidden ring-1 ring-black/5">
                         <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-white/50 backdrop-blur-sm">
                             <h3 className="font-bold text-slate-800 dark:text-white">💬 Messages</h3>
                             <div className="flex items-center gap-3">

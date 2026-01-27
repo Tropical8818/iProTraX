@@ -196,7 +196,7 @@ export default function AIChatPanel({ productId, role = 'user', onNavigate }: AI
 
             {/* Chat Panel */}
             {isOpen && (
-                <div className="fixed bottom-24 left-4 right-4 z-50 md:left-auto md:right-6 md:w-96 md:max-w-none bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[70vh] overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300">
+                <div className="fixed bottom-24 right-6 z-50 w-96 max-w-[calc(100vw-3rem)] bg-white rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[70vh] overflow-hidden animate-in slide-in-from-bottom-4 fade-in duration-300">
                     {/* Header */}
                     <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 flex items-center gap-3">
                         <div className="p-2 bg-white/20 rounded-lg">
