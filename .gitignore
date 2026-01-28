@@ -79,3 +79,17 @@ data/.config.json
 
 # Business Plan (Internal)
 business_plan/
+
+# Documentation drafts and checklists
+VERSION_UPDATE_CHECKLIST.md
+RELEASE_NOTES_*.md
+
+# Test results and reports
+playwright-report/
+test-results/
+
+# Sensitive Data
+cookies.txt
+
+# Temporary Scripts
+check_users.js
