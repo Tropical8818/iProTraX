@@ -65,7 +65,7 @@ export const SmartSchedulerDialog: React.FC<SmartSchedulerDialogProps> = ({
                 console.error("Failed to load scheduler settings", e);
             }
         }
-    }, [product.id]);
+    }, [product.id, storageKey]);
 
     // PERSISTENCE: Save settings on change
     React.useEffect(() => {
@@ -76,7 +76,7 @@ export const SmartSchedulerDialog: React.FC<SmartSchedulerDialogProps> = ({
             weights
         };
         localStorage.setItem(storageKey, JSON.stringify(settings));
-    }, [standardHours, overtimeHours, planningHours, weights, product.id]);
+    }, [standardHours, overtimeHours, planningHours, weights, product.id, storageKey]);
 
 
     // Dynamic product with temporary overrides

@@ -18,6 +18,9 @@ const eslintConfig = defineConfig([
     "check_*.js",
     // Ignore problematic files for CI
     "src/app/login/page.tsx",
+    // Ignore generated WASM files
+    "pkg/**",
+    "native/**",
   ]),
   {
     rules: {
@@ -26,6 +29,7 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-require-imports": "off",
       "@typescript-eslint/ban-ts-comment": "off",
       "prefer-const": "warn",
+      "react-hooks/exhaustive-deps": "warn",
       "@next/next/no-img-element": "off",
       "react/no-unescaped-entities": "off",
       "react-hooks/preserve-manual-memoization": "off",

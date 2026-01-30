@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { APP_VERSION } from '@/lib/version';
 import {
@@ -92,7 +92,7 @@ function OperationContent() {
         }
     };
 
-    const fetchMyActiveOrders = async () => {
+    const fetchMyActiveOrders = useCallback(async () => {
         try {
             const res = await fetch('/api/step-progress/my-active');
             if (res.ok) {
@@ -102,7 +102,7 @@ function OperationContent() {
         } catch (error) {
             console.error('Fetch my active orders error', error);
         }
-    };
+    }, []);
 
     useEffect(() => {
         if (selectedOrder) {
@@ -115,7 +115,7 @@ function OperationContent() {
         }
     }, [selectedOrder]);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
             // Fetch auth first
             const authRes = await fetch('/api/auth');
@@ -208,7 +208,7 @@ function OperationContent() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [productId, searchParams, router]);
 
     const fetchSupervisors = async () => {
         try {
@@ -244,7 +244,7 @@ function OperationContent() {
             fetchMyActiveOrders();
         }, 30000); // Refresh every 30 seconds
         return () => clearInterval(interval);
-    }, [searchParams]); // Depend on searchParams to re-fetch if product ID changes
+    }, [searchParams, fetchData, fetchMyActiveOrders]); // Depend on searchParams to re-fetch if product ID changes
 
     // Timer tick for live elapsed time display
     const [, setTick] = useState(0);
@@ -264,16 +264,7 @@ function OperationContent() {
         }
     }, [selectedOrder?.id]);
 
-    // Fetch comments when modal opens
-    useEffect(() => {
-        if (commentModal) {
-            fetchStepComments(commentModal.orderId, commentModal.step);
-        } else {
-            setStepComments([]);
-        }
-    }, [commentModal]);
-
-    const fetchStepComments = async (orderId: string, stepName: string) => {
+    const fetchStepComments = useCallback(async (orderId: string, stepName: string) => {
         setLoadingComments(true);
         try {
             const res = await fetch(`/api/comments?orderId=${orderId}&stepName=${encodeURIComponent(stepName)}`);
@@ -301,7 +292,16 @@ function OperationContent() {
         } finally {
             setLoadingComments(false);
         }
-    };
+    }, [selectedOrder?.id]);
+
+    // Fetch comments when modal opens
+    useEffect(() => {
+        if (commentModal) {
+            fetchStepComments(commentModal.orderId, commentModal.step);
+        } else {
+            setStepComments([]);
+        }
+    }, [commentModal, fetchStepComments]);
 
     const handleLogout = async () => {
         await fetch('/api/auth', { method: 'DELETE' });

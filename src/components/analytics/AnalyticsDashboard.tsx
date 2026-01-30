@@ -71,14 +71,22 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
     const [workerLogs, setWorkerLogs] = useState<WorkerLog[]>([]);
     const [loadingLogs, setLoadingLogs] = useState(false);
 
-    useEffect(() => {
-        if (isOpen && productId) {
-            if (activeTab === 'overview') fetchOverviewData();
-            if (activeTab === 'performance') fetchPerformanceData();
+    const fetchOverviewData = React.useCallback(async () => {
+        setLoadingOverview(true);
+        try {
+            const res = await fetch(`/api/analytics?productId=${productId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setOverviewData(data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch overview', err);
+        } finally {
+            setLoadingOverview(false);
         }
-    }, [isOpen, productId, activeTab, startDate, endDate]);
+    }, [productId]);
 
-    const fetchPerformanceData = async () => {
+    const fetchPerformanceData = React.useCallback(async () => {
         setLoadingPerformance(true);
         try {
             const res = await fetch(`/api/reports/workers?productId=${productId}&startDate=${startDate}&endDate=${endDate}`);
@@ -91,7 +99,17 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
         } finally {
             setLoadingPerformance(false);
         }
-    };
+    }, [productId, startDate, endDate]);
+
+    useEffect(() => {
+        if (isOpen && productId) {
+            if (activeTab === 'overview') fetchOverviewData();
+            if (activeTab === 'performance') fetchPerformanceData();
+        }
+    }, [isOpen, productId, activeTab, startDate, endDate, fetchOverviewData, fetchPerformanceData]);
+
+    // Moved up to fix hoisting
+    // const fetchPerformanceData = ...
 
     const fetchWorkerLogs = async (userId: string) => {
         setLoadingLogs(true);
@@ -111,20 +129,8 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
     // Fetch Overview Data (Legacy API) -> Should ideally accept dates too, but keeping as is for now or updating if API supports it
     // Assuming legacy API might not support dates yet, but let's try passing them if we updated it (we didn't yet).
     // For now, Overview is fixed to "Recent", but Performance is flexible.
-    const fetchOverviewData = async () => {
-        setLoadingOverview(true);
-        try {
-            const res = await fetch(`/api/analytics?productId=${productId}`);
-            if (res.ok) {
-                const data = await res.json();
-                setOverviewData(data);
-            }
-        } catch (err) {
-            console.error('Failed to fetch overview', err);
-        } finally {
-            setLoadingOverview(false);
-        }
-    };
+    // Moved up to fix hoisting
+    // const fetchOverviewData = ...
 
     const handleWorkerClick = (userId: string, username: string) => {
         setSelectedWorker({ id: userId, name: username });

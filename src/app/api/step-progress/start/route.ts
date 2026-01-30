@@ -10,7 +10,9 @@ export async function POST(request: NextRequest) {
 
     try {
         console.log('API Start: prisma keys:', Object.keys(prisma).filter((k: string) => !k.startsWith('_')));
-        let { orderId, stepName, standardTime } = await request.json();
+        const body = await request.json();
+        const { orderId, stepName } = body;
+        let { standardTime } = body;
 
         if (!orderId || !stepName) {
             console.error('Start session error: Missing fields', { orderId, stepName });
