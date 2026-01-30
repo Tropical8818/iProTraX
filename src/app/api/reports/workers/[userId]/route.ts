@@ -66,7 +66,7 @@ export async function GET(
                     // @ts-ignore
                     woId = log.order.data['WO ID'] || log.order.data.woId || log.order.id;
                 }
-            } catch (e) {
+            } catch {
                 // Fallback to ID
             }
 

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Lock, User, Loader2, UserPlus, ArrowLeft, Eye, EyeOff, CheckCircle, CreditCard } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 export default function RegisterPage() {
@@ -18,8 +17,6 @@ export default function RegisterPage() {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState(false);
     const [loading, setLoading] = useState(false);
-
-    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

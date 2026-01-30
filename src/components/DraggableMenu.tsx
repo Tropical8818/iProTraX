@@ -13,12 +13,9 @@ interface DraggableMenuProps {
     role: string;
     onNavigate: (path: string) => void;
 
-    // Toggles
-    pMode: boolean; setPMode: (v: boolean) => void;
-    naMode: boolean; setNaMode: (v: boolean) => void;
-    holdMode: boolean; setHoldMode: (v: boolean) => void;
-    eraseMode: boolean; setEraseMode: (v: boolean) => void;
-    handleEraseRequest: () => void;
+    // Batch Mode
+    activeBatchMode: string | null;
+    toggleBatchMode: (mode: string) => void;
 
     // Actions
     onImport: () => void;
@@ -39,11 +36,8 @@ function getInitialPosition() {
 export default function DraggableMenu({
     selectedProductId,
     role, onNavigate,
-    pMode, setPMode,
-    naMode, setNaMode,
-    holdMode, setHoldMode,
-    eraseMode, setEraseMode,
-    handleEraseRequest,
+    activeBatchMode,
+    toggleBatchMode,
     onImport, onScan, onShowAnalytics, onRefresh, onLogout
 }: DraggableMenuProps) {
     const t = useTranslations('Dashboard.mobileMenu');
@@ -211,29 +205,29 @@ export default function DraggableMenu({
                             <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2 block">{t('quickActions')}</label>
                             <div className="grid grid-cols-4 gap-2">
                                 <button
-                                    onClick={() => { setPMode(!pMode); if (!pMode) { setNaMode(false); setEraseMode(false); setHoldMode(false); } setIsOpen(false); }}
-                                    className={`aspect-square rounded-xl flex items-center justify-center transition-all ${pMode ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
+                                    onClick={() => { toggleBatchMode('P'); setIsOpen(false); }}
+                                    className={`aspect-square rounded-xl flex items-center justify-center transition-all ${activeBatchMode === 'P' ? 'bg-blue-600 text-white shadow-md' : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
                                     title={t('pMode')}
                                 >
                                     <Pencil className="w-5 h-5" />
                                 </button>
                                 <button
-                                    onClick={() => { setNaMode(!naMode); if (!naMode) { setPMode(false); setEraseMode(false); setHoldMode(false); } setIsOpen(false); }}
-                                    className={`aspect-square rounded-xl flex items-center justify-center transition-all ${naMode ? 'bg-slate-600 text-white shadow-md' : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
+                                    onClick={() => { toggleBatchMode('N/A'); setIsOpen(false); }}
+                                    className={`aspect-square rounded-xl flex items-center justify-center transition-all ${activeBatchMode === 'N/A' ? 'bg-slate-600 text-white shadow-md' : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
                                     title={t('naMode')}
                                 >
                                     <Ban className="w-5 h-5" />
                                 </button>
                                 <button
-                                    onClick={() => { setHoldMode(!holdMode); if (!holdMode) { setPMode(false); setNaMode(false); setEraseMode(false); } setIsOpen(false); }}
-                                    className={`aspect-square rounded-xl flex items-center justify-center transition-all ${holdMode ? 'bg-orange-600 text-white shadow-md' : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
+                                    onClick={() => { toggleBatchMode('Hold'); setIsOpen(false); }}
+                                    className={`aspect-square rounded-xl flex items-center justify-center transition-all ${activeBatchMode === 'Hold' ? 'bg-orange-600 text-white shadow-md' : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
                                     title={t('holdMode')}
                                 >
                                     <PauseCircle className="w-5 h-5" />
                                 </button>
                                 <button
-                                    onClick={() => { handleEraseRequest(); setIsOpen(false); }}
-                                    className={`aspect-square rounded-xl flex items-center justify-center transition-all ${eraseMode ? 'bg-red-600 text-white shadow-md' : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
+                                    onClick={() => { toggleBatchMode('Erase'); setIsOpen(false); }}
+                                    className={`aspect-square rounded-xl flex items-center justify-center transition-all ${activeBatchMode === 'Erase' ? 'bg-red-600 text-white shadow-md' : 'bg-slate-50 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}`}
                                     title={t('eraseMode')}
                                 >
                                     <Eraser className="w-5 h-5" />

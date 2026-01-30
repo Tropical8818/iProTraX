@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { ArrowUp, ArrowDown, ArrowUpDown, Download, Lock, Unlock, Trash2 } from 'lucide-react';
-import { format, isValid, parseISO } from 'date-fns';
+import { ArrowUp, ArrowDown, ArrowUpDown, Lock, Unlock, Trash2 } from 'lucide-react';
+import { format, isValid } from 'date-fns';
 
 import type { Order } from '@/lib/excel';
 
@@ -11,26 +11,12 @@ interface Props {
     steps: string[];
     detailColumns?: string[];  // Dynamic detail columns from config
     onNavigate: (woId: string) => void;
-    pMode?: boolean;
-    onSetP?: (woId: string, step: string, currentValue: string) => void;
-    naMode?: boolean;
-    onSetNA?: (woId: string, step: string, currentVal: string) => void;
-    onBulkSetP?: (step: string) => void;
-    onBulkSetNA?: (step: string) => void;
-    holdMode?: boolean;
-    onSetHold?: (woId: string, step: string, currentVal: string) => void;
-    onBulkSetHold?: (step: string) => void;
-    qnMode?: boolean;
-    onSetQN?: (woId: string, step: string, currentVal: string) => void;
-    onBulkSetQN?: (step: string) => void;
-    wipMode?: boolean;
-    onSetWIP?: (woId: string, step: string, currentVal: string) => void;
-    onBulkSetWIP?: (step: string) => void;
-    completeMode?: boolean;
-    onSetComplete?: (woId: string, step: string) => void;
-    onBulkSetComplete?: (step: string) => void;
-    eraseMode?: boolean;
-    onErase?: (woId: string, step: string) => void;
+
+    // Batch Operations
+    activeBatchMode: string | null;
+    onBatchUpdate: (woId: string, step: string, status: string) => void;
+    onBulkBatchUpdate?: (step: string, mode: string) => void;
+
     highlightedWos: string[];
     extraColumns?: string[];
     role?: string;
@@ -145,26 +131,9 @@ export default function PlannerTable({
     steps: orderedSteps, // Renamed to avoid conflict with local 'steps' variable
     detailColumns = [], // Default to empty array if not provided
     onNavigate,
-    pMode,
-    onSetP,
-    naMode,
-    onSetNA,
-    onBulkSetP,
-    onBulkSetNA,
-    holdMode,
-    onSetHold,
-    onBulkSetHold,
-    qnMode,
-    onSetQN,
-    onBulkSetQN,
-    wipMode,
-    onSetWIP,
-    onBulkSetWIP,
-    completeMode,
-    onSetComplete,
-    onBulkSetComplete,
-    eraseMode = false,
-    onErase,
+    activeBatchMode,
+    onBatchUpdate,
+    onBulkBatchUpdate,
     highlightedWos = [],
     extraColumns = [],
     role,
@@ -177,6 +146,8 @@ export default function PlannerTable({
 
     const [sortKey, setSortKey] = useState<string | null>(null);
     const [sortDir, setSortDir] = useState<SortDir>(null);
+    // sortVersion increments only when user clicks to sort - this prevents re-sorting on data changes
+    const [sortVersion, setSortVersion] = useState(0);
 
     // --- MANUAL RESIZING LOGIC ---
     const [detailWidths, setDetailWidths] = useState<Record<string, number>>({});
@@ -188,6 +159,8 @@ export default function PlannerTable({
         isStep: boolean;
     } | null>(null);
     const [isSuperEditing, setIsSuperEditing] = useState(false);
+    // Delete confirmation state - prevents dialog flashing due to React re-renders
+    const [deleteConfirm, setDeleteConfirm] = useState<{ orderId: string; woId: string } | null>(null);
 
     useEffect(() => {
         if (!resizing) return;
@@ -261,12 +234,18 @@ export default function PlannerTable({
 
     const handleSort = (key: string) => {
         if (sortKey === key) {
-            if (sortDir === 'asc') setSortDir('desc');
-            else if (sortDir === 'desc') { setSortKey(null); setSortDir(null); }
+            if (sortDir === 'asc') {
+                setSortDir('desc');
+            } else if (sortDir === 'desc') {
+                setSortKey(null);
+                setSortDir(null);
+            }
         } else {
             setSortKey(key);
             setSortDir('asc');
         }
+        // Increment sortVersion to trigger re-sort only on explicit user action
+        setSortVersion(v => v + 1);
     };
 
     const formatDate = (val: string, fmt = 'dd-MMM') => {
@@ -422,35 +401,54 @@ export default function PlannerTable({
             }
         });
 
-        // Sort
+        // Sort - only re-sort when sortVersion changes (user clicked to sort)
+        // This prevents the table from jumping when data changes during editing
         if (sortKey && sortDir) {
             result.sort((a, b) => {
                 const aVal = String(a[sortKey] || '');
                 const bVal = String(b[sortKey] || '');
+
+                // Try to parse both values as dates (value-based detection, works for any column)
+                const aDate = new Date(aVal);
+                const bDate = new Date(bVal);
+                const aValid = aVal && isValid(aDate) && !isNaN(aDate.getTime());
+                const bValid = bVal && isValid(bDate) && !isNaN(bDate.getTime());
+
+                // If BOTH values are valid dates, use chronological comparison
+                if (aValid && bValid) {
+                    const cmp = aDate.getTime() - bDate.getTime();
+                    return sortDir === 'asc' ? cmp : -cmp;
+                }
+
+                // If only one is a valid date, push invalid/empty ones to the end
+                if (aValid && !bValid) return sortDir === 'asc' ? -1 : 1;
+                if (!aValid && bValid) return sortDir === 'asc' ? 1 : -1;
+
+                // Default: string comparison for non-date values
                 const cmp = aVal.localeCompare(bVal);
                 return sortDir === 'asc' ? cmp : -cmp;
             });
         }
 
         return result;
-    }, [orders, filters, sortKey, sortDir]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [orders, filters, sortVersion]); // Use sortVersion instead of sortKey/sortDir to prevent re-sort on data changes
 
     // Use provided detail columns or fallback to defaults (NOW REMOVED)
     // Combine columns: Details + Steps
     // Integrate extraColumns (ECD) into details after WO DUE
-    let effectiveDetailColumns = detailColumns.length > 0 ? detailColumns : [];
-
-    // Ensure at least one column exists if empty (fallback to WO ID only if absolutely nothing)
-    if (effectiveDetailColumns.length === 0 && orders.length > 0) {
-        // Try to guess from first order
-        effectiveDetailColumns = ['WO ID'];
-    }
-
-    // Insert extraColumns (like ECD) if present
-    // Since we don't assume 'WO DUE' exists, just append them or insert at reasonable position (e.g. at end of details)
-    if (extraColumns.length > 0) {
-        effectiveDetailColumns = [...effectiveDetailColumns, ...extraColumns];
-    }
+    // Combine columns: Details + Steps
+    // Integrate extraColumns (ECD) into details after WO DUE
+    const effectiveDetailColumns = useMemo(() => {
+        let cols = detailColumns.length > 0 ? detailColumns : [];
+        if (cols.length === 0 && orders.length > 0) {
+            cols = ['WO ID'];
+        }
+        if (extraColumns.length > 0) {
+            cols = [...cols, ...extraColumns];
+        }
+        return cols;
+    }, [detailColumns, orders.length, extraColumns]);
 
     const columns = [...effectiveDetailColumns, ...orderedSteps];
 
@@ -563,20 +561,26 @@ export default function PlannerTable({
                                     width: columnWidths[col],
                                     maxWidth: columnWidths[col] // Force max width
                                 }}
-                                className={`px-0.5 py-1 font-semibold text-slate-700 cursor-pointer hover:bg-slate-200 border-r border-slate-200 bg-slate-100 relative group ${i === 0 ? 'sticky left-0 z-30' : ''
+                                className={`px-0.5 py-1 font-semibold text-slate-700 border-r border-slate-200 bg-slate-100 relative group ${i === 0 ? 'sticky left-0 z-30' : ''
                                     } ${i >= 5 ? 'text-center' : 'text-left'}`}
-                                onClick={() => handleSort(col)}
                                 title={col}
                             >
                                 <div className="flex items-center gap-0.5 justify-center overflow-hidden">
                                     <span className="truncate">
                                         {i >= 5 ? getStepAbbrev(col) : col}
                                     </span>
-                                    {sortKey === col ? (
-                                        sortDir === 'asc' ? <ArrowUp className="w-2 h-2 shrink-0" /> : <ArrowDown className="w-2 h-2 shrink-0" />
-                                    ) : (
-                                        <ArrowUpDown className="w-2 h-2 opacity-30 shrink-0" />
-                                    )}
+                                    {/* Sort icon - click this to sort */}
+                                    <button
+                                        onClick={() => handleSort(col)}
+                                        className={`shrink-0 p-0.5 rounded hover:bg-slate-300 transition-colors ${sortKey === col ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                        title={`Sort by ${col}`}
+                                    >
+                                        {sortKey === col ? (
+                                            sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+                                        ) : (
+                                            <ArrowUpDown className="w-3 h-3" />
+                                        )}
+                                    </button>
                                 </div>
                                 <div
                                     className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-indigo-400/50 z-50 group-hover:bg-slate-300"
@@ -594,42 +598,54 @@ export default function PlannerTable({
                             const naCount = processedOrders.filter(o => o[step] === 'N/A').length;
                             const pendingCount = processedOrders.length - completeCount - naCount;
 
-                            const isBulkP = pMode && onBulkSetP;
-                            const isBulkNA = naMode && onBulkSetNA;
-                            const isBulkHold = holdMode && onBulkSetHold;
-                            const isBulkQN = qnMode && onBulkSetQN;
-                            const isBulkWIP = wipMode && onBulkSetWIP;
-                            const isBulkComplete = completeMode && onBulkSetComplete;
+                            const isBulkMode = activeBatchMode && ['P', 'N/A', 'Hold', 'QN', 'WIP', 'Complete', 'Erase'].includes(activeBatchMode) && onBulkBatchUpdate;
+
+                            const getBulkModeClass = () => {
+                                if (!activeBatchMode || !onBulkBatchUpdate) return '';
+                                switch (activeBatchMode) {
+                                    case 'P': return 'cursor-pointer hover:bg-blue-100 ring-inset hover:ring-2 hover:ring-blue-300';
+                                    case 'N/A': return 'cursor-pointer hover:bg-slate-200 ring-inset hover:ring-2 hover:ring-slate-400';
+                                    case 'Hold': return 'cursor-pointer hover:bg-orange-100 ring-inset hover:ring-2 hover:ring-orange-300';
+                                    case 'QN': return 'cursor-pointer hover:bg-red-100 ring-inset hover:ring-2 hover:ring-red-300';
+                                    case 'WIP': return 'cursor-pointer hover:bg-yellow-100 ring-inset hover:ring-2 hover:ring-yellow-300';
+                                    case 'Complete': return 'cursor-pointer hover:bg-green-100 ring-inset hover:ring-2 hover:ring-green-300';
+                                    case 'Erase': return 'cursor-pointer hover:bg-red-50 ring-inset hover:ring-2 hover:ring-red-400';
+                                    default: return '';
+                                }
+                            };
+
 
                             return (
                                 <th
                                     key={step}
                                     style={{ width: columnWidths[step], fontSize: `${10 * fontSizeScale}px` }}
-                                    className={`px-0.5 py-1 font-semibold text-slate-600 bg-slate-50 border-r border-slate-200 relative group
-                                        ${isBulkP ? 'cursor-pointer hover:bg-blue-100 ring-inset hover:ring-2 hover:ring-blue-300' : ''}
-                                        ${isBulkNA ? 'cursor-pointer hover:bg-slate-200 ring-inset hover:ring-2 hover:ring-slate-400' : ''}
-                                        ${isBulkHold ? 'cursor-pointer hover:bg-orange-100 ring-inset hover:ring-2 hover:ring-orange-300' : ''}
-                                        ${isBulkQN ? 'cursor-pointer hover:bg-red-100 ring-inset hover:ring-2 hover:ring-red-300' : ''}
-                                        ${isBulkWIP ? 'cursor-pointer hover:bg-yellow-100 ring-inset hover:ring-2 hover:ring-yellow-300' : ''}
-                                        ${isBulkComplete ? 'cursor-pointer hover:bg-green-100 ring-inset hover:ring-2 hover:ring-green-300' : ''}
-                                    `}
+                                    className={`px-0.5 py-1 font-semibold text-slate-600 bg-slate-50 border-r border-slate-200 relative group ${isBulkMode ? getBulkModeClass() : ''}`}
                                     onClick={() => {
-                                        if (isBulkP && onBulkSetP) onBulkSetP(step);
-                                        else if (isBulkNA && onBulkSetNA) onBulkSetNA(step);
-                                        else if (isBulkHold && onBulkSetHold) onBulkSetHold(step);
-                                        else if (isBulkQN && onBulkSetQN) onBulkSetQN(step);
-                                        else if (isBulkWIP && onBulkSetWIP) onBulkSetWIP(step);
-                                        else if (isBulkComplete && onBulkSetComplete) onBulkSetComplete(step);
-                                        else handleSort(step);
+                                        // Only handle bulk mode clicks on the header - sort is handled by the icon
+                                        if (isBulkMode && onBulkBatchUpdate) {
+                                            onBulkBatchUpdate(step, activeBatchMode);
+                                        }
                                     }}
-                                    title={isBulkP ? `Click to Fill ${step} with P` : isBulkNA ? `Click to Fill ${step} with N/A` : isBulkHold ? `Click to Fill ${step} with Hold` : isBulkQN ? `Click to Fill ${step} with QN` : isBulkWIP ? `Click to Fill ${step} with WIP` : isBulkComplete ? `Click to Fill ${step} with Today's Date` : `Click to sort by ${step}`}
+                                    title={isBulkMode ? `Click to Fill ${step} with ${activeBatchMode}` : step}
                                 >
                                     <div className="flex flex-col items-center w-full">
                                         <div className="flex items-center gap-0.5 justify-center w-full">
                                             <span className="truncate text-center">{getStepAbbrev(step)}</span>
-                                            {sortKey === step && (
-                                                sortDir === 'asc' ? <ArrowUp className="w-2 h-2 text-indigo-500" /> : <ArrowDown className="w-2 h-2 text-indigo-500" />
-                                            )}
+                                            {/* Sort icon - click this to sort */}
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation(); // Don't trigger bulk mode
+                                                    handleSort(step);
+                                                }}
+                                                className={`shrink-0 p-0.5 rounded hover:bg-slate-300 transition-colors ${sortKey === step ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                                title={`Sort by ${step}`}
+                                            >
+                                                {sortKey === step ? (
+                                                    sortDir === 'asc' ? <ArrowUp className="w-2.5 h-2.5" /> : <ArrowDown className="w-2.5 h-2.5" />
+                                                ) : (
+                                                    <ArrowUpDown className="w-2.5 h-2.5" />
+                                                )}
+                                            </button>
                                         </div>
                                         <div className="flex gap-0.5 mt-1 font-normal text-[9px] opacity-70">
                                             <span className="text-green-600" title="Done (with dates)">{completeCount}</span>
@@ -663,301 +679,290 @@ export default function PlannerTable({
                 </thead>
 
                 <tbody>
-                    {processedOrders.map((order, idx) => (
-                        <tr key={order.id} className={`border-b border-slate-100 hover:bg-slate-50 ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
-                            {/* Detail Columns - Dynamic Rendering */}
-                            {effectiveDetailColumns.map((col, colIdx) => {
-                                const value = getOrderValue(order, col);
-                                const colUpper = col.toUpperCase();
+                    {processedOrders.map((order, idx) => {
+                        const isHighlighted = highlightedWos.includes(getWoId(order) || (order['WO ID'] as string));
+                        return (
+                            <tr key={order.id} className={`border-b border-slate-100 hover:bg-slate-50 ${isHighlighted ? 'bg-yellow-50/80 ring-2 ring-inset ring-yellow-400' : idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
+                                {/* Detail Columns - Dynamic Rendering */}
+                                {effectiveDetailColumns.map((col, colIdx) => {
+                                    const value = getOrderValue(order, col);
+                                    const colUpper = col.toUpperCase();
 
-                                // First column (WO ID) - Clickable, sticky
-                                if (colIdx === 0) {
-                                    // Always use the actual WO ID for navigation (handles various column name formats)
-                                    const woIdForNav = getWoId(order) || value;
-                                    return (
+                                    // First column (WO ID) - Clickable, sticky
+                                    if (colIdx === 0) {
+                                        // Always use the actual WO ID for navigation (handles various column name formats)
+                                        const woIdForNav = getWoId(order) || value;
+                                        return (
 
-                                        <td
-                                            key={col}
-                                            style={{ width: columnWidths[col], fontSize: `${10 * fontSizeScale}px` }}
-                                            className="px-1 py-0.5 sticky left-0 bg-inherit z-10 font-medium border-r border-slate-200 group/cell"
-                                        >
-                                            <div className="flex items-center justify-between gap-1">
-                                                <span
-                                                    className="cursor-pointer text-indigo-600 dark:text-blue-400 hover:underline truncate"
-                                                    onClick={() => onNavigate(String(woIdForNav))}
-                                                >
-                                                    {value}
-                                                </span>
-                                                {isSuperEditing && onDeleteOrder && (
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            if (confirm(`Are you sure you want to PERMANENTLY DELETE Order ${value}?`)) {
-                                                                onDeleteOrder(order.id);
+                                            <td
+                                                key={col}
+                                                style={{ width: columnWidths[col], fontSize: `${10 * fontSizeScale}px` }}
+                                                className="px-1 py-0.5 sticky left-0 bg-inherit z-10 font-medium border-r border-slate-200 group/cell"
+                                            >
+                                                <div className="flex items-center justify-between gap-1">
+                                                    <span
+                                                        className="cursor-pointer text-indigo-600 dark:text-blue-400 hover:underline truncate"
+                                                        onClick={() => onNavigate(String(woIdForNav))}
+                                                    >
+                                                        {value}
+                                                    </span>
+                                                    {isSuperEditing && onDeleteOrder && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                e.preventDefault();
+                                                                // Use state-controlled dialog instead of native confirm()
+                                                                // to prevent flashing due to React re-renders
+                                                                setDeleteConfirm({ orderId: order.id, woId: value });
+                                                            }}
+                                                            className="opacity-0 group-hover/cell:opacity-100 p-0.5 text-slate-400 hover:text-red-600 transition-opacity"
+                                                            title="Delete Order"
+                                                        >
+                                                            <Trash2 size={12} />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        );
+
+                                    }
+
+                                    // Due Date - Fuzzy match "DUE"
+                                    if (colUpper.includes('DUE')) {
+                                        const { style, countdown } = getDueDateInfo(value, order);
+                                        return (
+                                            <td
+                                                key={col}
+                                                className="px-1 py-0.5 whitespace-nowrap border-r border-slate-200 text-center text-slate-700 relative group/due"
+                                                style={{ ...style, width: columnWidths[col], fontSize: `${9 * fontSizeScale}px` }}
+                                            >
+                                                {isSuperEditing && onUpdateDetail ? (
+                                                    <input
+                                                        type="text"
+                                                        defaultValue={formatDate(value, 'dd-MM-yyyy')}
+                                                        className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                        onBlur={(e) => {
+                                                            const newVal = e.target.value.trim();
+                                                            if (newVal !== formatDate(value, 'dd-MM-yyyy')) {
+                                                                onUpdateDetail(order['WO ID'], col, newVal);
                                                             }
                                                         }}
-                                                        className="opacity-0 group-hover/cell:opacity-100 p-0.5 text-slate-400 hover:text-red-600 transition-opacity"
-                                                        title="Delete Order"
-                                                    >
-                                                        <Trash2 size={12} />
-                                                    </button>
+                                                        onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                ) : (
+                                                    <>
+                                                        {formatDate(value, 'dd-MM-yyyy')}
+                                                        {countdown && (
+                                                            <div className="hidden group-hover/due:block absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-0.5 bg-slate-800 text-white text-[8px] rounded whitespace-nowrap z-50">
+                                                                {countdown}
+                                                            </div>
+                                                        )}
+                                                    </>
                                                 )}
+                                            </td>
+                                        );
+                                    }
+
+                                    // Priority - Fuzzy match "PRIORITY"
+                                    if (colUpper.includes('PRIORITY')) {
+                                        return (
+                                            <td key={col} className="px-1 py-0.5 text-center border-r border-slate-200 text-slate-700" style={{ ...getPriorityStyle(value), width: columnWidths[col], fontSize: `${9 * fontSizeScale}px` }}>
+                                                {isSuperEditing && onUpdateDetail ? (
+                                                    <input
+                                                        type="text"
+                                                        defaultValue={value}
+                                                        className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                        onBlur={(e) => {
+                                                            const newVal = e.target.value.trim();
+                                                            if (newVal !== value) {
+                                                                onUpdateDetail(order['WO ID'], col, newVal);
+                                                            }
+                                                        }}
+                                                        onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                ) : (
+                                                    value
+                                                )}
+                                            </td>
+                                        );
+                                    }
+
+                                    // Description - With tooltip
+                                    if (col === 'Description') {
+                                        return (
+                                            <td key={col} style={{ width: columnWidths[col], fontSize: `${9 * fontSizeScale}px` }} className="px-1 py-0.5 truncate text-slate-700 border-r border-slate-200" title={value}>
+                                                {isSuperEditing && onUpdateDetail ? (
+                                                    <input
+                                                        type="text"
+                                                        defaultValue={value}
+                                                        className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                        onBlur={(e) => {
+                                                            const newVal = e.target.value.trim();
+                                                            if (newVal !== value) {
+                                                                onUpdateDetail(order['WO ID'], col, newVal);
+                                                            }
+                                                        }}
+                                                        onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    />
+                                                ) : (
+                                                    value
+                                                )}
+                                            </td>
+                                        );
+                                    }
+
+                                    // Default rendering for other detail columns
+                                    return (
+                                        <td
+                                            key={col}
+                                            style={{ width: columnWidths[col], fontSize: `${9 * fontSizeScale}px` }}
+                                            className={`px-1 py-0.5 text-slate-700 border-r border-slate-200 ${colIdx === 0 ? 'sticky left-0 bg-inherit z-10' : 'truncate'}`}
+                                            title={value}
+                                        >
+                                            {isSuperEditing && onUpdateDetail && col !== 'ECD' ? (
+                                                <input
+                                                    type="text"
+                                                    defaultValue={value}
+                                                    className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                                    onBlur={(e) => {
+                                                        const newVal = e.target.value.trim();
+                                                        if (newVal !== value) {
+                                                            onUpdateDetail(order['WO ID'], col, newVal);
+                                                        }
+                                                    }}
+                                                    onKeyDown={(e) => {
+                                                        if (e.key === 'Enter') {
+                                                            e.currentTarget.blur();
+                                                        }
+                                                    }}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                />
+                                            ) : (
+                                                value
+                                            )}
+                                        </td>
+                                    );
+                                })}
+
+
+
+                                {/* Process Steps */}
+                                {orderedSteps.map(step => {
+                                    const cellValue = order[step] || '';
+                                    const upperValue = cellValue.toUpperCase();
+
+                                    // Unified logic based on activeBatchMode
+                                    let isClickable = false;
+                                    let isRemovable = false;
+                                    let clickActionStr = '';
+
+                                    if (activeBatchMode === 'P') {
+                                        isClickable = !cellValue || upperValue === 'P';
+                                        isRemovable = upperValue === 'P';
+                                        clickActionStr = 'Plan';
+                                    } else if (activeBatchMode === 'N/A') {
+                                        isClickable = !cellValue || upperValue === 'N/A';
+                                        isRemovable = upperValue === 'N/A';
+                                        clickActionStr = 'N/A';
+                                    } else if (activeBatchMode === 'Hold') {
+                                        isClickable = !cellValue || upperValue === 'HOLD';
+                                        isRemovable = upperValue === 'HOLD';
+                                        clickActionStr = 'Hold';
+                                    } else if (activeBatchMode === 'QN') {
+                                        isClickable = !cellValue || upperValue === 'QN';
+                                        isRemovable = upperValue === 'QN';
+                                        clickActionStr = 'QN';
+                                    } else if (activeBatchMode === 'WIP') {
+                                        isClickable = !cellValue || upperValue === 'WIP';
+                                        isRemovable = upperValue === 'WIP';
+                                        clickActionStr = 'WIP';
+                                    } else if (activeBatchMode === 'Complete') {
+                                        isClickable = !cellValue;
+                                        clickActionStr = 'Complete';
+                                    } else if (activeBatchMode === 'Erase') {
+                                        isClickable = !!cellValue; // Can erase anything
+                                        clickActionStr = 'Erase';
+                                    }
+
+                                    return (
+                                        <td
+                                            key={step}
+                                            style={{
+                                                width: columnWidths[step],
+                                                maxWidth: columnWidths[step],
+                                                ...getCellStyle(cellValue)
+                                            }}
+                                            className={`px-0.5 py-0.5 text-center text-[9px] tracking-tighter font-medium whitespace-nowrap border-r border-slate-100 relative ${activeBatchMode === 'Erase' && isClickable
+                                                ? 'cursor-pointer hover:bg-red-200 hover:ring-2 hover:ring-red-400'
+                                                : isRemovable
+                                                    ? 'cursor-pointer hover:bg-red-100 hover:ring-2 hover:ring-red-300' // General removal hint
+                                                    : isClickable
+                                                        ? activeBatchMode === 'P' ? 'cursor-pointer hover:bg-blue-100 hover:ring-2 hover:ring-blue-300'
+                                                            : activeBatchMode === 'N/A' ? 'cursor-pointer hover:bg-slate-200 hover:ring-2 hover:ring-slate-400'
+                                                                : activeBatchMode === 'Hold' ? 'cursor-pointer hover:bg-orange-100 hover:ring-2 hover:ring-orange-400'
+                                                                    : activeBatchMode === 'QN' ? 'cursor-pointer hover:bg-red-100 hover:ring-2 hover:ring-red-300'
+                                                                        : activeBatchMode === 'WIP' ? 'cursor-pointer hover:bg-yellow-100 hover:ring-2 hover:ring-yellow-300'
+                                                                            : activeBatchMode === 'Complete' ? 'cursor-pointer hover:bg-green-100 hover:ring-2 hover:ring-green-300'
+                                                                                : ''
+                                                        : ''
+                                                }`}
+                                            onClick={() => {
+                                                // Robust ID retrieval
+                                                const woId = getWoId(order);
+                                                if (isClickable && activeBatchMode) {
+                                                    onBatchUpdate(woId, step, activeBatchMode);
+                                                }
+                                            }}
+                                            title={
+                                                activeBatchMode === 'Erase' ? 'Click to erase'
+                                                    : isRemovable ? `Click to remove ${activeBatchMode}`
+                                                        : isClickable ? `Click to set ${clickActionStr}` : ''
+                                            }
+
+                                        >
+                                            <div className="relative w-full h-full flex items-center justify-center min-h-[14px]">
+                                                {formatCellValue(cellValue)}
+                                                {(order as any).commentStats?.[step]?.total > 0 && (() => {
+                                                    const total = (order as any).commentStats?.[step]?.total || 0;
+                                                    const unread = (order as any).userUnreadStats?.[step]?.unread || 0;
+                                                    const previews = (order as any).commentPreviews?.[step] || [];
+
+                                                    return (
+                                                        <div className="group/tooltip absolute -top-0.5 -right-0.5">
+                                                            <div className={`w-1.5 h-1.5 rounded-full border border-white cursor-pointer ${unread > 0 ? 'bg-red-500 animate-pulse' : 'bg-indigo-400'}`} />
+
+                                                            {/* Instant tooltip - appears on hover with no delay */}
+                                                            <div className="hidden group-hover/tooltip:block absolute bottom-full right-0 mb-1 z-[100] pointer-events-none">
+                                                                <div className="bg-slate-800 text-white text-[10px] rounded-lg px-2 py-1.5 shadow-lg whitespace-pre-wrap max-w-[250px] min-w-[120px]">
+                                                                    <div className="font-semibold text-slate-200 mb-1">
+                                                                        {total} comment{total > 1 ? 's' : ''}{unread > 0 ? ` (${unread} unread)` : ''}
+                                                                    </div>
+                                                                    {previews.length > 0 && (
+                                                                        <div className="border-t border-slate-600 pt-1 mt-1 space-y-1">
+                                                                            {previews.slice(0, 3).map((p: any, idx: number) => (
+                                                                                <div key={idx} className="text-slate-300">
+                                                                                    <span className="text-slate-400">{p.username}:</span> {p.content.length > 40 ? p.content.substring(0, 40) + '...' : p.content}
+                                                                                </div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                {/* Arrow */}
+                                                                <div className="absolute bottom-0 right-1 transform translate-y-1/2 rotate-45 w-2 h-2 bg-slate-800" />
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })()}
                                             </div>
                                         </td>
                                     );
-
-                                }
-
-                                // Due Date - Fuzzy match "DUE"
-                                if (colUpper.includes('DUE')) {
-                                    const { style, countdown } = getDueDateInfo(value, order);
-                                    return (
-                                        <td
-                                            key={col}
-                                            className="px-1 py-0.5 whitespace-nowrap border-r border-slate-200 text-center text-slate-700"
-                                            style={{ ...style, width: columnWidths[col], fontSize: `${9 * fontSizeScale}px` }}
-                                        >
-                                            {isSuperEditing && onUpdateDetail ? (
-                                                <input
-                                                    type="text"
-                                                    defaultValue={formatDate(value, 'dd-MM-yyyy')}
-                                                    className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                                                    onBlur={(e) => {
-                                                        const newVal = e.target.value.trim();
-                                                        if (newVal !== formatDate(value, 'dd-MM-yyyy')) {
-                                                            onUpdateDetail(order['WO ID'], col, newVal);
-                                                        }
-                                                    }}
-                                                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                />
-                                            ) : (
-                                                formatDate(value, 'dd-MM-yyyy')
-                                            )}
-                                        </td>
-                                    );
-                                }
-
-                                // Priority - Fuzzy match "PRIORITY"
-                                if (colUpper.includes('PRIORITY')) {
-                                    return (
-                                        <td key={col} className="px-1 py-0.5 text-center border-r border-slate-200 text-slate-700" style={{ ...getPriorityStyle(value), width: columnWidths[col], fontSize: `${9 * fontSizeScale}px` }}>
-                                            {isSuperEditing && onUpdateDetail ? (
-                                                <input
-                                                    type="text"
-                                                    defaultValue={value}
-                                                    className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                                                    onBlur={(e) => {
-                                                        const newVal = e.target.value.trim();
-                                                        if (newVal !== value) {
-                                                            onUpdateDetail(order['WO ID'], col, newVal);
-                                                        }
-                                                    }}
-                                                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                />
-                                            ) : (
-                                                value
-                                            )}
-                                        </td>
-                                    );
-                                }
-
-                                // Description - With tooltip
-                                if (col === 'Description') {
-                                    return (
-                                        <td key={col} style={{ width: columnWidths[col], fontSize: `${9 * fontSizeScale}px` }} className="px-1 py-0.5 truncate text-slate-700 border-r border-slate-200" title={value}>
-                                            {isSuperEditing && onUpdateDetail ? (
-                                                <input
-                                                    type="text"
-                                                    defaultValue={value}
-                                                    className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                                                    onBlur={(e) => {
-                                                        const newVal = e.target.value.trim();
-                                                        if (newVal !== value) {
-                                                            onUpdateDetail(order['WO ID'], col, newVal);
-                                                        }
-                                                    }}
-                                                    onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                />
-                                            ) : (
-                                                value
-                                            )}
-                                        </td>
-                                    );
-                                }
-
-                                // Default rendering for other detail columns
-                                return (
-                                    <td
-                                        key={col}
-                                        style={{ width: columnWidths[col], fontSize: `${9 * fontSizeScale}px` }}
-                                        className={`px-1 py-0.5 text-slate-700 border-r border-slate-200 ${colIdx === 0 ? 'sticky left-0 bg-inherit z-10' : 'truncate'}`}
-                                        title={value}
-                                    >
-                                        {isSuperEditing && onUpdateDetail && col !== 'ECD' ? (
-                                            <input
-                                                type="text"
-                                                defaultValue={value}
-                                                className="w-full h-full bg-yellow-50 px-1 border border-yellow-200 rounded text-[9px] text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                                                onBlur={(e) => {
-                                                    const newVal = e.target.value.trim();
-                                                    if (newVal !== value) {
-                                                        onUpdateDetail(order['WO ID'], col, newVal);
-                                                    }
-                                                }}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        e.currentTarget.blur();
-                                                    }
-                                                }}
-                                                onClick={(e) => e.stopPropagation()}
-                                            />
-                                        ) : (
-                                            value
-                                        )}
-                                    </td>
-                                );
-                            })}
-
-
-
-                            {/* Process Steps */}
-                            {orderedSteps.map(step => {
-                                const cellValue = order[step] || '';
-                                const upperValue = cellValue.toUpperCase();
-
-                                // P Mode logic
-                                const isPClickable = pMode && onSetP && (!cellValue || upperValue === 'P');
-                                const isPRemovable = pMode && onSetP && upperValue === 'P';
-
-                                // N/A Mode logic
-                                const isNAClickable = naMode && onSetNA && (!cellValue || upperValue === 'N/A');
-                                const isNARemovable = naMode && onSetNA && upperValue === 'N/A';
-
-                                // Hold Mode logic
-                                const isHoldClickable = holdMode && onSetHold && (!cellValue || upperValue === 'HOLD');
-                                const isHoldRemovable = holdMode && onSetHold && upperValue === 'HOLD';
-
-                                // QN Mode logic
-                                const isQNClickable = qnMode && onSetQN && (!cellValue || upperValue === 'QN');
-                                const isQNRemovable = qnMode && onSetQN && upperValue === 'QN';
-
-                                // WIP Mode logic
-                                const isWIPClickable = wipMode && onSetWIP && (!cellValue || upperValue === 'WIP');
-                                const isWIPRemovable = wipMode && onSetWIP && upperValue === 'WIP';
-
-                                // Complete Mode logic - can click empty cells to fill with date
-                                const isCompleteClickable = completeMode && onSetComplete && !cellValue;
-
-                                // Erase Mode logic - can click any cell with content
-                                const isEraseClickable = eraseMode && onErase && !!cellValue;
-
-                                const isClickable = isPClickable || isNAClickable || isHoldClickable || isQNClickable || isWIPClickable || isCompleteClickable || isEraseClickable;
-                                const isRemovable = isPRemovable || isNARemovable || isHoldRemovable || isQNRemovable || isWIPRemovable;
-
-                                return (
-                                    <td
-                                        key={step}
-                                        style={{
-                                            width: columnWidths[step],
-                                            maxWidth: columnWidths[step],
-                                            ...getCellStyle(cellValue)
-                                        }}
-                                        className={`px-0.5 py-0.5 text-center text-[9px] tracking-tighter font-medium whitespace-nowrap border-r border-slate-100 relative ${isEraseClickable
-                                            ? 'cursor-pointer hover:bg-red-200 hover:ring-2 hover:ring-red-400'
-                                            : isRemovable
-                                                ? 'cursor-pointer hover:bg-red-100 hover:ring-2 hover:ring-red-300'
-                                                : isPClickable
-                                                    ? 'cursor-pointer hover:bg-blue-100 hover:ring-2 hover:ring-blue-300'
-                                                    : isNAClickable
-                                                        ? 'cursor-pointer hover:bg-slate-200 hover:ring-2 hover:ring-slate-400'
-                                                        : isHoldClickable
-                                                            ? 'cursor-pointer hover:bg-orange-100 hover:ring-2 hover:ring-orange-300'
-                                                            : isQNClickable
-                                                                ? 'cursor-pointer hover:bg-red-100 hover:ring-2 hover:ring-red-300'
-                                                                : isWIPClickable
-                                                                    ? 'cursor-pointer hover:bg-yellow-100 hover:ring-2 hover:ring-yellow-300'
-                                                                    : isCompleteClickable
-                                                                        ? 'cursor-pointer hover:bg-green-100 hover:ring-2 hover:ring-green-300'
-                                                                        : ''
-                                            }`}
-                                        onClick={() => {
-                                            // Robust ID retrieval
-                                            const woId = getWoId(order);
-
-                                            if (isEraseClickable && onErase) {
-                                                onErase(woId, step);
-                                            } else if (isPClickable && onSetP) {
-                                                onSetP(woId, step, cellValue);
-                                            } else if (isNAClickable && onSetNA) {
-                                                onSetNA(woId, step, cellValue);
-                                            } else if (isHoldClickable && onSetHold) {
-                                                onSetHold(woId, step, cellValue);
-                                            } else if (isQNClickable && onSetQN) {
-                                                onSetQN(woId, step, cellValue);
-                                            } else if (isWIPClickable && onSetWIP) {
-                                                onSetWIP(woId, step, cellValue);
-                                            } else if (isCompleteClickable && onSetComplete) {
-                                                onSetComplete(woId, step);
-                                            }
-                                        }}
-                                        title={
-                                            isEraseClickable ? 'Click to erase'
-                                                : isPRemovable ? 'Click to remove P'
-                                                    : isPClickable ? 'Click to set P'
-                                                        : isNARemovable ? 'Click to remove N/A'
-                                                            : isNAClickable ? 'Click to set N/A'
-                                                                : isHoldRemovable ? 'Click to remove Hold'
-                                                                    : isHoldClickable ? 'Click to set Hold'
-                                                                        : isQNRemovable ? 'Click to remove QN'
-                                                                            : isQNClickable ? 'Click to set QN'
-                                                                                : isWIPRemovable ? 'Click to remove WIP'
-                                                                                    : isWIPClickable ? 'Click to set WIP'
-                                                                                        : isCompleteClickable ? 'Click to mark Complete with date'
-                                                                                            : ''
-                                        }
-                                    >
-                                        <div className="relative w-full h-full flex items-center justify-center min-h-[14px]">
-                                            {formatCellValue(cellValue)}
-                                            {(order as any).commentStats?.[step]?.total > 0 && (() => {
-                                                const total = (order as any).commentStats?.[step]?.total || 0;
-                                                const unread = (order as any).userUnreadStats?.[step]?.unread || 0;
-                                                const previews = (order as any).commentPreviews?.[step] || [];
-
-                                                return (
-                                                    <div className="group/tooltip absolute -top-0.5 -right-0.5">
-                                                        <div className={`w-1.5 h-1.5 rounded-full border border-white cursor-pointer ${unread > 0 ? 'bg-red-500 animate-pulse' : 'bg-indigo-400'}`} />
-
-                                                        {/* Instant tooltip - appears on hover with no delay */}
-                                                        <div className="hidden group-hover/tooltip:block absolute bottom-full right-0 mb-1 z-[100] pointer-events-none">
-                                                            <div className="bg-slate-800 text-white text-[10px] rounded-lg px-2 py-1.5 shadow-lg whitespace-pre-wrap max-w-[250px] min-w-[120px]">
-                                                                <div className="font-semibold text-slate-200 mb-1">
-                                                                    {total} comment{total > 1 ? 's' : ''}{unread > 0 ? ` (${unread} unread)` : ''}
-                                                                </div>
-                                                                {previews.length > 0 && (
-                                                                    <div className="border-t border-slate-600 pt-1 mt-1 space-y-1">
-                                                                        {previews.slice(0, 3).map((p: any, idx: number) => (
-                                                                            <div key={idx} className="text-slate-300">
-                                                                                <span className="text-slate-400">{p.username}:</span> {p.content.length > 40 ? p.content.substring(0, 40) + '...' : p.content}
-                                                                            </div>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                            {/* Arrow */}
-                                                            <div className="absolute bottom-0 right-1 transform translate-y-1/2 rotate-45 w-2 h-2 bg-slate-800" />
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })()}
-                                        </div>
-                                    </td>
-                                );
-                            })}
-                        </tr>
-                    ))}
+                                })}
+                            </tr>
+                        );
+                    })}
                 </tbody>
             </table>
 
@@ -966,6 +971,44 @@ export default function PlannerTable({
                     <div className="py-10 text-center text-slate-400">No orders found</div>
                 )
             }
+
+            {/* Delete Confirmation Modal - React controlled to prevent flashing */}
+            {deleteConfirm && onDeleteOrder && (
+                <div
+                    className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50"
+                    onClick={() => setDeleteConfirm(null)}
+                >
+                    <div
+                        className="bg-white rounded-lg shadow-xl p-6 max-w-md mx-4 transform transition-all"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h3 className="text-lg font-bold text-slate-800 mb-2">⚠️ Confirm Delete</h3>
+                        <p className="text-slate-600 mb-6">
+                            Are you sure you want to <span className="font-bold text-red-600">PERMANENTLY DELETE</span> Order{' '}
+                            <span className="font-mono bg-slate-100 px-1 rounded">{deleteConfirm.woId}</span>?
+                        </p>
+                        <p className="text-sm text-red-500 mb-6">This action cannot be undone!</p>
+                        <div className="flex justify-end gap-3">
+                            <button
+                                onClick={() => setDeleteConfirm(null)}
+                                className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={async () => {
+                                    const orderId = deleteConfirm.orderId;
+                                    setDeleteConfirm(null);
+                                    await onDeleteOrder(orderId);
+                                }}
+                                className="px-4 py-2 bg-red-600 text-white hover:bg-red-700 rounded-lg transition-colors font-medium"
+                            >
+                                Delete Order
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div >
     );
 }

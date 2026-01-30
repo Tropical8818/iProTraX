@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import type { Order } from '@prisma/client';
 
 interface StepUpdate {
     woId: string;
@@ -29,24 +30,40 @@ export async function PATCH(request: Request) {
         let successCount = 0;
         const errors: string[] = [];
 
+        // Group updates by woId for efficiency
+        const updatesByWoId = new Map<string, StepUpdate[]>();
         for (const update of updates as StepUpdate[]) {
-            try {
-                // Find the order
-                const order = await prisma.order.findUnique({
-                    where: {
-                        productId_woId: {
-                            productId,
-                            woId: update.woId
-                        }
-                    }
-                });
+            const existing = updatesByWoId.get(update.woId) || [];
+            existing.push(update);
+            updatesByWoId.set(update.woId, existing);
+        }
 
-                if (!order) {
-                    errors.push(`Order ${update.woId} not found`);
-                    continue;
-                }
+        // Fetch all affected orders in one query
+        const woIds = Array.from(updatesByWoId.keys());
+        const allOrders = await prisma.order.findMany({
+            where: {
+                productId,
+                woId: { in: woIds }
+            }
+        });
 
-                const currentData = JSON.parse(order.data);
+        // Create a map for quick lookup
+        const orderMap = new Map<string, Order>(allOrders.map((o: Order) => [o.woId, o]));
+
+        // Process all updates and prepare batch operations
+        const orderUpdates: { id: string; data: string }[] = [];
+        const logEntries: { action: string; details: string; userId: string; orderId: string; snapshot: string }[] = [];
+
+        for (const [woId, stepUpdates] of updatesByWoId) {
+            const order = orderMap.get(woId);
+            if (!order) {
+                errors.push(`Order ${woId} not found`);
+                continue;
+            }
+
+            const currentData = JSON.parse(order.data);
+
+            for (const update of stepUpdates) {
                 const previousValue = currentData[update.step] || '';
                 let newValue = update.status;
 
@@ -60,38 +77,49 @@ export async function PATCH(request: Request) {
                     currentData[update.step] = update.status;
                 }
 
-                // Update order and create log in transaction
-                await prisma.$transaction([
-                    prisma.order.update({
-                        where: { id: order.id },
-                        data: {
-                            data: JSON.stringify(currentData)
-                        }
+                logEntries.push({
+                    action: update.status,
+                    details: JSON.stringify({
+                        step: update.step,
+                        previousValue,
+                        newValue,
+                        batchOperation: true
                     }),
-                    prisma.operationLog.create({
-                        data: {
-                            action: update.status,
-                            details: JSON.stringify({
-                                step: update.step,
-                                previousValue,
-                                newValue,
-                                batchOperation: true
-                            }),
-                            userId: session.userId,
-                            orderId: order.id,
-                            snapshot: JSON.stringify({
-                                woId: update.woId
-                            })
-                        }
-                    })
-                ]);
-
-                successCount++;
-            } catch (err) {
-                console.error(`Failed to update ${update.woId}:`, err);
-                errors.push(`Failed to update ${update.woId}`);
+                    userId: session.userId,
+                    orderId: order.id,
+                    snapshot: JSON.stringify({ woId: update.woId })
+                });
             }
+
+            orderUpdates.push({
+                id: order.id,
+                data: JSON.stringify(currentData)
+            });
         }
+
+        // Execute all updates in a transaction for consistency
+        await prisma.$transaction(async (tx: typeof prisma) => {
+            // Update all orders in parallel (chunked to prevent overwhelming DB)
+            const CHUNK_SIZE = 50;
+            for (let i = 0; i < orderUpdates.length; i += CHUNK_SIZE) {
+                const chunk = orderUpdates.slice(i, i + CHUNK_SIZE);
+                await Promise.all(chunk.map(update =>
+                    tx.order.update({
+                        where: { id: update.id },
+                        data: { data: update.data }
+                    })
+                ));
+            }
+
+            // Create all logs in one batch operation
+            if (logEntries.length > 0) {
+                await tx.operationLog.createMany({
+                    data: logEntries
+                });
+            }
+        });
+
+        successCount = orderUpdates.length;
 
         // Publish event (fire and forget)
         (async () => {

@@ -3,43 +3,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { Table2, HardHat, Settings, LogOut, Save, FileSpreadsheet, Lock, Plus, Trash2, Edit2, X, ChevronUp, ChevronDown, Package, RefreshCw, Check, Eye, EyeOff, Clock, FilePlus, Info, User, Key, Users, Database, Download, Bot, Sparkles, Monitor, Play, Upload, Globe, Copy, ShieldCheck, BarChart2, AlertTriangle } from 'lucide-react';
+import {
+    Table2, HardHat, Settings, LogOut, Save, FileSpreadsheet, Lock, Plus, Trash2, Edit2, X, ChevronUp, ChevronDown, Package, RefreshCw, Check, Eye, EyeOff, Clock, FilePlus, Info, User, Key, Users, Database, Download, Bot, Sparkles, Monitor, Play, Copy, ShieldCheck, BarChart2, AlertTriangle
+} from 'lucide-react';
 import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
-import { APP_VERSION } from '@/lib/version';
 
 import { Product, Config, WebhookConfig } from '@/lib/types/config';
 
-function PasswordInput({
-    label,
-    value,
-    onChange
-}: {
-    label: string,
-    value: string,
-    onChange: (val: string) => void
-}) {
-    const [visible, setVisible] = useState(false);
-    return (
-        <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">{label}</label>
-            <div className="relative">
-                <input
-                    type={visible ? 'text' : 'password'}
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
-                    className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 font-mono text-slate-800 pr-10"
-                />
-                <button
-                    type="button"
-                    onClick={() => setVisible(!visible)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-                >
-                    {visible ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-            </div>
-        </div>
-    );
-}
 
 
 
@@ -97,7 +67,7 @@ export default function SettingsPage() {
     // Import preview state
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [previewData, setPreviewData] = useState<{ detectedHeaders?: string[] } | null>(null);
-    const [previewFile, setPreviewFile] = useState<File | null>(null);
+    const [, setPreviewFile] = useState<File | null>(null);
 
     // Current User State
     const [currentUser, setCurrentUser] = useState<{ id: string, username: string, role: string } | null>(null);
@@ -107,10 +77,7 @@ export default function SettingsPage() {
     const [passMsg, setPassMsg] = useState('');
 
     // AI Settings State
-    const [aiApiKey, setAiApiKey] = useState('');
     const [aiApiKeyVisible, setAiApiKeyVisible] = useState(false);
-    const [aiTestResult, setAiTestResult] = useState<{ status: 'idle' | 'testing' | 'success' | 'error'; message: string }>({ status: 'idle', message: '' });
-    const [savingAiKey, setSavingAiKey] = useState(false);
 
     // Split model lists
     const [cloudModels, setCloudModels] = useState<{ id: string }[]>([]);
@@ -148,7 +115,7 @@ export default function SettingsPage() {
                     setMachineId(data.machineId);
                     setFingerprintHash(data.fingerprintHash);
                 }
-            } catch (e) {
+            } catch {
                 // console.error('Failed to fetch system ID:', e);
             }
         };
@@ -279,7 +246,7 @@ export default function SettingsPage() {
             } else {
                 setMessage({ type: 'error', text: data.error || 'Failed to start watcher' });
             }
-        } catch (e) {
+        } catch {
             setMessage({ type: 'error', text: 'Failed to start watcher' });
         } finally {
             setWatcherLoading(false);
@@ -298,7 +265,7 @@ export default function SettingsPage() {
             } else {
                 setMessage({ type: 'error', text: data.error || 'Failed to stop watcher' });
             }
-        } catch (e) {
+        } catch {
             setMessage({ type: 'error', text: 'Failed to stop watcher' });
         } finally {
             setWatcherLoading(false);
@@ -335,22 +302,6 @@ export default function SettingsPage() {
         }
     };
 
-    const addPresetProduct = (preset: Omit<Product, 'id'>) => {
-        if (config.license && config.products.length >= config.license.maxProductLines) {
-            setMessage({ type: 'error', text: t('licenseLimitReached') });
-            return;
-        }
-
-        const newId = `product_${Date.now()}`;
-        const newProduct: Product = { id: newId, ...preset };
-        const newProducts = [...config.products, newProduct];
-        setConfig({
-            ...config,
-            products: newProducts,
-            activeProductId: config.activeProductId || newId
-        });
-        setEditingProduct(newProduct);
-    };
 
     const addCustomProduct = () => {
         if (config.license && config.products.length >= config.license.maxProductLines) {
@@ -857,8 +808,7 @@ export default function SettingsPage() {
                                                                     const err = await res.json();
                                                                     setMessage({ type: 'error', text: err.error || 'Failed to preview Excel file.' });
                                                                 }
-                                                            } catch (err) {
-                                                                console.error('Excel preview error:', err);
+                                                            } catch {
                                                                 setMessage({ type: 'error', text: 'Failed to process Excel file.' });
                                                             } finally {
                                                                 setDetecting(false);
@@ -924,7 +874,7 @@ export default function SettingsPage() {
                                                                         } else {
                                                                             setMessage({ type: 'error', text: data.error || 'Failed to prepare template' });
                                                                         }
-                                                                    } catch (err) {
+                                                                    } catch {
                                                                         setMessage({ type: 'error', text: 'Failed to prepare template' });
                                                                     } finally {
                                                                         setCreatingTemplate(false);
@@ -957,7 +907,570 @@ export default function SettingsPage() {
 
 
 
+
                                             <div className="mb-6">
+                                                <h4 className="text-sm font-bold text-slate-900 mb-3">{t('ecdCalculationSettings')}</h4>
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg">
+                                                        <div>
+                                                            <p className="font-medium text-slate-900 text-sm">{t('includeSaturday')}</p>
+                                                            <p className="text-xs text-slate-500">{editingProduct.includeSaturday ? t('included') : t('excluded')}</p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => {
+                                                                const updated = { ...editingProduct, includeSaturday: !editingProduct.includeSaturday };
+                                                                setEditingProduct(updated);
+                                                                updateProduct(updated);
+                                                            }}
+                                                            className={`relative w-10 h-6 rounded-full transition-colors ${editingProduct.includeSaturday ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                                                        >
+                                                            <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editingProduct.includeSaturday ? 'left-5' : 'left-1'}`} />
+                                                        </button>
+                                                    </div>
+                                                    <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg">
+                                                        <div>
+                                                            <p className="font-medium text-slate-900 text-sm">{t('includeSunday')}</p>
+                                                            <p className="text-xs text-slate-500">{editingProduct.includeSunday ? t('included') : t('excluded')}</p>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => {
+                                                                const updated = { ...editingProduct, includeSunday: !editingProduct.includeSunday };
+                                                                setEditingProduct(updated);
+                                                                updateProduct(updated);
+                                                            }}
+                                                            className={`relative w-10 h-6 rounded-full transition-colors ${editingProduct.includeSunday ? 'bg-indigo-600' : 'bg-slate-300'}`}
+                                                        >
+                                                            <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editingProduct.includeSunday ? 'left-5' : 'left-1'}`} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Shift Configuration */}
+                                            <div className="mb-6">
+                                                <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                                                    <Clock className="w-4 h-4 text-indigo-600" />
+                                                    {t('shiftConfiguration')}
+                                                </h4>
+
+                                                <div className="bg-white border border-slate-200 rounded-lg p-4">
+                                                    <p className="text-sm text-slate-500 mb-4">{t('shiftHelp')}</p>
+
+                                                    <div className="space-y-3">
+                                                        {(editingProduct.shifts || []).map((shift, index) => (
+                                                            <div key={index} className="flex gap-2 items-center">
+                                                                <input
+                                                                    value={shift.name}
+                                                                    onChange={(e) => {
+                                                                        const shifts = [...(editingProduct.shifts || [])];
+                                                                        shifts[index] = { ...shifts[index], name: e.target.value };
+                                                                        const updated = { ...editingProduct, shifts };
+                                                                        setEditingProduct(updated);
+                                                                        updateProduct(updated);
+                                                                    }}
+                                                                    placeholder={t('shiftName')}
+                                                                    className="flex-1 px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-900"
+                                                                />
+                                                                <input
+                                                                    type="time"
+                                                                    value={shift.start}
+                                                                    onChange={(e) => {
+                                                                        const shifts = [...(editingProduct.shifts || [])];
+                                                                        shifts[index] = { ...shifts[index], start: e.target.value };
+                                                                        const updated = { ...editingProduct, shifts };
+                                                                        setEditingProduct(updated);
+                                                                        updateProduct(updated);
+                                                                    }}
+                                                                    className="w-24 px-2 py-2 border border-slate-200 rounded-md text-sm text-slate-900"
+                                                                />
+                                                                <span className="text-slate-400">-</span>
+                                                                <input
+                                                                    type="time"
+                                                                    value={shift.end}
+                                                                    onChange={(e) => {
+                                                                        const shifts = [...(editingProduct.shifts || [])];
+                                                                        shifts[index] = { ...shifts[index], end: e.target.value };
+                                                                        const updated = { ...editingProduct, shifts };
+                                                                        setEditingProduct(updated);
+                                                                        updateProduct(updated);
+                                                                    }}
+                                                                    className="w-24 px-2 py-2 border border-slate-200 rounded-md text-sm text-slate-900"
+                                                                />
+                                                                <button
+                                                                    onClick={() => {
+                                                                        const shifts = editingProduct.shifts?.filter((_, i) => i !== index);
+                                                                        const updated = { ...editingProduct, shifts };
+                                                                        setEditingProduct(updated);
+                                                                        updateProduct(updated);
+                                                                    }}
+                                                                    className="p-2 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-colors"
+                                                                >
+                                                                    <Trash2 className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+
+                                                    <button
+                                                        onClick={() => {
+                                                            const newShift = { name: `Shift ${(editingProduct.shifts?.length || 0) + 1}`, start: '08:00', end: '16:00' };
+                                                            const updated = { ...editingProduct, shifts: [...(editingProduct.shifts || []), newShift] };
+                                                            setEditingProduct(updated);
+                                                            updateProduct(updated);
+                                                        }}
+                                                        className="mt-3 text-sm text-indigo-600 font-medium flex items-center gap-1 hover:text-indigo-700"
+                                                    >
+                                                        <Plus className="w-4 h-4" /> {t('addShift')}
+                                                    </button>
+
+                                                    <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-3">
+                                                        <label className="text-sm font-medium text-slate-700">
+                                                            {t('overtimeThreshold')}
+                                                        </label>
+                                                        <input
+                                                            type="number"
+                                                            value={editingProduct.overtimeThreshold !== undefined ? editingProduct.overtimeThreshold : 30}
+                                                            onChange={(e) => {
+                                                                const val = parseInt(e.target.value) || 0;
+                                                                const updated = { ...editingProduct, overtimeThreshold: val };
+                                                                setEditingProduct(updated);
+                                                                updateProduct(updated);
+                                                            }}
+                                                            className="w-20 px-3 py-1.5 border border-slate-200 rounded-md text-sm text-slate-900"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Auto-Import Watch Folder */}
+                                            <div className="mb-6">
+                                                <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+                                                    <RefreshCw className="w-4 h-4 text-green-600" />
+                                                    {t('automaticExcelImport')}
+                                                </h4>
+                                                <div className="bg-green-50 p-4 rounded-xl border border-green-200">
+                                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                                                        {t('watchFolderPath')}
+                                                    </label>
+                                                    <input
+                                                        type="text"
+                                                        value={editingProduct.watchFolder || ''}
+                                                        onChange={(e) => {
+                                                            const updated = { ...editingProduct, watchFolder: e.target.value };
+                                                            setEditingProduct(updated);
+                                                            updateProduct(updated);
+                                                        }}
+                                                        placeholder={t('watchFolderPlaceholder')}
+                                                        className="w-full px-4 py-2.5 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-200 text-sm text-slate-800 font-mono bg-white shadow-sm"
+                                                    />
+                                                    <p className="text-xs text-green-700 mt-2 mb-3">
+                                                        {t('watchFolderHelp')}
+                                                    </p>
+
+                                                    {/* Watcher Status and Controls */}
+                                                    <div className="mt-4 p-4 bg-white rounded-lg border border-green-200 shadow-sm">
+                                                        <div className="flex items-center justify-between">
+                                                            <div className="flex items-center gap-3">
+                                                                <div className={`w-2.5 h-2.5 rounded-full ${watcherRunning ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`} />
+                                                                <span className="text-sm font-medium text-slate-700">
+                                                                    {t('status')}: {watcherRunning ? t('running') : t('stopped')}
+                                                                </span>
+                                                                {watcherPid && (
+                                                                    <span className="text-xs text-slate-500 font-mono">PID: {watcherPid}</span>
+                                                                )}
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    onClick={fetchWatcherStatus}
+                                                                    disabled={watcherLoading}
+                                                                    className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors disabled:opacity-50"
+                                                                    title={t('refreshStatus')}
+                                                                >
+                                                                    <RefreshCw className={`w-4 h-4 ${watcherLoading ? 'animate-spin' : ''}`} />
+                                                                </button>
+                                                                {watcherRunning ? (
+                                                                    <button
+                                                                        onClick={stopWatcher}
+                                                                        disabled={watcherLoading}
+                                                                        className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 disabled:opacity-50 flex items-center gap-2 shadow-sm transition-all"
+                                                                    >
+                                                                        <X className="w-4 h-4" />
+                                                                        {t('stopWatcher')}
+                                                                    </button>
+                                                                ) : (
+                                                                    <button
+                                                                        onClick={startWatcher}
+                                                                        disabled={watcherLoading || !editingProduct?.watchFolder}
+                                                                        className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-500 disabled:opacity-50 flex items-center gap-2 shadow-sm transition-all"
+                                                                        title={!editingProduct?.watchFolder ? t('setWatchFolderPathFirst') : ''}
+                                                                    >
+                                                                        <Play className="w-4 h-4" />
+                                                                        {t('startWatcher')}
+                                                                    </button>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex flex-col gap-8 mt-6 pt-6 border-t border-slate-200">
+                                                {/* Detail Columns Management */}
+                                                <div>
+                                                    <label className="block text-sm font-bold text-slate-900 mb-2">
+                                                        {t('detailColumns')}
+                                                    </label>
+                                                    <p className="text-xs text-slate-500 mb-3">
+                                                        {t('detailColumnsHelp')}
+                                                        <span className="block mt-1 text-[10px] text-slate-400">
+                                                            <Eye className="w-3 h-3 inline mr-1 text-green-600" />{t('visibleToAI')} | <EyeOff className="w-3 h-3 inline mr-1 text-slate-400" />{t('hidden')}
+                                                        </span>
+                                                    </p>
+
+                                                    {/* Add Detail Column Input */}
+                                                    <div className="flex gap-2 mb-2">
+                                                        <input
+                                                            type="text"
+                                                            value={newDetailColumnName}
+                                                            onChange={(e) => setNewDetailColumnName(e.target.value)}
+                                                            onKeyDown={(e) => e.key === 'Enter' && addManualDetailColumn()}
+                                                            className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm text-black font-medium"
+                                                            placeholder={t('columnNamePlaceholder')}
+                                                        />
+                                                        <button
+                                                            onClick={addManualDetailColumn}
+                                                            disabled={!newDetailColumnName.trim()}
+                                                            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50"
+                                                        >
+                                                            <Plus className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Detail Columns List - Double-click to rename */}
+                                                    <p className="text-[10px] text-amber-600 mb-2">💡 {t('doubleClickToRename') || 'Double-click column name to rename (data will be migrated)'}</p>
+                                                    <div className="bg-white border border-slate-200 rounded-lg p-1 min-h-[100px] max-h-[400px] overflow-y-auto space-y-1">
+                                                        {editingProduct.detailColumns.map((col, index) => (
+                                                            <div key={`${col}-${index}`} className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-100 rounded-md group hover:bg-blue-100 transition-colors">
+                                                                <div className="flex flex-col gap-0.5">
+                                                                    <button onClick={() => moveDetailColumn(index, 'up')} disabled={index === 0} className="text-blue-500 hover:text-blue-700 disabled:text-slate-300 disabled:cursor-not-allowed"><ChevronUp className="w-4 h-4" /></button>
+                                                                    <button onClick={() => moveDetailColumn(index, 'down')} disabled={index === editingProduct.detailColumns.length - 1} className="text-blue-500 hover:text-blue-700 disabled:text-slate-300 disabled:cursor-not-allowed"><ChevronDown className="w-4 h-4" /></button>
+                                                                </div>
+                                                                <span className="text-xs font-mono text-blue-500 w-5 text-center">{index + 1}</span>
+
+                                                                {/* Editable column name */}
+                                                                {editingColumnIndex === index ? (
+                                                                    <input
+                                                                        type="text"
+                                                                        value={editingColumnValue}
+                                                                        onChange={(e) => setEditingColumnValue(e.target.value)}
+                                                                        onBlur={() => {
+                                                                            if (editingColumnValue.trim() && editingColumnValue !== col) {
+                                                                                renameAndMigrateColumn(index, col, editingColumnValue.trim());
+                                                                            } else {
+                                                                                setEditingColumnIndex(null);
+                                                                            }
+                                                                        }}
+                                                                        onKeyDown={(e) => {
+                                                                            if (e.key === 'Enter') {
+                                                                                if (editingColumnValue.trim() && editingColumnValue !== col) {
+                                                                                    renameAndMigrateColumn(index, col, editingColumnValue.trim());
+                                                                                } else {
+                                                                                    setEditingColumnIndex(null);
+                                                                                }
+                                                                            } else if (e.key === 'Escape') {
+                                                                                setEditingColumnIndex(null);
+                                                                            }
+                                                                        }}
+                                                                        autoFocus
+                                                                        disabled={migrating}
+                                                                        className="flex-1 px-2 py-1 text-sm font-medium text-slate-900 border border-blue-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
+                                                                    />
+                                                                ) : (
+                                                                    <div
+                                                                        className="flex-1 text-sm font-medium text-slate-700 truncate cursor-pointer hover:text-blue-600"
+                                                                        onDoubleClick={() => {
+                                                                            setEditingColumnIndex(index);
+                                                                            setEditingColumnValue(col);
+                                                                        }}
+                                                                        title={t('doubleClickToRename') || 'Double-click to rename'}
+                                                                    >
+                                                                        {col}
+                                                                    </div>
+                                                                )}
+
+                                                                {/* AI Visibility Toggle */}
+                                                                <button
+                                                                    onClick={() => {
+                                                                        // If currently undefined, it means ALL are visible (implicit). So initializing means we must be careful.
+                                                                        // Actually, if we want to "Hide" this one, we should add ALL OTHERS to visible list (if list was empty/undefined).
+                                                                        // Simplified approach: If undefined, assume all are visible.
+                                                                        // To toggle this OFF, we need to populate the list with ALL except this one.
+
+                                                                        let newVisible: string[];
+
+                                                                        if (!editingProduct.aiVisibleColumns) {
+                                                                            // Initial state: All visible. Toggle OFF means:
+                                                                            newVisible = editingProduct.detailColumns.filter(c => c !== col);
+                                                                        } else {
+                                                                            if (editingProduct.aiVisibleColumns.includes(col)) {
+                                                                                // Toggle OFF
+                                                                                newVisible = editingProduct.aiVisibleColumns.filter(c => c !== col);
+                                                                            } else {
+                                                                                // Toggle ON
+                                                                                newVisible = [...editingProduct.aiVisibleColumns, col];
+                                                                            }
+                                                                        }
+
+                                                                        const updated = { ...editingProduct, aiVisibleColumns: newVisible };
+                                                                        setEditingProduct(updated);
+                                                                        updateProduct(updated);
+                                                                    }}
+                                                                    className="p-1 hover:bg-white rounded transition-colors"
+                                                                    title={(!editingProduct.aiVisibleColumns || editingProduct.aiVisibleColumns.includes(col)) ? t('visibleToAI') : t('hiddenFromAI')}
+                                                                >
+                                                                    {(!editingProduct.aiVisibleColumns || editingProduct.aiVisibleColumns.includes(col))
+                                                                        ? <Eye className="w-4 h-4 text-green-600" />
+                                                                        : <EyeOff className="w-4 h-4 text-slate-400" />
+                                                                    }
+                                                                </button>
+
+                                                                <button onClick={() => deleteDetailColumn(col)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-4 h-4" /></button>
+                                                            </div>
+                                                        ))}
+                                                        {editingProduct.detailColumns.length === 0 && (
+                                                            <div className="text-center py-8 text-slate-400 text-sm italic">{t('noDetailColumns')}</div>
+                                                        )}
+                                                    </div>
+                                                </div>
+
+                                                {/* Process Steps Management */}
+                                                <div className="pt-6 border-t border-slate-100">
+                                                    <label className="block text-sm font-bold text-slate-900 mb-2">
+                                                        {t('processSteps')}
+                                                    </label>
+                                                    <p className="text-xs text-slate-500 mb-3">
+                                                        {t('processStepsHelp')}
+                                                        <span className="block mt-1 text-[10px] text-slate-400">
+                                                            <Eye className="w-3 h-3 inline mr-1 text-green-600" />{t('visibleToAI')} | <EyeOff className="w-3 h-3 inline mr-1 text-slate-400" />{t('hidden')}
+                                                        </span>
+                                                    </p>
+
+                                                    {/* Add Step Input */}
+                                                    <div className="flex gap-2 mb-3">
+                                                        <input
+                                                            type="text"
+                                                            value={newStepName}
+                                                            onChange={(e) => setNewStepName(e.target.value)}
+                                                            onKeyDown={(e) => e.key === 'Enter' && addManualStep()}
+                                                            className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm text-black font-medium"
+                                                            placeholder={t('stepNamePlaceholder')}
+                                                        />
+                                                        <button
+                                                            onClick={addManualStep}
+                                                            disabled={!newStepName.trim()}
+                                                            className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 disabled:opacity-50"
+                                                        >
+                                                            <Plus className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Steps List */}
+                                                    <div className="bg-white border border-slate-200 rounded-lg p-1 min-h-[100px] max-h-[400px] overflow-y-auto space-y-1">
+                                                        {/* Header Row */}
+                                                        <div className="grid grid-cols-12 gap-2 p-2 items-center bg-slate-50 border-b border-slate-100 rounded-t-md sticky top-0 z-10 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                                            <div className="col-span-1"></div>
+                                                            <div className="col-span-3">{t('stepName')}</div>
+                                                            <div className="col-span-2 text-center">{t('quantity')}</div>
+                                                            <div className="col-span-2 text-center flex items-center justify-center gap-1"><Users size={12} /> {tDash('staff')}</div>
+                                                            <div className="col-span-2 text-center flex items-center justify-center gap-1"><Monitor size={12} /> {tDash('machine')}</div>
+                                                            <div className="col-span-1 text-center">{t('hours')}</div>
+                                                            <div className="col-span-1"></div>
+                                                        </div>
+
+                                                        {editingProduct.steps.map((step, index) => (
+                                                            <div key={step} className="grid grid-cols-12 gap-2 p-1.5 items-center bg-white border border-slate-100 rounded-md group hover:bg-slate-50 transition-colors">
+                                                                {/* Move Buttons - Col 1 */}
+                                                                <div className="col-span-1 flex flex-col items-center justify-center gap-0.5">
+                                                                    <button onClick={() => moveStep(index, 'up')} disabled={index === 0} className="text-indigo-500 hover:text-indigo-700 disabled:text-slate-300 disabled:cursor-not-allowed"><ChevronUp className="w-4 h-4" /></button>
+                                                                    <button onClick={() => moveStep(index, 'down')} disabled={index === editingProduct.steps.length - 1} className="text-indigo-500 hover:text-indigo-700 disabled:text-slate-300 disabled:cursor-not-allowed"><ChevronDown className="w-4 h-4" /></button>
+                                                                </div>
+
+                                                                <div className="col-span-3 flex items-center gap-1 min-w-0">
+                                                                    <span className="text-xs font-mono text-slate-400 w-5 text-center flex-shrink-0">{index + 1}</span>
+                                                                    {editingStepIndex === index ? (
+                                                                        <div className="flex-1 relative">
+                                                                            <input
+                                                                                autoFocus
+                                                                                type="text"
+                                                                                className="w-full text-sm font-medium border border-indigo-300 rounded px-1 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-200 text-slate-900 bg-white"
+                                                                                value={editingStepValue}
+                                                                                onChange={(e) => setEditingStepValue(e.target.value)}
+                                                                                onBlur={() => renameAndMigrateStep(index, step, editingStepValue)}
+                                                                                onKeyDown={(e) => {
+                                                                                    if (e.key === 'Enter') renameAndMigrateStep(index, step, editingStepValue);
+                                                                                    if (e.key === 'Escape') setEditingStepIndex(null);
+                                                                                }}
+                                                                                disabled={migrating}
+                                                                            />
+                                                                            {migrating && (
+                                                                                <div className="absolute right-2 top-1.5 animate-spin">
+                                                                                    <RefreshCw className="w-3 h-3 text-indigo-500" />
+                                                                                </div>
+                                                                            )}
+                                                                        </div>
+                                                                    ) : (
+                                                                        <div
+                                                                            className="text-sm font-medium text-slate-700 truncate cursor-pointer hover:text-indigo-600 hover:bg-slate-100 px-1 rounded border border-transparent hover:border-slate-200"
+                                                                            title={`${step} (${t('renameColumn')})`}
+                                                                            onDoubleClick={() => {
+                                                                                setEditingStepIndex(index);
+                                                                                setEditingStepValue(step);
+                                                                            }}
+                                                                        >
+                                                                            {step}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Quantity & Unit - Col 2 */}
+                                                                <div className="col-span-2 flex items-center gap-1">
+                                                                    <input
+                                                                        type="number"
+                                                                        placeholder={t('targetQuantity')}
+                                                                        value={editingProduct.stepQuantities?.[step] !== undefined ? editingProduct.stepQuantities[step] : ''}
+                                                                        onChange={(e) => {
+                                                                            const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
+                                                                            const newQtys = { ...editingProduct.stepQuantities };
+                                                                            if (val === undefined) delete newQtys[step];
+                                                                            else newQtys[step] = val;
+
+                                                                            const updated = { ...editingProduct, stepQuantities: newQtys };
+                                                                            setEditingProduct(updated);
+                                                                            updateProduct(updated);
+                                                                        }}
+                                                                        className="w-full min-w-0 px-2 py-1 text-right text-xs border border-slate-200 rounded text-slate-900 placeholder:text-slate-300"
+                                                                        title={t('targetQuantity')}
+                                                                    />
+                                                                    <input
+                                                                        type="text"
+                                                                        placeholder={t('unit')}
+                                                                        value={editingProduct.stepUnits?.[step] || ''}
+                                                                        onChange={(e) => {
+                                                                            const val = e.target.value;
+                                                                            const newUnits = { ...editingProduct.stepUnits, [step]: val };
+                                                                            const updated = { ...editingProduct, stepUnits: newUnits };
+                                                                            setEditingProduct(updated);
+                                                                            updateProduct(updated);
+                                                                        }}
+                                                                        className="w-12 flex-shrink-0 px-1 py-1 text-xs border border-slate-200 rounded text-slate-900 placeholder:text-slate-300 text-center"
+                                                                        title={t('unit')}
+                                                                    />
+                                                                </div>
+
+                                                                {/* Staff Count - Col 2 */}
+                                                                <div className="col-span-2">
+                                                                    <input
+                                                                        type="number"
+                                                                        min="0"
+                                                                        placeholder="Staff"
+                                                                        value={editingProduct.stepStaffCounts?.[step] !== undefined ? editingProduct.stepStaffCounts[step] : ''}
+                                                                        onChange={(e) => {
+                                                                            const val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                                                                            const newStaff = { ...editingProduct.stepStaffCounts };
+                                                                            if (val === undefined) delete newStaff[step];
+                                                                            else newStaff[step] = val;
+                                                                            const updated = { ...editingProduct, stepStaffCounts: newStaff };
+                                                                            setEditingProduct(updated);
+                                                                            updateProduct(updated);
+                                                                        }}
+                                                                        className="w-full px-2 py-1 text-center text-xs border border-slate-200 rounded text-slate-800 focus:ring-1 focus:ring-indigo-300 outline-none"
+                                                                    />
+                                                                </div>
+
+                                                                {/* Machine Count - Col 2 */}
+                                                                <div className="col-span-2">
+                                                                    <input
+                                                                        type="number"
+                                                                        min="0"
+                                                                        placeholder="Machine"
+                                                                        value={editingProduct.stepMachineCounts?.[step] !== undefined ? editingProduct.stepMachineCounts[step] : ''}
+                                                                        onChange={(e) => {
+                                                                            const val = e.target.value === '' ? undefined : parseInt(e.target.value);
+                                                                            const newMachines = { ...editingProduct.stepMachineCounts };
+                                                                            if (val === undefined) delete newMachines[step];
+                                                                            else newMachines[step] = val;
+                                                                            const updated = { ...editingProduct, stepMachineCounts: newMachines };
+                                                                            setEditingProduct(updated);
+                                                                            updateProduct(updated);
+                                                                        }}
+                                                                        className="w-full px-2 py-1 text-center text-xs border border-slate-200 rounded text-slate-800 focus:ring-1 focus:ring-indigo-300 outline-none"
+                                                                    />
+                                                                </div>
+
+                                                                {/* Duration - Col 1 */}
+                                                                <div className="col-span-1 flex items-center gap-1">
+                                                                    <input
+                                                                        type="number"
+                                                                        min="0"
+                                                                        step="0.5"
+                                                                        value={editingProduct.stepDurations?.[step] || 0}
+                                                                        onChange={(e) => {
+                                                                            const val = parseFloat(e.target.value) || 0;
+                                                                            const newDurations = { ...editingProduct.stepDurations, [step]: val };
+                                                                            const updated = { ...editingProduct, stepDurations: newDurations };
+                                                                            setEditingProduct(updated);
+                                                                            updateProduct(updated);
+                                                                        }}
+                                                                        className="w-full min-w-0 px-2 py-1 text-right text-xs text-black font-medium border border-slate-200 rounded bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                                                                        title={t('hours')}
+                                                                    />
+                                                                </div>
+
+                                                                {/* Actions - Col 1 */}
+                                                                <div className="col-span-1 flex items-center justify-end gap-1">
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            // Logic same as columns: If undefined, all visible.
+                                                                            let newVisible: string[];
+                                                                            if (!editingProduct.aiVisibleSteps) {
+                                                                                newVisible = editingProduct.steps.filter(s => s !== step);
+                                                                            } else {
+                                                                                if (editingProduct.aiVisibleSteps.includes(step)) {
+                                                                                    newVisible = editingProduct.aiVisibleSteps.filter(s => s !== step);
+                                                                                } else {
+                                                                                    newVisible = [...editingProduct.aiVisibleSteps, step];
+                                                                                }
+                                                                            }
+                                                                            const updated = { ...editingProduct, aiVisibleSteps: newVisible };
+                                                                            setEditingProduct(updated);
+                                                                            updateProduct(updated);
+                                                                        }}
+                                                                        className="p-1 hover:bg-slate-100 rounded transition-colors"
+                                                                        title={(!editingProduct.aiVisibleSteps || editingProduct.aiVisibleSteps.includes(step)) ? t('visibleToAI') : t('hiddenFromAI')}
+                                                                    >
+                                                                        {(!editingProduct.aiVisibleSteps || editingProduct.aiVisibleSteps.includes(step))
+                                                                            ? <Eye className="w-4 h-4 text-green-600" />
+                                                                            : <EyeOff className="w-4 h-4 text-slate-400" />
+                                                                        }
+                                                                    </button>
+
+                                                                    <button onClick={() => deleteStep(step)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-4 h-4" /></button>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                        {editingProduct.steps.length === 0 && (
+                                                            <div className="text-center py-8 text-slate-400 text-sm italic">{t('noStepsDefined')}</div>
+                                                        )}
+                                                    </div>
+
+                                                </div>
+                                            </div>
+
+
+
+
+                                            {/* AI Assistant Settings (Moved to bottom) */}
+                                            <div className="mb-6 mt-6 pt-6 border-t border-slate-200">
                                                 <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
                                                     <Bot className="w-4 h-4 text-indigo-600" />
                                                     {t('aiAssistantSettings')}
@@ -1134,518 +1647,6 @@ export default function SettingsPage() {
                                                 </div>
                                             </div>
 
-                                            <div className="mb-6">
-                                                <h4 className="text-sm font-bold text-slate-900 mb-3">{t('ecdCalculationSettings')}</h4>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg">
-                                                        <div>
-                                                            <p className="font-medium text-slate-900 text-sm">{t('includeSaturday')}</p>
-                                                            <p className="text-xs text-slate-500">{editingProduct.includeSaturday ? t('included') : t('excluded')}</p>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => {
-                                                                const updated = { ...editingProduct, includeSaturday: !editingProduct.includeSaturday };
-                                                                setEditingProduct(updated);
-                                                                updateProduct(updated);
-                                                            }}
-                                                            className={`relative w-10 h-6 rounded-full transition-colors ${editingProduct.includeSaturday ? 'bg-indigo-600' : 'bg-slate-300'}`}
-                                                        >
-                                                            <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editingProduct.includeSaturday ? 'left-5' : 'left-1'}`} />
-                                                        </button>
-                                                    </div>
-                                                    <div className="flex items-center justify-between p-3 bg-white border border-slate-200 rounded-lg">
-                                                        <div>
-                                                            <p className="font-medium text-slate-900 text-sm">{t('includeSunday')}</p>
-                                                            <p className="text-xs text-slate-500">{editingProduct.includeSunday ? t('included') : t('excluded')}</p>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => {
-                                                                const updated = { ...editingProduct, includeSunday: !editingProduct.includeSunday };
-                                                                setEditingProduct(updated);
-                                                                updateProduct(updated);
-                                                            }}
-                                                            className={`relative w-10 h-6 rounded-full transition-colors ${editingProduct.includeSunday ? 'bg-indigo-600' : 'bg-slate-300'}`}
-                                                        >
-                                                            <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${editingProduct.includeSunday ? 'left-5' : 'left-1'}`} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Shift Configuration */}
-                                            <div className="mb-6">
-                                                <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                                                    <Clock className="w-4 h-4 text-indigo-600" />
-                                                    {t('shiftConfiguration')}
-                                                </h4>
-
-                                                <div className="bg-white border border-slate-200 rounded-lg p-4">
-                                                    <p className="text-sm text-slate-500 mb-4">{t('shiftHelp')}</p>
-
-                                                    <div className="space-y-3">
-                                                        {(editingProduct.shifts || []).map((shift, index) => (
-                                                            <div key={index} className="flex gap-2 items-center">
-                                                                <input
-                                                                    value={shift.name}
-                                                                    onChange={(e) => {
-                                                                        const shifts = [...(editingProduct.shifts || [])];
-                                                                        shifts[index] = { ...shifts[index], name: e.target.value };
-                                                                        const updated = { ...editingProduct, shifts };
-                                                                        setEditingProduct(updated);
-                                                                        updateProduct(updated);
-                                                                    }}
-                                                                    placeholder={t('shiftName')}
-                                                                    className="flex-1 px-3 py-2 border border-slate-200 rounded-md text-sm text-slate-900"
-                                                                />
-                                                                <input
-                                                                    type="time"
-                                                                    value={shift.start}
-                                                                    onChange={(e) => {
-                                                                        const shifts = [...(editingProduct.shifts || [])];
-                                                                        shifts[index] = { ...shifts[index], start: e.target.value };
-                                                                        const updated = { ...editingProduct, shifts };
-                                                                        setEditingProduct(updated);
-                                                                        updateProduct(updated);
-                                                                    }}
-                                                                    className="w-24 px-2 py-2 border border-slate-200 rounded-md text-sm text-slate-900"
-                                                                />
-                                                                <span className="text-slate-400">-</span>
-                                                                <input
-                                                                    type="time"
-                                                                    value={shift.end}
-                                                                    onChange={(e) => {
-                                                                        const shifts = [...(editingProduct.shifts || [])];
-                                                                        shifts[index] = { ...shifts[index], end: e.target.value };
-                                                                        const updated = { ...editingProduct, shifts };
-                                                                        setEditingProduct(updated);
-                                                                        updateProduct(updated);
-                                                                    }}
-                                                                    className="w-24 px-2 py-2 border border-slate-200 rounded-md text-sm text-slate-900"
-                                                                />
-                                                                <button
-                                                                    onClick={() => {
-                                                                        const shifts = editingProduct.shifts?.filter((_, i) => i !== index);
-                                                                        const updated = { ...editingProduct, shifts };
-                                                                        setEditingProduct(updated);
-                                                                        updateProduct(updated);
-                                                                    }}
-                                                                    className="p-2 text-slate-400 hover:text-red-500 rounded-md hover:bg-red-50 transition-colors"
-                                                                >
-                                                                    <Trash2 className="w-4 h-4" />
-                                                                </button>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-
-                                                    <button
-                                                        onClick={() => {
-                                                            const newShift = { name: `Shift ${(editingProduct.shifts?.length || 0) + 1}`, start: '08:00', end: '16:00' };
-                                                            const updated = { ...editingProduct, shifts: [...(editingProduct.shifts || []), newShift] };
-                                                            setEditingProduct(updated);
-                                                            updateProduct(updated);
-                                                        }}
-                                                        className="mt-3 text-sm text-indigo-600 font-medium flex items-center gap-1 hover:text-indigo-700"
-                                                    >
-                                                        <Plus className="w-4 h-4" /> {t('addShift')}
-                                                    </button>
-
-                                                    <div className="mt-4 pt-4 border-t border-slate-100 flex items-center gap-3">
-                                                        <label className="text-sm font-medium text-slate-700">
-                                                            {t('overtimeThreshold')}
-                                                        </label>
-                                                        <input
-                                                            type="number"
-                                                            value={editingProduct.overtimeThreshold !== undefined ? editingProduct.overtimeThreshold : 30}
-                                                            onChange={(e) => {
-                                                                const val = parseInt(e.target.value) || 0;
-                                                                const updated = { ...editingProduct, overtimeThreshold: val };
-                                                                setEditingProduct(updated);
-                                                                updateProduct(updated);
-                                                            }}
-                                                            className="w-20 px-3 py-1.5 border border-slate-200 rounded-md text-sm text-slate-900"
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Auto-Import Watch Folder */}
-                                            <div className="mb-6">
-                                                <h4 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                                                    <RefreshCw className="w-4 h-4 text-green-600" />
-                                                    {t('automaticExcelImport')}
-                                                </h4>
-                                                <div className="bg-green-50 p-4 rounded-xl border border-green-200">
-                                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                                                        {t('watchFolderPath')}
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        value={editingProduct.watchFolder || ''}
-                                                        onChange={(e) => {
-                                                            const updated = { ...editingProduct, watchFolder: e.target.value };
-                                                            setEditingProduct(updated);
-                                                            updateProduct(updated);
-                                                        }}
-                                                        placeholder={t('watchFolderPlaceholder')}
-                                                        className="w-full px-4 py-2.5 border border-green-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-200 text-sm text-slate-800 font-mono bg-white shadow-sm"
-                                                    />
-                                                    <p className="text-xs text-green-700 mt-2 mb-3">
-                                                        {t('watchFolderHelp')}
-                                                    </p>
-
-                                                    {/* Watcher Status and Controls */}
-                                                    <div className="mt-4 p-4 bg-white rounded-lg border border-green-200 shadow-sm">
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className={`w-2.5 h-2.5 rounded-full ${watcherRunning ? 'bg-green-500 animate-pulse' : 'bg-slate-300'}`} />
-                                                                    <span className="text-sm font-medium text-slate-700">
-                                                                        {t('status')}: {watcherRunning ? t('running') : t('stopped')}
-                                                                    </span>
-                                                                </div>
-                                                                {watcherPid && (
-                                                                    <span className="text-xs text-slate-500 font-mono">PID: {watcherPid}</span>
-                                                                )}
-                                                            </div>
-                                                            <div className="flex items-center gap-2">
-                                                                <button
-                                                                    onClick={fetchWatcherStatus}
-                                                                    disabled={watcherLoading}
-                                                                    className="p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-50 rounded-lg transition-colors disabled:opacity-50"
-                                                                    title={t('refreshStatus')}
-                                                                >
-                                                                    <RefreshCw className={`w-4 h-4 ${watcherLoading ? 'animate-spin' : ''}`} />
-                                                                </button>
-                                                                {watcherRunning ? (
-                                                                    <button
-                                                                        onClick={stopWatcher}
-                                                                        disabled={watcherLoading}
-                                                                        className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 disabled:opacity-50 flex items-center gap-2 shadow-sm transition-all"
-                                                                    >
-                                                                        <X className="w-4 h-4" />
-                                                                        {t('stopWatcher')}
-                                                                    </button>
-                                                                ) : (
-                                                                    <button
-                                                                        onClick={startWatcher}
-                                                                        disabled={watcherLoading || !editingProduct?.watchFolder}
-                                                                        className="px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-500 disabled:opacity-50 flex items-center gap-2 shadow-sm transition-all"
-                                                                        title={!editingProduct?.watchFolder ? t('setWatchFolderPathFirst') : ''}
-                                                                    >
-                                                                        <Play className="w-4 h-4" />
-                                                                        {t('startWatcher')}
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-slate-200">
-                                                {/* Detail Columns Management */}
-                                                <div className="md:col-span-1">
-                                                    <label className="block text-sm font-bold text-slate-900 mb-2">
-                                                        {t('detailColumns')}
-                                                    </label>
-                                                    <p className="text-xs text-slate-500 mb-3">
-                                                        {t('detailColumnsHelp')}
-                                                        <span className="block mt-1 text-[10px] text-slate-400">
-                                                            <Eye className="w-3 h-3 inline mr-1 text-green-600" />{t('visibleToAI')} | <EyeOff className="w-3 h-3 inline mr-1 text-slate-400" />{t('hidden')}
-                                                        </span>
-                                                    </p>
-
-                                                    {/* Add Detail Column Input */}
-                                                    <div className="flex gap-2 mb-2">
-                                                        <input
-                                                            type="text"
-                                                            value={newDetailColumnName}
-                                                            onChange={(e) => setNewDetailColumnName(e.target.value)}
-                                                            onKeyDown={(e) => e.key === 'Enter' && addManualDetailColumn()}
-                                                            className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm text-black font-medium"
-                                                            placeholder={t('columnNamePlaceholder')}
-                                                        />
-                                                        <button
-                                                            onClick={addManualDetailColumn}
-                                                            disabled={!newDetailColumnName.trim()}
-                                                            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-500 disabled:opacity-50"
-                                                        >
-                                                            <Plus className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-
-                                                    {/* Detail Columns List - Double-click to rename */}
-                                                    <p className="text-[10px] text-amber-600 mb-2">💡 {t('doubleClickToRename') || 'Double-click column name to rename (data will be migrated)'}</p>
-                                                    <div className="bg-white border border-slate-200 rounded-lg p-1 min-h-[100px] max-h-[400px] overflow-y-auto space-y-1">
-                                                        {editingProduct.detailColumns.map((col, index) => (
-                                                            <div key={`${col}-${index}`} className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-100 rounded-md group hover:bg-blue-100 transition-colors">
-                                                                <div className="flex flex-col gap-0.5">
-                                                                    <button onClick={() => moveDetailColumn(index, 'up')} disabled={index === 0} className="text-blue-500 hover:text-blue-700 disabled:text-slate-300 disabled:cursor-not-allowed"><ChevronUp className="w-4 h-4" /></button>
-                                                                    <button onClick={() => moveDetailColumn(index, 'down')} disabled={index === editingProduct.detailColumns.length - 1} className="text-blue-500 hover:text-blue-700 disabled:text-slate-300 disabled:cursor-not-allowed"><ChevronDown className="w-4 h-4" /></button>
-                                                                </div>
-                                                                <span className="text-xs font-mono text-blue-500 w-5 text-center">{index + 1}</span>
-
-                                                                {/* Editable column name */}
-                                                                {editingColumnIndex === index ? (
-                                                                    <input
-                                                                        type="text"
-                                                                        value={editingColumnValue}
-                                                                        onChange={(e) => setEditingColumnValue(e.target.value)}
-                                                                        onBlur={() => {
-                                                                            if (editingColumnValue.trim() && editingColumnValue !== col) {
-                                                                                renameAndMigrateColumn(index, col, editingColumnValue.trim());
-                                                                            } else {
-                                                                                setEditingColumnIndex(null);
-                                                                            }
-                                                                        }}
-                                                                        onKeyDown={(e) => {
-                                                                            if (e.key === 'Enter') {
-                                                                                if (editingColumnValue.trim() && editingColumnValue !== col) {
-                                                                                    renameAndMigrateColumn(index, col, editingColumnValue.trim());
-                                                                                } else {
-                                                                                    setEditingColumnIndex(null);
-                                                                                }
-                                                                            } else if (e.key === 'Escape') {
-                                                                                setEditingColumnIndex(null);
-                                                                            }
-                                                                        }}
-                                                                        autoFocus
-                                                                        disabled={migrating}
-                                                                        className="flex-1 px-2 py-1 text-sm font-medium text-slate-900 border border-blue-300 rounded bg-white focus:outline-none focus:ring-2 focus:ring-blue-400"
-                                                                    />
-                                                                ) : (
-                                                                    <div
-                                                                        className="flex-1 text-sm font-medium text-slate-700 truncate cursor-pointer hover:text-blue-600"
-                                                                        onDoubleClick={() => {
-                                                                            setEditingColumnIndex(index);
-                                                                            setEditingColumnValue(col);
-                                                                        }}
-                                                                        title={t('doubleClickToRename') || 'Double-click to rename'}
-                                                                    >
-                                                                        {col}
-                                                                    </div>
-                                                                )}
-
-                                                                {/* AI Visibility Toggle */}
-                                                                <button
-                                                                    onClick={() => {
-                                                                        const currentVisible = editingProduct.aiVisibleColumns || [];
-                                                                        // If currently undefined, it means ALL are visible (implicit). So initializing means we must be careful.
-                                                                        // Actually, if we want to "Hide" this one, we should add ALL OTHERS to visible list (if list was empty/undefined).
-                                                                        // Simplified approach: If undefined, assume all are visible.
-                                                                        // To toggle this OFF, we need to populate the list with ALL except this one.
-
-                                                                        let newVisible: string[];
-
-                                                                        if (!editingProduct.aiVisibleColumns) {
-                                                                            // Initial state: All visible. Toggle OFF means:
-                                                                            newVisible = editingProduct.detailColumns.filter(c => c !== col);
-                                                                        } else {
-                                                                            if (editingProduct.aiVisibleColumns.includes(col)) {
-                                                                                // Toggle OFF
-                                                                                newVisible = editingProduct.aiVisibleColumns.filter(c => c !== col);
-                                                                            } else {
-                                                                                // Toggle ON
-                                                                                newVisible = [...editingProduct.aiVisibleColumns, col];
-                                                                            }
-                                                                        }
-
-                                                                        const updated = { ...editingProduct, aiVisibleColumns: newVisible };
-                                                                        setEditingProduct(updated);
-                                                                        updateProduct(updated);
-                                                                    }}
-                                                                    className="p-1 hover:bg-white rounded transition-colors"
-                                                                    title={(!editingProduct.aiVisibleColumns || editingProduct.aiVisibleColumns.includes(col)) ? t('visibleToAI') : t('hiddenFromAI')}
-                                                                >
-                                                                    {(!editingProduct.aiVisibleColumns || editingProduct.aiVisibleColumns.includes(col))
-                                                                        ? <Eye className="w-4 h-4 text-green-600" />
-                                                                        : <EyeOff className="w-4 h-4 text-slate-400" />
-                                                                    }
-                                                                </button>
-
-                                                                <button onClick={() => deleteDetailColumn(col)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-4 h-4" /></button>
-                                                            </div>
-                                                        ))}
-                                                        {editingProduct.detailColumns.length === 0 && (
-                                                            <div className="text-center py-8 text-slate-400 text-sm italic">{t('noDetailColumns')}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-
-                                                {/* Process Steps Management */}
-                                                <div className="md:col-span-2">
-                                                    <label className="block text-sm font-bold text-slate-900 mb-2">
-                                                        {t('processSteps')}
-                                                    </label>
-                                                    <p className="text-xs text-slate-500 mb-3">
-                                                        {t('processStepsHelp')}
-                                                        <span className="block mt-1 text-[10px] text-slate-400">
-                                                            <Eye className="w-3 h-3 inline mr-1 text-green-600" />{t('visibleToAI')} | <EyeOff className="w-3 h-3 inline mr-1 text-slate-400" />{t('hidden')}
-                                                        </span>
-                                                    </p>
-
-                                                    {/* Add Step Input */}
-                                                    <div className="flex gap-2 mb-3">
-                                                        <input
-                                                            type="text"
-                                                            value={newStepName}
-                                                            onChange={(e) => setNewStepName(e.target.value)}
-                                                            onKeyDown={(e) => e.key === 'Enter' && addManualStep()}
-                                                            className="flex-1 px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-200 text-sm text-black font-medium"
-                                                            placeholder={t('stepNamePlaceholder')}
-                                                        />
-                                                        <button
-                                                            onClick={addManualStep}
-                                                            disabled={!newStepName.trim()}
-                                                            className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-500 disabled:opacity-50"
-                                                        >
-                                                            <Plus className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-
-                                                    {/* Steps List */}
-                                                    <div className="bg-white border border-slate-200 rounded-lg p-1 min-h-[100px] max-h-[400px] overflow-y-auto space-y-1">
-                                                        {editingProduct.steps.map((step, index) => (
-                                                            <div key={step} className="grid grid-cols-12 gap-2 p-2 items-center bg-white border border-slate-200 rounded-md group hover:bg-slate-50 transition-colors">
-                                                                {/* Move Buttons - Col 1 */}
-                                                                <div className="col-span-1 flex flex-col items-center justify-center gap-0.5">
-                                                                    <button onClick={() => moveStep(index, 'up')} disabled={index === 0} className="text-indigo-500 hover:text-indigo-700 disabled:text-slate-300 disabled:cursor-not-allowed"><ChevronUp className="w-4 h-4" /></button>
-                                                                    <button onClick={() => moveStep(index, 'down')} disabled={index === editingProduct.steps.length - 1} className="text-indigo-500 hover:text-indigo-700 disabled:text-slate-300 disabled:cursor-not-allowed"><ChevronDown className="w-4 h-4" /></button>
-                                                                </div>
-
-                                                                <div className="col-span-4 flex items-center gap-2 min-w-0">
-                                                                    <span className="text-xs font-mono text-slate-400 w-5 text-center flex-shrink-0">{index + 1}</span>
-                                                                    {editingStepIndex === index ? (
-                                                                        <div className="flex-1 relative">
-                                                                            <input
-                                                                                autoFocus
-                                                                                type="text"
-                                                                                className="w-full text-sm font-medium border border-indigo-300 rounded px-1 py-0.5 focus:outline-none focus:ring-2 focus:ring-indigo-200 text-slate-900 bg-white"
-                                                                                value={editingStepValue}
-                                                                                onChange={(e) => setEditingStepValue(e.target.value)}
-                                                                                onBlur={() => renameAndMigrateStep(index, step, editingStepValue)}
-                                                                                onKeyDown={(e) => {
-                                                                                    if (e.key === 'Enter') renameAndMigrateStep(index, step, editingStepValue);
-                                                                                    if (e.key === 'Escape') setEditingStepIndex(null);
-                                                                                }}
-                                                                                disabled={migrating}
-                                                                            />
-                                                                            {migrating && (
-                                                                                <div className="absolute right-2 top-1.5 animate-spin">
-                                                                                    <RefreshCw className="w-3 h-3 text-indigo-500" />
-                                                                                </div>
-                                                                            )}
-                                                                        </div>
-                                                                    ) : (
-                                                                        <div
-                                                                            className="text-sm font-medium text-slate-700 truncate cursor-pointer hover:text-indigo-600 hover:bg-slate-100 px-1 rounded border border-transparent hover:border-slate-200"
-                                                                            title={`${step} (${t('renameColumn')})`}
-                                                                            onDoubleClick={() => {
-                                                                                setEditingStepIndex(index);
-                                                                                setEditingStepValue(step);
-                                                                            }}
-                                                                        >
-                                                                            {step}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-
-                                                                {/* Quantity & Unit - Col 4 */}
-                                                                <div className="col-span-4 flex items-center gap-1">
-                                                                    <input
-                                                                        type="number"
-                                                                        placeholder={t('targetQuantity')}
-                                                                        value={editingProduct.stepQuantities?.[step] !== undefined ? editingProduct.stepQuantities[step] : ''}
-                                                                        onChange={(e) => {
-                                                                            const val = e.target.value === '' ? undefined : parseFloat(e.target.value);
-                                                                            const newQtys = { ...editingProduct.stepQuantities };
-                                                                            if (val === undefined) delete newQtys[step];
-                                                                            else newQtys[step] = val;
-
-                                                                            const updated = { ...editingProduct, stepQuantities: newQtys };
-                                                                            setEditingProduct(updated);
-                                                                            updateProduct(updated);
-                                                                        }}
-                                                                        className="w-full min-w-0 px-2 py-1 text-right text-xs border border-slate-200 rounded text-slate-900 placeholder:text-slate-300"
-                                                                        title={t('targetQuantity')}
-                                                                    />
-                                                                    <input
-                                                                        type="text"
-                                                                        placeholder={t('unit')}
-                                                                        value={editingProduct.stepUnits?.[step] || ''}
-                                                                        onChange={(e) => {
-                                                                            const val = e.target.value;
-                                                                            const newUnits = { ...editingProduct.stepUnits, [step]: val };
-                                                                            const updated = { ...editingProduct, stepUnits: newUnits };
-                                                                            setEditingProduct(updated);
-                                                                            updateProduct(updated);
-                                                                        }}
-                                                                        className="w-12 flex-shrink-0 px-1 py-1 text-xs border border-slate-200 rounded text-slate-900 placeholder:text-slate-300 text-center"
-                                                                        title={t('unit')}
-                                                                    />
-                                                                </div>
-
-                                                                {/* Duration - Col 2 */}
-                                                                <div className="col-span-2 flex items-center gap-1">
-                                                                    <input
-                                                                        type="number"
-                                                                        min="0"
-                                                                        step="0.5"
-                                                                        value={editingProduct.stepDurations?.[step] || 0}
-                                                                        onChange={(e) => {
-                                                                            const val = parseFloat(e.target.value) || 0;
-                                                                            const newDurations = { ...editingProduct.stepDurations, [step]: val };
-                                                                            const updated = { ...editingProduct, stepDurations: newDurations };
-                                                                            setEditingProduct(updated);
-                                                                            updateProduct(updated);
-                                                                        }}
-                                                                        className="w-full min-w-0 px-2 py-1 text-right text-xs text-black font-medium border border-slate-200 rounded bg-slate-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-300"
-                                                                        title={t('hours')}
-                                                                    />
-                                                                </div>
-
-                                                                {/* Actions - Col 1 */}
-                                                                <div className="col-span-1 flex items-center justify-end gap-1">
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            // Logic same as columns: If undefined, all visible.
-                                                                            let newVisible: string[];
-                                                                            if (!editingProduct.aiVisibleSteps) {
-                                                                                newVisible = editingProduct.steps.filter(s => s !== step);
-                                                                            } else {
-                                                                                if (editingProduct.aiVisibleSteps.includes(step)) {
-                                                                                    newVisible = editingProduct.aiVisibleSteps.filter(s => s !== step);
-                                                                                } else {
-                                                                                    newVisible = [...editingProduct.aiVisibleSteps, step];
-                                                                                }
-                                                                            }
-                                                                            const updated = { ...editingProduct, aiVisibleSteps: newVisible };
-                                                                            setEditingProduct(updated);
-                                                                            updateProduct(updated);
-                                                                        }}
-                                                                        className="p-1 hover:bg-slate-100 rounded transition-colors"
-                                                                        title={(!editingProduct.aiVisibleSteps || editingProduct.aiVisibleSteps.includes(step)) ? t('visibleToAI') : t('hiddenFromAI')}
-                                                                    >
-                                                                        {(!editingProduct.aiVisibleSteps || editingProduct.aiVisibleSteps.includes(step))
-                                                                            ? <Eye className="w-4 h-4 text-green-600" />
-                                                                            : <EyeOff className="w-4 h-4 text-slate-400" />
-                                                                        }
-                                                                    </button>
-
-                                                                    <button onClick={() => deleteStep(step)} className="text-slate-400 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-4 h-4" /></button>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                        {editingProduct.steps.length === 0 && (
-                                                            <div className="text-center py-8 text-slate-400 text-sm italic">{t('noStepsDefined')}</div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-
-
-
                                             <button
                                                 onClick={handleSave}
                                                 disabled={saving}
@@ -1724,7 +1725,7 @@ export default function SettingsPage() {
                                                             } else {
                                                                 alert(t('error') + ': ' + data.error);
                                                             }
-                                                        } catch (e) {
+                                                        } catch {
                                                             alert(t('cleanupFailed'));
                                                         }
                                                     }}
@@ -2030,7 +2031,7 @@ export default function SettingsPage() {
                                                                     value={editingWebhook.provider}
                                                                     onChange={e => {
                                                                         const newProvider = e.target.value as any;
-                                                                        let newSettings = { ...editingWebhook.settings };
+                                                                        const newSettings = { ...editingWebhook.settings };
 
                                                                         // Set defaults for specific providers
                                                                         if (newProvider === 'bark' && !newSettings.serverUrl) {
@@ -2191,7 +2192,7 @@ export default function SettingsPage() {
                                                                                 try {
                                                                                     const val = JSON.parse(e.target.value);
                                                                                     setEditingWebhook({ ...editingWebhook, customHeaders: val });
-                                                                                } catch (err) {
+                                                                                } catch {
                                                                                     // Allow typing invalid JSON temporarily (managed via raw state usually, but simplified here)
                                                                                 }
                                                                             }}
@@ -2308,7 +2309,7 @@ export default function SettingsPage() {
                                                                         } else {
                                                                             setWebhookTestStatus({ status: 'error', message: data.error || 'Failed' });
                                                                         }
-                                                                    } catch (e) {
+                                                                    } catch {
                                                                         setWebhookTestStatus({ status: 'error', message: 'Network error' });
                                                                     }
                                                                 }}
@@ -2350,7 +2351,7 @@ export default function SettingsPage() {
                                                                 finalWebhook.url = '';
                                                             }
 
-                                                            let newWebhooks = config.webhooks ? [...config.webhooks] : [];
+                                                            const newWebhooks = config.webhooks ? [...config.webhooks] : [];
                                                             const index = newWebhooks.findIndex(w => w.id === finalWebhook.id);
                                                             if (index >= 0) {
                                                                 newWebhooks[index] = finalWebhook;

@@ -23,7 +23,7 @@ export async function GET() {
             machineId,
             fingerprintHash
         });
-    } catch (error) {
+    } catch {
         return NextResponse.json({ error: 'Failed to retrieve system ID' }, { status: 500 });
     }
 }

@@ -18,6 +18,13 @@ export interface WebhookConfig {
     settings?: Record<string, string>; // Provider-specific settings (e.g. deviceKey, sound, chat_id)
 }
 
+export interface SchedulingConfig {
+    priorityWeight: number;
+    dateWeight: number;
+    agingWeight: number;
+    flowWeight?: number; // Optional weight for continuity (default 500)
+}
+
 // Product configuration
 export interface Product {
     id: string;           // Unique identifier (e.g., "stator")
@@ -45,6 +52,15 @@ export interface Product {
     aiModel?: string;
     aiVisibleColumns?: string[];
     aiVisibleSteps?: string[];
+
+    // 4M1E & Scheduling
+    stepStaffCounts?: Record<string, number>;   // Man (人员)
+    stepMachineCounts?: Record<string, number>; // Machine (机器)
+    schedulingConfig?: SchedulingConfig;        // Weights for AI scoring
+    shiftConfig?: {                             // Environment (环境/班次)
+        standardHours: number;
+        overtimeHours: number;
+    };
 }
 
 export interface Config {

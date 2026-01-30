@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Users as UsersIcon, UserPlus, Shield, UserCog, Check, X, Ban,
-    Unlock, Lock, Loader2, RefreshCw, Key, ArrowLeft, Monitor
+    Unlock, Loader2, Key, ArrowLeft, Monitor
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -20,7 +20,6 @@ interface User {
 export default function UserManagementPage() {
     const t = useTranslations('Users');
     const tCommon = useTranslations('Common');
-    const tDash = useTranslations('Dashboard');
 
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
@@ -51,6 +50,7 @@ export default function UserManagementPage() {
 
     useEffect(() => {
         checkAuthAndLoadUsers();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const checkAuthAndLoadUsers = async () => {

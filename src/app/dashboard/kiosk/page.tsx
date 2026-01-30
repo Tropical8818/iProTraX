@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-    Activity, Clock, AlertTriangle, CheckCircle2,
+    Activity,
     Layers, Filter, Grid, ChevronDown, Lock, Unlock, X,
     LayoutList, Maximize2, LogOut
 } from 'lucide-react';
@@ -110,6 +110,7 @@ export default function KioskPage() {
             const refreshInterval = setInterval(fetchKioskData, 60000);
             return () => clearInterval(refreshInterval);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedProductId]);
 
     useEffect(() => {
@@ -134,7 +135,7 @@ export default function KioskPage() {
         };
     }, [viewDensity]);
 
-    const getStatusInfo = (orderData: any, selectedStep: string = 'ALL') => {  
+    const getStatusInfo = (orderData: any, selectedStep: string = 'ALL') => {
         if (selectedStep !== 'ALL') {
             const val = orderData[selectedStep];
             if (!val || val === '') return { label: 'UNPLANNED', color: 'text-slate-500', bg: 'bg-slate-500/10', border: 'border-slate-500/50' };
@@ -363,9 +364,6 @@ export default function KioskPage() {
                 ) : filteredOrders.length > 0 ? (
                     filteredOrders.map((order) => {
                         const status = getStatusInfo(order.data, selectedStep);
-                        const completedSteps = Object.values(order.data).filter(v => /\d{2}-\w{3}/.test(v as string)).length;
-                        const totalSteps = availableSteps.length;
-                        const progressPercent = totalSteps > 0 ? (completedSteps / totalSteps) * 100 : 0;
 
                         return (
                             <div
@@ -403,7 +401,7 @@ export default function KioskPage() {
                                         const stepIndex = availableSteps.findIndex(s => s === targetStep);
 
                                         // Safety parsing function for various formats
-                                        const parseStepDate = (val: any) => {  
+                                        const parseStepDate = (val: any) => {
                                             if (!val || typeof val !== 'string') return null;
 
                                             // Case 1: YYYY-MM-DD [HH:mm] (Standard format)

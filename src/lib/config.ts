@@ -15,8 +15,7 @@ const DEFAULT_STEPS = [
     'Step 6', 'Step 7', 'Step 8', 'Step 9', 'Step 10'
 ];
 
-// Removed DEFAULT_DETAIL_COLUMNS to support fully flexible column names
-const DEFAULT_DETAIL_COLUMNS: string[] = [];
+// Note: DEFAULT_DETAIL_COLUMNS removed to support fully flexible column names
 
 const DEFAULT_PRODUCT: Product = {
     id: 'default',
@@ -26,7 +25,16 @@ const DEFAULT_PRODUCT: Product = {
     steps: DEFAULT_STEPS,
     monthlyTarget: 100, // Default target
     aiContextLimit: 60,
-    aiMaxTokens: 4000
+    aiMaxTokens: 4000,
+    schedulingConfig: {
+        priorityWeight: 50,
+        dateWeight: 30,
+        agingWeight: 20
+    },
+    shiftConfig: {
+        standardHours: 8,
+        overtimeHours: 0
+    }
 };
 
 const DEFAULT_CONFIG: Config = {

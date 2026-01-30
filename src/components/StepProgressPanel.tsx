@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
-import { Play, Square, History, Clock, CheckCircle2, ChevronRight, X, AlertCircle, Pencil } from 'lucide-react';
+import { Play, Square, History, CheckCircle2, X, AlertCircle, Pencil } from 'lucide-react';
 import { format, differenceInSeconds } from 'date-fns';
 
 interface StepProgressPanelProps {
@@ -53,6 +53,7 @@ export default function StepProgressPanel({ orderId, orderName, stepName, stepQu
     useEffect(() => {
         fetchProgress();
         return () => stopTimer();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Timer Logic
@@ -63,6 +64,7 @@ export default function StepProgressPanel({ orderId, orderName, stepName, stepQu
             stopTimer();
             setElapsedSeconds(0);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [myActiveSession]);
 
     const startTimer = (startTime: Date) => {

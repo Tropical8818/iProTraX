@@ -1,17 +1,17 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { parseShortTimestamp } from '@/lib/date-utils';
 import {
-    LayoutDashboard, FileText, Settings, LogOut,
-    Maximize, Minimize, Activity, AlertCircle, ScanBarcode, ArrowRight,
-    Play, Ban, PauseCircle, Eraser, Info, HardHat, Upload, Users,
+    Settings, LogOut,
+    Maximize, Minimize, ScanBarcode, ArrowRight,
+    Ban, PauseCircle, Eraser, Info, HardHat, Upload,
     ChevronDown, Table2, Pencil, Eye, EyeOff, ClipboardList,
-    RefreshCw, X, FileSpreadsheet, Check, Clock, CheckCircle2, Layers, AlertTriangle, Sparkles, Megaphone,
-    History, Loader2, Download, Trash2, BarChart2, TrendingUp, Monitor, ChevronUp, ZoomIn, ZoomOut,
-    LayoutGrid, List, KanbanSquare // Add icons
+    RefreshCw, X, FileSpreadsheet, Check, Clock, CheckCircle2, Layers, AlertTriangle, Sparkles,
+    History, Loader2, BarChart2, ZoomIn, ZoomOut,
+    LayoutGrid, List
 } from 'lucide-react';
 import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
 import { useTranslations } from 'next-intl';
@@ -20,12 +20,12 @@ import MobilePlannerCards from '@/components/MobilePlannerCards';
 import DraggableMenu from '@/components/DraggableMenu';
 import { APP_VERSION } from '@/lib/version';
 import type { Order } from '@/lib/excel';
-import { getSession } from '@/lib/auth';
 import dynamic from 'next/dynamic';
 import AIChatPanel from '@/components/AIChatPanel';
 import KanbanBoard from '@/components/KanbanBoard'; // Import Kanban Board
 import { MessageNotification } from '@/components/MessageNotification';
 import { StructuredCommentDialog } from '@/components/StructuredCommentDialog';
+import { SmartSchedulerDialog } from '@/components/SmartSchedulerDialog';
 import { calculateECD } from '@/lib/ecd';
 import { useLocaleDetection } from '@/hooks/useLocaleDetection';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
@@ -98,17 +98,16 @@ export default function DashboardPage() {
     const [error, setError] = useState('');
     const [showCompleted, setShowCompleted] = useState(false);
     const [role, setRole] = useState<'user' | 'supervisor' | 'admin'>('user');
-    const [username, setUsername] = useState('');
-    const [isFullscreen, setIsFullscreen] = useState(false);
-    const [pMode, setPMode] = useState(false);
-    const [naMode, setNaMode] = useState(false);
-    const [holdMode, setHoldMode] = useState(false);
-    const [qnMode, setQnMode] = useState(false);
-    const [wipMode, setWipMode] = useState(false);
-    const [completeMode, setCompleteMode] = useState(false);
-    const [eraseMode, setEraseMode] = useState(false);
-    const [refreshing, setRefreshing] = useState(false);
     const [fontSizeScale, setFontSizeScale] = useState(1);
+
+    // Batch Operations State - Single Source of Truth
+    const [activeBatchMode, setActiveBatchMode] = useState<string | null>(null);
+    const [refreshing, setRefreshing] = useState(false);
+    const [batchMenuOpen, setBatchMenuOpen] = useState(false);
+    const [eraseConfirmOpen, setEraseConfirmOpen] = useState(false);
+
+    const [scannerOpen, setScannerOpen] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const [viewMode, setViewMode] = useState<'table' | 'board'>('table'); // Add View Mode
     const [licenseInfo, setLicenseInfo] = useState<{
         customerName: string; type: string; expiresAt: string; isValid: boolean; error?: string;
@@ -143,6 +142,7 @@ export default function DashboardPage() {
 
     // Comment Modal State
     const [commentModal, setCommentModal] = useState<{ step: string; orderId: string } | null>(null);
+    const [showSmartScheduler, setShowSmartScheduler] = useState(false);
 
     const updateFontSize = (delta: number) => {
         const newScale = Math.max(0.8, Math.min(2.0, fontSizeScale + delta));
@@ -154,7 +154,7 @@ export default function DashboardPage() {
     const [bulkConfirmState, setBulkConfirmState] = useState<{
         isOpen: boolean;
         step: string;
-        mode: 'P' | 'NA' | 'Hold' | 'QN' | 'WIP' | 'Complete';
+        mode: string;
         count: number;
         targets: Order[];
     }>({ isOpen: false, step: '', mode: 'P', count: 0, targets: [] });
@@ -163,20 +163,18 @@ export default function DashboardPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [selectedProductId, setSelectedProductId] = useState<string>('');
     const [productMenuOpen, setProductMenuOpen] = useState(false);
-    const [batchMenuOpen, setBatchMenuOpen] = useState(false);
+    const productMenuRef = useRef<HTMLDivElement>(null);
+    const batchMenuRef = useRef<HTMLDivElement>(null);
 
     // Logs state
     const [logs, setLogs] = useState<OperationLog[]>([]);
     const [showLogsModal, setShowLogsModal] = useState(false);
     const [loadingLogs, setLoadingLogs] = useState(false);
-    const [logsNotification, setLogsNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
-    const [confirmingClear, setConfirmingClear] = useState(false);
 
     // ECD settings - separate Saturday/Sunday
 
 
     // Barcode Scanner
-    const [scannerOpen, setScannerOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [showAnalytics, setShowAnalytics] = useState(false);
 
@@ -237,117 +235,89 @@ export default function DashboardPage() {
         }
     };
 
-    const handleSetP = async (woId: string, step: string, currentValue: string) => {
-        try {
-            const newStatus = currentValue.toUpperCase() === 'P' ? 'Reset' : 'P';
-            const res = await fetch(`/api/orders/${woId}/step`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ step, status: newStatus, productId: selectedProductId })
-            });
-            if (res.ok) {
-                await fetchOrders();
+    // --- BATCH OPERATIONS LOGIC ---
+
+    const toggleBatchMode = (mode: string) => {
+        // Close menu first for all modes
+        setBatchMenuOpen(false);
+
+        if (mode === 'Erase') {
+            if (activeBatchMode === 'Erase') {
+                setActiveBatchMode(null);
+            } else {
+                // Show React-based confirmation modal instead of window.confirm
+                setEraseConfirmOpen(true);
             }
-        } catch (err) {
-            console.error('Failed to toggle P:', err);
+        } else {
+            // Toggle off if same mode, otherwise switch to new mode
+            setActiveBatchMode(prev => prev === mode ? null : mode);
         }
     };
 
-    const handleSetNA = async (woId: string, step: string, currentValue: string) => {
-        try {
-            const newStatus = currentValue.toUpperCase() === 'N/A' ? 'Reset' : 'N/A';
-            const res = await fetch(`/api/orders/${woId}/step`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ step, status: newStatus, productId: selectedProductId })
-            });
-            if (res.ok) {
-                await fetchOrders();
+    // Unified Batch Handler with Optimistic Updates
+    const handleBatchUpdate = async (woId: string, step: string, status: string) => {
+        // For Complete mode, generate a timestamp
+        const timestamp = status === 'Complete' ? format(new Date(), 'yyyy-MM-dd HH:mm') : null;
+
+        // Optimistic Update
+        const originalOrders = [...orders];
+        setOrders(prev => prev.map(o => {
+            if (o['WO ID'] === woId) {
+                // Determine new value
+                // For Erase, we clear the cell
+                if (status === 'Erase') {
+                    return { ...o, [step]: '' };
+                }
+                // For toggling off the same status (e.g. removing 'P')
+                if (String(o[step]).trim().toUpperCase() === status.toUpperCase() && status !== 'Complete') {
+                    return { ...o, [step]: '' };
+                }
+
+                // For setting status
+                // If status is 'Complete', we set today's date formatted
+                if (status === 'Complete') {
+                    return { ...o, [step]: format(new Date(), 'yyyy-MM-dd HH:mm') };
+                }
+
+                return { ...o, [step]: status };
             }
-        } catch (err) {
-            console.error('Failed to toggle N/A:', err);
+            return o;
+        }));
+
+        try {
+            // Logic to determine if we are SETTING or CLEARING
+            const currentVal = String(originalOrders.find(o => o['WO ID'] === woId)?.[step] || '');
+            let apiValue: string = status;
+
+            if (status === 'Erase') {
+                apiValue = '';
+            } else if (status === 'Complete') {
+                // Always set timestamp for Complete
+                apiValue = timestamp!;
+            } else if (currentVal.trim().toUpperCase() === status.toUpperCase()) {
+                // Toggling off
+                apiValue = '';
+            }
+
+            const res = await fetch('/api/orders/update-detail', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ woId, field: step, value: apiValue, productId: selectedProductId })
+            });
+
+            if (!res.ok) {
+                // Revert on failure
+                console.error('Update failed, reverting');
+                setOrders(originalOrders);
+                alert('Update failed');
+            }
+            // No need to fetchOrders for Complete anymore since we set the timestamp optimistically
+        } catch (error) {
+            console.error(error);
+            setOrders(originalOrders);
         }
     };
 
-    const handleSetHold = async (woId: string, step: string, currentValue: string) => {
-        try {
-            const newStatus = currentValue.toUpperCase() === 'HOLD' ? 'Reset' : 'Hold';
-            const res = await fetch(`/api/orders/${woId}/step`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ step, status: newStatus, productId: selectedProductId })
-            });
-            if (res.ok) {
-                await fetchOrders();
-            }
-        } catch (err) {
-            console.error('Failed to toggle Hold:', err);
-        }
-    };
-
-    const handleSetQN = async (woId: string, step: string, currentValue: string) => {
-        try {
-            const newStatus = currentValue.toUpperCase() === 'QN' ? 'Reset' : 'QN';
-            const res = await fetch(`/api/orders/${woId}/step`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ step, status: newStatus, productId: selectedProductId })
-            });
-            if (res.ok) {
-                await fetchOrders();
-            }
-        } catch (err) {
-            console.error('Failed to toggle QN:', err);
-        }
-    };
-
-    const handleSetWIP = async (woId: string, step: string, currentValue: string) => {
-        try {
-            const newStatus = currentValue.toUpperCase() === 'WIP' ? 'Reset' : 'WIP';
-            const res = await fetch(`/api/orders/${woId}/step`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ step, status: newStatus, productId: selectedProductId })
-            });
-            if (res.ok) {
-                await fetchOrders();
-            }
-        } catch (err) {
-            console.error('Failed to toggle WIP:', err);
-        }
-    };
-
-    const handleErase = async (woId: string, step: string) => {
-        try {
-            const res = await fetch(`/api/orders/${woId}/step`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ step, status: 'Reset', productId: selectedProductId })
-            });
-            if (res.ok) {
-                await fetchOrders();
-            }
-        } catch (err) {
-            console.error('Failed to erase:', err);
-        }
-    };
-
-    const handleSetComplete = async (woId: string, step: string) => {
-        try {
-            // Complete marks with current date
-            const today = format(new Date(), 'dd-MMM, HH:mm');
-            const res = await fetch(`/api/orders/${woId}/step`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ step, status: today, productId: selectedProductId })
-            });
-            if (res.ok) {
-                await fetchOrders();
-            }
-        } catch (err) {
-            console.error('Failed to complete:', err);
-        }
-    };
 
     // Generic Status Change Handler for Kanban
     const handleStatusChange = async (woId: string, step: string, status: string) => {
@@ -365,6 +335,99 @@ export default function DashboardPage() {
             console.error('Status change error:', err);
         }
     };
+
+    const handleSmartScheduleConfirm = async (recommendations: any[]) => {
+        if (!selectedProductId) return;
+        try {
+            // Flatten all predicted steps from recommendations
+            const updates: { woId: string; step: string; status: string }[] = [];
+            for (const rec of recommendations) {
+                if (rec.predictedFlow && rec.predictedFlow.length > 0) {
+                    // Mark ALL predicted steps as 'P'
+                    for (const flow of rec.predictedFlow) {
+                        updates.push({
+                            woId: rec.woId,
+                            step: flow.stepName,
+                            status: 'P'
+                        });
+                    }
+                } else {
+                    // Fallback to single step for backward compatibility
+                    updates.push({
+                        woId: rec.woId,
+                        step: rec.stepName,
+                        status: 'P'
+                    });
+                }
+            }
+
+            const res = await fetch('/api/orders/batch', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productId: selectedProductId,
+                    updates
+                })
+            });
+
+            if (res.ok) {
+                await fetchOrders();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Failed to apply schedule');
+            }
+        } catch (err) {
+            console.error('Smart schedule commit error', err);
+            alert('Failed to apply schedule');
+        }
+    };
+
+    // Reset All P - finds all 'P' status cells and clears them
+    const handleResetAllP = async () => {
+        if (!selectedProductId) return;
+
+        const updates: { woId: string; step: string; status: string }[] = [];
+
+        // Find all cells with 'P' status
+        orders.forEach(order => {
+            steps.forEach(step => {
+                if (order[step] === 'P') {
+                    updates.push({
+                        woId: order['WO ID'],
+                        step,
+                        status: 'Reset' // Use 'Reset' to properly clear the status via batch API
+                    });
+                }
+            });
+        });
+
+        if (updates.length === 0) {
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/orders/batch', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    productId: selectedProductId,
+                    updates,
+                    operatorId: 'admin'
+                })
+            });
+
+            if (res.ok) {
+                await fetchOrders();
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Failed to reset P statuses');
+            }
+        } catch (err) {
+            console.error('Reset All P error', err);
+            alert('Failed to reset P statuses');
+        }
+    };
+
 
 
 
@@ -388,33 +451,6 @@ export default function DashboardPage() {
     };
 
     // Fetch products and auth
-    const fetchConfig = async () => {
-        try {
-            const [authRes, configRes] = await Promise.all([
-                fetch('/api/auth', { cache: 'no-store' }),
-                fetch(`/api/config?t=${Date.now()}`, { cache: 'no-store' })
-            ]);
-
-            const authData = await authRes.json();
-            if (authData.role) {
-                setRole(authData.role);
-            }
-            if (authData.username) {
-                setUsername(authData.username);
-            }
-
-            const configData = await configRes.json();
-            if (configData.products && configData.products.length > 0) {
-                setProducts(configData.products);
-                // Set initial product
-                if (!selectedProductId || !configData.products.find((p: Product) => p.id === selectedProductId)) {
-                    setSelectedProductId(configData.activeProductId || configData.products[0].id);
-                }
-            }
-        } catch (err) {
-            console.error('Failed to fetch config:', err);
-        }
-    };
 
     // Fetch orders for selected product
     const fetchOrders = async () => {
@@ -463,9 +499,6 @@ export default function DashboardPage() {
                 if (authData.role) {
                     setRole(authData.role);
                 }
-                if (authData.username) {
-                    setUsername(authData.username);
-                }
 
                 const configData = await configRes.json();
                 let targetId = '';
@@ -509,6 +542,20 @@ export default function DashboardPage() {
             }
         };
         loadData();
+    }, []);
+
+    // Click outside to close menus
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (productMenuRef.current && !productMenuRef.current.contains(event.target as Node)) {
+                setProductMenuOpen(false);
+            }
+            if (batchMenuRef.current && !batchMenuRef.current.contains(event.target as Node)) {
+                setBatchMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     // Fetch orders when product changes (after initial load)
@@ -597,58 +644,6 @@ export default function DashboardPage() {
         fetchLogs();
     };
 
-    const downloadLogsCSV = () => {
-        if (!logs.length) return;
-        const headers = ['Time', 'Operator', 'WO ID', 'Step', 'Action', 'Previous', 'New Value'];
-        const csvContent = [
-            headers.join(','),
-            ...logs.map(log => [
-                new Date(log.timestamp).toISOString(),
-                log.operatorId,
-                log.woId,
-                `"${log.step?.replace(/"/g, '""') || ''}"`,
-                log.action,
-                `"${log.previousValue?.replace(/"/g, '""') || ''}"`,
-                `"${log.newValue?.replace(/"/g, '""') || ''}"`
-            ].join(','))
-        ].join('\n');
-
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.setAttribute('download', `operation_logs_${format(new Date(), 'yyyyMMdd_HHmm')}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
-    // Unused log functions removed for linting
-    /* 
-    const clearLogs = () => {
-        setConfirmingClear(true);
-    };
-
-    const performClearLogs = async () => {
-        setConfirmingClear(false);
-        try {
-            const res = await fetch('/api/logs', { method: 'DELETE' });
-            if (res.ok) {
-                setLogsNotification({ type: 'success', message: 'Logs cleared successfully!' });
-                fetchLogs();
-                // Auto-dismiss after 5 seconds
-                setTimeout(() => setLogsNotification(null), 5000);
-            } else {
-                const data = await res.json();
-                setLogsNotification({ type: 'error', message: data.error || 'Failed to clear logs' });
-                setTimeout(() => setLogsNotification(null), 5000);
-            }
-        } catch (e) {
-            console.error(e);
-            setLogsNotification({ type: 'error', message: 'Failed to clear logs' });
-            setTimeout(() => setLogsNotification(null), 5000);
-        }
-    };
-    */
 
     const handleImportFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -779,10 +774,10 @@ export default function DashboardPage() {
                         <img src="/logo.png" alt="iProTraX" className="h-9 w-auto" />
                     </button>
 
-                    <div className="flex-1 overflow-x-auto no-scrollbar flex items-center justify-end px-2">
+                    <div className="flex-1 overflow-visible no-scrollbar flex items-center justify-end px-2">
                         <nav className="flex items-center gap-1 sm:gap-2">
                             {/* Product Selector - Outside overflow container to prevent clipping */}
-                            <div className="relative shrink-0">
+                            <div className="relative shrink-0" ref={productMenuRef}>
                                 <button
                                     onClick={() => setProductMenuOpen(!productMenuOpen)}
                                     className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-200 bg-white"
@@ -833,9 +828,18 @@ export default function DashboardPage() {
                                 </div>
                             )}
 
-                            {/* DESKTOP NAV - Hidden on Mobile */}
-                            <div className="hidden md:flex items-center gap-2 px-1">
+                            {(role === 'admin' || role === 'supervisor') && (
+                                <button
+                                    title={t('aiSmartScheduler')}
+                                    onClick={() => setShowSmartScheduler(true)}
+                                    className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-sm font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200 transition-all active:scale-95"
+                                >
+                                    <Sparkles className="w-4 h-4 animate-pulse" />
+                                    <span className="hidden sm:inline">{t('smartScheduleBtn')}</span>
+                                </button>
+                            )}
 
+                            <div className="hidden md:flex items-center gap-2 px-1">
                                 <div className="w-px h-6 bg-slate-200" />
 
                                 <button className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium">
@@ -872,43 +876,43 @@ export default function DashboardPage() {
 
                                 {/* Batch Operations Dropdown */}
                                 {(role === 'admin' || role === 'supervisor') && (
-                                    <div className="relative">
+                                    <div className="relative" ref={batchMenuRef}>
                                         <button
                                             onClick={() => setBatchMenuOpen(!batchMenuOpen)}
-                                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${pMode || naMode || holdMode || qnMode || wipMode || completeMode || eraseMode
+                                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeBatchMode
                                                 ? 'bg-indigo-600 text-white shadow-sm'
                                                 : 'text-slate-700 hover:bg-slate-50 border border-slate-200'
                                                 }`}
                                         >
                                             <Layers className="w-4 h-4" />
                                             <span className="hidden sm:inline">
-                                                {pMode ? t('batch.plan') : naMode ? t('batch.na') : holdMode ? t('batch.hold') : qnMode ? t('batch.qn') : wipMode ? t('batch.wip') : completeMode ? t('batch.complete') : eraseMode ? t('batch.erase') : t('batch.edit')}
+                                                {activeBatchMode === 'P' ? t('batch.plan') : activeBatchMode === 'N/A' ? t('batch.na') : activeBatchMode === 'Hold' ? t('batch.hold') : activeBatchMode === 'QN' ? t('batch.qn') : activeBatchMode === 'WIP' ? t('batch.wip') : activeBatchMode === 'Complete' ? t('batch.complete') : activeBatchMode === 'Erase' ? t('batch.erase') : t('batch.edit')}
                                             </span>
                                             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${batchMenuOpen ? 'rotate-180' : ''}`} />
                                         </button>
 
                                         {batchMenuOpen && (
                                             <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 min-w-[140px] z-[100]">
-                                                <button onClick={() => { setPMode(!pMode); if (!pMode) { setNaMode(false); setEraseMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${pMode ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('P'); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'P' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
                                                     <Pencil className="w-4 h-4" /> Plan
                                                 </button>
-                                                <button onClick={() => { setNaMode(!naMode); if (!naMode) { setPMode(false); setEraseMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${naMode ? 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('N/A'); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'N/A' ? 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
                                                     <Ban className="w-4 h-4" /> N/A
                                                 </button>
-                                                <button onClick={() => { setHoldMode(!holdMode); if (!holdMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${holdMode ? 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('Hold'); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'Hold' ? 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
                                                     <PauseCircle className="w-4 h-4" /> Hold
                                                 </button>
-                                                <button onClick={() => { setQnMode(!qnMode); if (!qnMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setHoldMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${qnMode ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('QN'); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'QN' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
                                                     <AlertTriangle className="w-4 h-4" /> QN
                                                 </button>
-                                                <button onClick={() => { setWipMode(!wipMode); if (!wipMode) { setPMode(false); setNaMode(false); setEraseMode(false); setCompleteMode(false); setHoldMode(false); setQnMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${wipMode ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('WIP'); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'WIP' ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
                                                     <Clock className="w-4 h-4" /> WIP
                                                 </button>
-                                                <button onClick={() => { setCompleteMode(!completeMode); if (!completeMode) { setPMode(false); setNaMode(false); setEraseMode(false); setHoldMode(false); setQnMode(false); setWipMode(false); } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${completeMode ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('Complete'); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'Complete' ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
                                                     <CheckCircle2 className="w-4 h-4" /> Complete
                                                 </button>
                                                 <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
-                                                <button onClick={() => { if (eraseMode) { setEraseMode(false); } else { if (window.confirm(t('modals.eraseModeDesc'))) { setEraseMode(true); setPMode(false); setNaMode(false); setHoldMode(false); setCompleteMode(false); setQnMode(false); setWipMode(false); } } setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${eraseMode ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-red-500 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30 dark:hover:text-red-200'}`}>
+                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('Erase'); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'Erase' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-red-500 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30 dark:hover:text-red-200'}`}>
                                                     <Eraser className="w-4 h-4" /> Erase
                                                 </button>
                                             </div>
@@ -1322,7 +1326,7 @@ export default function DashboardPage() {
                                         <MobilePlannerCards
                                             orders={ordersToRender}
                                             steps={steps}
-                                            onSetP={handleSetP}
+                                            onSetP={(woId, step) => handleBatchUpdate(woId, step, 'P')}
                                             onNavigate={handleNavigate}
                                         />
                                     </div>
@@ -1348,68 +1352,20 @@ export default function DashboardPage() {
                                                 detailColumns={detailColumns}
                                                 extraColumns={orders.length > 0 ? ['ECD'] : []}
                                                 onNavigate={handleNavigate}
-                                                pMode={pMode}
-                                                onSetP={handleSetP}
-                                                onBulkSetP={role !== 'user' ? (step) => {
+
+                                                // Batch Props
+                                                activeBatchMode={activeBatchMode}
+                                                onBatchUpdate={handleBatchUpdate}
+
+                                                onBulkBatchUpdate={role !== 'user' ? (step, mode) => {
                                                     const targets = ordersToRender.filter(o => !o[step]);
                                                     if (targets.length === 0) {
                                                         alert('No empty cells to update in this column.');
                                                         return;
                                                     }
-                                                    setBulkConfirmState({ isOpen: true, step, mode: 'P', count: targets.length, targets });
+                                                    setBulkConfirmState({ isOpen: true, step, mode, count: targets.length, targets });
                                                 } : undefined}
-                                                naMode={naMode}
-                                                onSetNA={handleSetNA}
-                                                onBulkSetNA={role !== 'user' ? (step) => {
-                                                    const targets = ordersToRender.filter(o => !o[step]);
-                                                    if (targets.length === 0) {
-                                                        alert('No empty cells to update in this column.');
-                                                        return;
-                                                    }
-                                                    setBulkConfirmState({ isOpen: true, step, mode: 'NA', count: targets.length, targets });
-                                                } : undefined}
-                                                holdMode={holdMode}
-                                                onSetHold={handleSetHold}
-                                                onBulkSetHold={role !== 'user' ? (step) => {
-                                                    const targets = ordersToRender.filter(o => !o[step]);
-                                                    if (targets.length === 0) {
-                                                        alert('No empty cells to update in this column.');
-                                                        return;
-                                                    }
-                                                    setBulkConfirmState({ isOpen: true, step, mode: 'Hold', count: targets.length, targets });
-                                                } : undefined}
-                                                qnMode={qnMode}
-                                                onSetQN={handleSetQN}
-                                                onBulkSetQN={role !== 'user' ? (step) => {
-                                                    const targets = ordersToRender.filter(o => !o[step]);
-                                                    if (targets.length === 0) {
-                                                        alert('No empty cells to update in this column.');
-                                                        return;
-                                                    }
-                                                    setBulkConfirmState({ isOpen: true, step, mode: 'QN', count: targets.length, targets });
-                                                } : undefined}
-                                                wipMode={wipMode}
-                                                onSetWIP={handleSetWIP}
-                                                onBulkSetWIP={role !== 'user' ? (step) => {
-                                                    const targets = ordersToRender.filter(o => !o[step]);
-                                                    if (targets.length === 0) {
-                                                        alert('No empty cells to update in this column.');
-                                                        return;
-                                                    }
-                                                    setBulkConfirmState({ isOpen: true, step, mode: 'WIP', count: targets.length, targets });
-                                                } : undefined}
-                                                completeMode={completeMode}
-                                                onSetComplete={handleSetComplete}
-                                                onBulkSetComplete={role !== 'user' ? (step) => {
-                                                    const targets = ordersToRender.filter(o => !o[step]);
-                                                    if (targets.length === 0) {
-                                                        alert('No empty cells to update in this column.');
-                                                        return;
-                                                    }
-                                                    setBulkConfirmState({ isOpen: true, step, mode: 'Complete', count: targets.length, targets });
-                                                } : undefined}
-                                                eraseMode={eraseMode}
-                                                onErase={handleErase}
+
                                                 highlightedWos={highlightedWos} // Pass highlighted WOs
                                                 role={role}
                                                 onUpdateDetail={async (woId, field, value) => {
@@ -1571,18 +1527,38 @@ export default function DashboardPage() {
                 )
             }
 
-
-            {/* Click outside to close product menu */}
+            {/* Erase Mode Confirmation Modal */}
             {
-                productMenuOpen && (
-                    <div
-                        className="fixed inset-0 z-40"
-                        onClick={() => setProductMenuOpen(false)}
-                    />
+                eraseConfirmOpen && (
+                    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-xl p-6 max-w-sm mx-4 shadow-xl">
+                            <h3 className="text-lg font-bold text-red-600 mb-2">{t('mobileMenu.eraseMode')}</h3>
+                            <p className="text-slate-600 mb-4">
+                                {t('modals.eraseModeDesc')}
+                            </p>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setEraseConfirmOpen(false)}
+                                    className="flex-1 py-2 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200"
+                                >
+                                    {t('cancel')}
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setActiveBatchMode('Erase');
+                                        setEraseConfirmOpen(false);
+                                    }}
+                                    className="flex-1 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-500"
+                                >
+                                    Confirm
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )
             }
 
-            {/* Operation Logs Modal */}
+
             {
                 showLogsModal && (
                     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -1601,21 +1577,6 @@ export default function DashboardPage() {
                             </div>
 
                             {/* Notification */}
-                            {logsNotification && (
-                                <div className={`mx-6 mt-4 px-4 py-3 rounded-lg flex items-center gap-2 ${logsNotification.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 'bg-red-50 text-red-700 border border-red-200'
-                                    }`}>
-                                    {logsNotification.type === 'success' ? (
-                                        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    ) : (
-                                        <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    )}
-                                    <span className="font-medium">{logsNotification.message}</span>
-                                </div>
-                            )}
 
                             {loadingLogs ? (
                                 <div className="py-20 text-center text-slate-400 flex flex-col items-center gap-3">
@@ -1735,18 +1696,8 @@ export default function DashboardPage() {
                     role={role}
                     onNavigate={(path) => router.push(path)}
 
-                    pMode={pMode} setPMode={setPMode}
-                    naMode={naMode} setNaMode={setNaMode}
-                    holdMode={holdMode} setHoldMode={setHoldMode}
-                    eraseMode={eraseMode} setEraseMode={setEraseMode}
-                    handleEraseRequest={() => {
-                        if (eraseMode) setEraseMode(false);
-                        else {
-                            if (window.confirm(t('modals.eraseModeDesc'))) {
-                                setEraseMode(true);
-                            }
-                        }
-                    }}
+                    activeBatchMode={activeBatchMode}
+                    toggleBatchMode={toggleBatchMode}
 
                     onImport={() => {
                         if (!selectedProductId) { alert('Select a product line first'); return; }
@@ -1863,12 +1814,17 @@ export default function DashboardPage() {
                     </div>
                 )
             }
-            {/* Analytics Dashboard (Reports) */}
-            <AnalyticsDashboard
-                isOpen={showAnalytics}
-                onClose={() => setShowAnalytics(false)}
-                productId={selectedProductId}
-            />
+
+            {selectedProduct && orders.length > 0 && (
+                <SmartSchedulerDialog
+                    isOpen={showSmartScheduler}
+                    onClose={() => setShowSmartScheduler(false)}
+                    product={selectedProduct as any}
+                    orders={orders}
+                    onConfirm={handleSmartScheduleConfirm}
+                    onResetAllP={handleResetAllP}
+                />
+            )}
 
             {/* AI Chat Panel */}
             <AIChatPanel
@@ -1888,6 +1844,6 @@ export default function DashboardPage() {
                     {currentDate}
                 </div>
             </footer>
-        </div >
+        </div>
     );
 }

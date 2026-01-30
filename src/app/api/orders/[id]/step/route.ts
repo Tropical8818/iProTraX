@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { format } from 'date-fns';
-import { formatToExcelTimestamp, formatToShortTimestamp, formatToFullTimestamp } from '@/lib/date-utils';
+import { formatToFullTimestamp } from '@/lib/date-utils';
 import { NotificationService } from '@/lib/services/notification-service';
 
 export async function PATCH(

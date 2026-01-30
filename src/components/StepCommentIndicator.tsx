@@ -19,6 +19,7 @@ export function StepCommentIndicator({ orderId, stepName, onClick }: Props) {
 
     useEffect(() => {
         fetchStats();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [orderId, stepName]);
 
     const fetchStats = async () => {
