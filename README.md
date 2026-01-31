@@ -39,6 +39,8 @@ flowchart TB
   end
  subgraph AgileCore["Agile Collaboration Layer"]
         App["iProTraX Core"]
+        Scheduler["Smart Scheduler
+        (Autopilot Engine)"]
         DB[("Real-time DB")]
         AI["AI Copilot (DeepSeek/GPT)"]
   end
@@ -54,16 +56,19 @@ flowchart TB
     AI -- "4. Bottleneck Analysis" --> Supervisor
     App -- "5. Efficiency Reports" --> Supervisor
     App -.->|Webhooks| ExternalApps["External Apps (DingTalk/Slack/Telegram)"]
-    Supervisor -- "6. Shift Planning" --> Worker
-    Worker -- "7. Smart Comments" --> Supervisor
-    App -- "8. Audit Logs" --> Admin
-    Supervisor -. "9. Reconciliation" .-> SAP
-    ExternalApps -- "10. Query/Update" --> App
+    Supervisor -- "6. Autopilot Planning" --> Scheduler
+    Scheduler -- "7. Optimized Schedule" --> App
+    Supervisor -- "8. Shift Planning" --> Worker
+    Worker -- "9. Smart Comments" --> Supervisor
+    App -- "10. Audit Logs" --> Admin
+    Supervisor -. "11. Reconciliation" .-> SAP
+    ExternalApps -- "12. Query/Update" --> App
     
      SAP:::sap
      Worker:::shop
      Kiosk:::shop
      App:::core
+     Scheduler:::ai
      DB:::core
      AI:::ai
      Supervisor:::manage
@@ -176,6 +181,8 @@ flowchart TB
 
     subgraph Server ["Backend Services"]
         API[Next.js API Routes]
+        Scheduler["Smart Scheduler
+        (Weighted Scoring / Heuristics)"]
         Watcher[Chokidar File Watcher]
         Prisma[Prisma ORM]
     end
@@ -193,6 +200,8 @@ flowchart TB
     %% Connections
     UI --> API
     API --> Prisma
+    API --> Scheduler
+    Scheduler --> Prisma
     Prisma --> Postgres
     Prisma --> ApiKeyStore
     Watcher -->|Auto-Import| Excel
@@ -207,7 +216,7 @@ flowchart TB
     classDef ai fill:#fee2e2,stroke:#dc2626,color:#7f1d1d;
 
     class UI,TW,Icon,Chart fe;
-    class API,Watcher,Prisma be;
+    class API,Watcher,Prisma,Scheduler be;
     class SQLite,Excel db;
     class OpenAI ai;
 ```
