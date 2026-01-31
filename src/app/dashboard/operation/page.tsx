@@ -741,14 +741,12 @@ function OperationContent() {
                                             <div className="flex flex-col mb-2">
                                                 <div className="flex justify-between items-center">
                                                     <p className="text-xs sm:text-sm font-medium text-slate-500 truncate">{step}</p>
-                                                </div>
-                                                {targetQty && (
-                                                    <div className="mt-1">
-                                                        <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full font-mono">
-                                                            Target: {targetQty}{unit}
+                                                    {targetQty && (
+                                                        <span className="text-[10px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-mono font-bold">
+                                                            {targetQty}{unit}
                                                         </span>
-                                                    </div>
-                                                )}
+                                                    )}
+                                                </div>
                                             </div>
 
                                             <div className={`px-3 py-2 rounded-lg text-xs sm:text-sm font-bold text-center mb-3 ${getStatusStyle(stepValue)}`}>
