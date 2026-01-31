@@ -27,9 +27,8 @@ const DEFAULT_PRODUCT: Product = {
     aiContextLimit: 60,
     aiMaxTokens: 4000,
     schedulingConfig: {
-        priorityWeight: 50,
-        dateWeight: 30,
-        agingWeight: 20
+        dateWeight: 50,
+        agingWeight: 50
     },
     shiftConfig: {
         standardHours: 8,

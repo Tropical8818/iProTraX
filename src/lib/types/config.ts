@@ -19,7 +19,7 @@ export interface WebhookConfig {
 }
 
 export interface SchedulingConfig {
-    priorityWeight: number;
+    priorityWeight?: number; // Deprecated: Priority now uses fixed bonus (Red +1000, Yellow x2)
     dateWeight: number;
     agingWeight: number;
     flowWeight?: number; // Optional weight for continuity (default 500)

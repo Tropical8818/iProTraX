@@ -11,9 +11,8 @@ const mockProduct: Product = {
     stepStaffCounts: { 'Step1': 2, 'Step2': 1 },
     stepMachineCounts: { 'Step1': 1, 'Step2': 2 },
     schedulingConfig: {
-        priorityWeight: 50,
-        dateWeight: 30,
-        agingWeight: 20
+        dateWeight: 50,
+        agingWeight: 50
     },
     shiftConfig: {
         standardHours: 8,

@@ -82,7 +82,6 @@ export const SmartSchedulerDialog: React.FC<SmartSchedulerDialogProps> = ({
     const tempProduct: Product = useMemo(() => ({
         ...product,
         schedulingConfig: {
-            priorityWeight: weights.priority,
             dateWeight: weights.date,
             agingWeight: weights.aging
         }
