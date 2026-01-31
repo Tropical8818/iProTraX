@@ -59,7 +59,22 @@ export const SmartSchedulerDialog: React.FC<SmartSchedulerDialogProps> = ({
                 if (parsed.standardHours !== undefined) setStandardHours(parsed.standardHours);
                 if (parsed.overtimeHours !== undefined) setOvertimeHours(parsed.overtimeHours);
                 if (parsed.planningHours !== undefined) setPlanningHours(parsed.planningHours);
-                if (parsed.weights) setWeights(prev => ({ ...prev, ...parsed.weights }));
+                if (parsed.weights) {
+                    // MIGRATION: If old defaults (30/20) are found, upgrade to new defaults (50/50)
+                    // Also handles if priorityWeight exists (old config)
+                    const w = parsed.weights;
+                    const isOldDefault = (w.date === 30 && w.aging === 20);
+                    const hasOldPriority = w.priority !== undefined;
+
+                    if (isOldDefault || hasOldPriority) {
+                        setWeights({
+                            date: w.date === 30 ? 50 : w.date,
+                            aging: w.aging === 20 ? 50 : w.aging
+                        });
+                    } else {
+                        setWeights(prev => ({ ...prev, ...w }));
+                    }
+                }
             } catch (e) {
                 console.error("Failed to load scheduler settings", e);
             }
