@@ -35,9 +35,8 @@ export const SmartSchedulerDialog: React.FC<SmartSchedulerDialogProps> = ({
     const [standardHours, setStandardHours] = useState(product.shiftConfig?.standardHours || 8);
     const [overtimeHours, setOvertimeHours] = useState(product.shiftConfig?.overtimeHours || 0);
     const [weights, setWeights] = useState({
-        priority: product.schedulingConfig?.priorityWeight || 50,
-        date: product.schedulingConfig?.dateWeight || 30,
-        aging: product.schedulingConfig?.agingWeight || 20
+        date: product.schedulingConfig?.dateWeight || 50,
+        aging: product.schedulingConfig?.agingWeight || 50
     });
     const [planningHours, setPlanningHours] = useState(24);  // 1-72 hours planning horizon
     const [isResetting, setIsResetting] = useState(false);
@@ -325,18 +324,6 @@ export const SmartSchedulerDialog: React.FC<SmartSchedulerDialogProps> = ({
                                 <Percent size={16} className="text-indigo-500" /> {t('scoringStrategy')}
                             </h3>
                             <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center">
-                                        <label className="text-[11px] font-bold text-slate-600 uppercase">{t('priorityWeight')}</label>
-                                        <span className="text-xs font-mono text-indigo-600 font-bold">{weights.priority}%</span>
-                                    </div>
-                                    <input
-                                        type="range" min="0" max="100"
-                                        value={weights.priority}
-                                        onChange={(e) => setWeights({ ...weights, priority: parseInt(e.target.value) })}
-                                        className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                                    />
-                                </div>
                                 <div className="space-y-2">
                                     <div className="flex justify-between items-center">
                                         <label className="text-[11px] font-bold text-slate-600 uppercase">{t('dateWeight')}</label>

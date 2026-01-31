@@ -168,9 +168,8 @@ export function calculateOrderScore(
     now: Date = new Date()
 ): OrderScoreDetails {
     const config = product.schedulingConfig || {
-        priorityWeight: 50,
-        dateWeight: 30,
-        agingWeight: 20,
+        dateWeight: 50,
+        agingWeight: 50,
         flowWeight: 500 // HUGE bonus for WIP continuity (hidden config for now)
     };
     const steps = product.steps || [];
