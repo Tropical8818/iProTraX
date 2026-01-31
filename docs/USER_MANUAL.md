@@ -1,6 +1,6 @@
 # iProTraX User Manual
 
-**Version 8.1.0**
+**Version 8.2.0**
 
 ---
 
@@ -102,7 +102,7 @@ After logging in, you'll see the main dashboard with all your orders.
 
 The main table shows all work orders with:
 
-- **Detail Columns**: Order ID, customer, due date, quantity, etc.
+- **Detail Columns**: Order ID, customer, due date, quantity, etc. (Default sorting: High Priority > Warning > Earliest Due Date)
 - **Step Columns**: Production steps (e.g., Cutting, Assembly, QC)
 - **Status Indicators**:
   - 📘 **P** = Planned/Pending
@@ -516,4 +516,4 @@ If you are on the Free Tier:
 
 For technical support, contact your system administrator.
 
-**iProTraX v8.0.0** - AI-Powered Production Tracker
+**iProTraX v8.2.0** - AI-Powered Production Tracker
