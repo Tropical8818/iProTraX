@@ -718,15 +718,17 @@ export default function DashboardPage() {
 
 
     // Sort orders by priority (Red first, then Yellow, then normal)
-    const sortedOrders = [...orders].sort((a, b) => {
-
-        const getPriority = (order: any) => {
-            if (order.priority === 'Red') return 3;
-            if (order.priority === 'Yellow') return 2;
-            return 1;
-        };
-        return getPriority(b) - getPriority(a);
-    });
+    // Skip sorting when batch mode is active to prevent rows from jumping
+    const sortedOrders = activeBatchMode
+        ? [...orders] // Keep original order in batch mode for stable row positions
+        : [...orders].sort((a, b) => {
+            const getPriority = (order: any) => {
+                if (order.priority === 'Red') return 3;
+                if (order.priority === 'Yellow') return 2;
+                return 1;
+            };
+            return getPriority(b) - getPriority(a);
+        });
 
     const displayedOrders = showCompleted
         ? sortedOrders
