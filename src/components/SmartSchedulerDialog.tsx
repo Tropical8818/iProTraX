@@ -567,12 +567,6 @@ export const SmartSchedulerDialog: React.FC<SmartSchedulerDialogProps> = ({
                             {t('exportDispatchList')}
                         </button>
                         <button
-                            onClick={onClose}
-                            className="px-6 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all active:scale-95"
-                        >
-                            {t('cancel')}
-                        </button>
-                        <button
                             onClick={handleConfirm}
                             disabled={isProcessing || result.recommendations.length === 0}
                             className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200 transition-all active:scale-95"
