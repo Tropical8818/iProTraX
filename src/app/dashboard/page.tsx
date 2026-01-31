@@ -717,17 +717,63 @@ export default function DashboardPage() {
 
 
 
-    // Sort orders by priority (Red first, then Yellow, then normal)
+    // Sort orders by Due Date + Priority
+    // Rule: Red (3) > Due Date > Yellow (2) = Due Date > Normal (1)
     // Skip sorting when batch mode is active to prevent rows from jumping
     const sortedOrders = activeBatchMode
         ? [...orders] // Keep original order in batch mode for stable row positions
         : [...orders].sort((a, b) => {
             const getPriority = (order: any) => {
-                if (order.priority === 'Red') return 3;
-                if (order.priority === 'Yellow') return 2;
+                // Check multiple field names (Priority, 优先级, priority)
+                const p = String(order['Priority'] || order['优先级'] || order.priority || '').toLowerCase().trim();
+                // Check for Red/高/紧急/3/high/urgent
+                if (p === 'red' || p === '3' || p.includes('urgent') || p.includes('high') || p.includes('紧急') || p.includes('高')) return 3;
+                // Check for Yellow/中/普通/2/medium/normal
+                if (p === 'yellow' || p === '2' || p.includes('normal') || p.includes('medium') || p.includes('普通') || p.includes('中')) return 2;
                 return 1;
             };
-            return getPriority(b) - getPriority(a);
+
+            const priorityA = getPriority(a);
+            const priorityB = getPriority(b);
+
+            // Parse due dates for comparison
+            const getDueDate = (order: any) => {
+                const due = order['WO DUE'] || order['WO_DUE'] || order['到期日期'];
+                if (!due) return new Date('9999-12-31'); // No due date goes last
+                const d = new Date(due);
+                return isNaN(d.getTime()) ? new Date('9999-12-31') : d;
+            };
+
+            const dateA = getDueDate(a).getTime();
+            const dateB = getDueDate(b).getTime();
+
+            // Priority 3 (Red) always comes first regardless of date
+            if (priorityA === 3 && priorityB !== 3) return -1;
+            if (priorityB === 3 && priorityA !== 3) return 1;
+
+            // Both are Red: sort by due date (earlier first)
+            if (priorityA === 3 && priorityB === 3) {
+                return dateA - dateB;
+            }
+
+            // Priority 2 (Yellow) vs Normal: Yellow with same date comes first
+            // Yellow: equal weight between priority and date
+            if (priorityA === 2 && priorityB === 1) {
+                // If dates are close (same day), Yellow wins
+                if (Math.abs(dateA - dateB) < 86400000) return -1; // Within 1 day
+                // Otherwise sort by date
+                return dateA - dateB;
+            }
+            if (priorityB === 2 && priorityA === 1) {
+                if (Math.abs(dateA - dateB) < 86400000) return 1;
+                return dateA - dateB;
+            }
+
+            // Both Yellow or both Normal: sort by due date
+            if (dateA !== dateB) return dateA - dateB;
+
+            // Same date: higher priority first
+            return priorityB - priorityA;
         });
 
     const displayedOrders = showCompleted

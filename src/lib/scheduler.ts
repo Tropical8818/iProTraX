@@ -226,10 +226,27 @@ export function calculateOrderScore(
         flowScore = (config.flowWeight || 500) * (0.5 + progress); // Base 250 + Scaled by progress
     }
 
-    // 5. Combined Score
+    // 5. Combined Score Calculation
+    // NEW LOGIC: Due Date is primary, Priority modifies weight
+    // - Priority 3 (Red):    +1000 bonus (always prioritized regardless of date)
+    // - Priority 2 (Yellow): Urgency score doubled (equal weight to date)
+    // - Priority 1 (Normal): Date-only (priority has minimal effect)
+
+    let priorityBonus = 0;
+    let effectiveUrgencyMultiplier = 1;
+
+    if (priority === 3) {
+        // Red: Massive fixed bonus - will always be scheduled first
+        priorityBonus = 1000;
+    } else if (priority === 2) {
+        // Yellow: Double the urgency effect (equal weight to date)
+        effectiveUrgencyMultiplier = 2;
+    }
+    // Priority 1: No bonus, date-driven
+
     const combinedScore = (
-        (priorityScore * (config.priorityWeight / 100)) +
-        (urgencyScore * (config.dateWeight / 100)) +
+        priorityBonus +
+        (urgencyScore * effectiveUrgencyMultiplier * (config.dateWeight / 100)) +
         (agingScore * (config.agingWeight / 100)) +
         flowScore
     );
