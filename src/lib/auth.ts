@@ -71,9 +71,13 @@ export async function getSession(): Promise<Session | null> {
     const authHeader = headersList.get('Authorization');
 
     if (authHeader) {
+        // console.log('[Auth] Header detected:', authHeader.substring(0, 15) + '...')
+
         // Case A: Real API Key (sk_live_...)
         if (authHeader.startsWith('Bearer sk_live_')) {
             const apiKey = authHeader.substring(7);
+            // console.log('[Auth] Validating API Key check...')
+
             // Basic format check
             if (apiKey.length < 20) return null;
 
@@ -83,6 +87,8 @@ export async function getSession(): Promise<Session | null> {
                 const keyRecord = await prisma.apiKey.findUnique({
                     where: { keyHash }
                 });
+
+                // console.log('[Auth] Key Record found:', !!keyRecord)
 
                 if (keyRecord && keyRecord.isActive) {
                     // Check expiration if set
@@ -111,20 +117,44 @@ export async function getSession(): Promise<Session | null> {
         // Case B: Bearer Session Token (No Cookie proxy needed)
         else if (authHeader.startsWith('Bearer ')) {
             const bearerToken = authHeader.split(' ')[1];
-            try {
-                const payload = await decrypt(bearerToken);
-                if (payload.expiresAt && (payload.expiresAt as number) < Date.now()) {
+            if (!bearerToken) return null;
+
+            // console.log(`[Auth] Attempting Bearer Token: ${bearerToken.substring(0, 10)}...`)
+
+            const tryDecrypt = async (t: string) => {
+                try {
+                    const payload = await decrypt(t);
+                    if (payload.expiresAt && (payload.expiresAt as number) < Date.now()) {
+                        console.log('[Auth] Token Expired')
+                        return null;
+                    }
+                    return {
+                        userId: payload.userId as string,
+                        username: payload.username as string,
+                        role: payload.role as UserRole,
+                        expiresAt: payload.expiresAt as number
+                    };
+                } catch (e) {
                     return null;
                 }
-                return {
-                    userId: payload.userId as string,
-                    username: payload.username as string,
-                    role: payload.role as UserRole,
-                    expiresAt: payload.expiresAt as number
-                };
-            } catch {
-                // Invalid bearer token, ignore
             }
+
+            // 1. Try Direct
+            let session = await tryDecrypt(bearerToken);
+
+            // 2. Try Decoding (if user pasted encoded cookie)
+            if (!session) {
+                try {
+                    const decoded = decodeURIComponent(bearerToken);
+                    if (decoded !== bearerToken) {
+                        // console.log('[Auth] Trying decoded token...')
+                        session = await tryDecrypt(decoded);
+                    }
+                } catch { }
+            }
+
+            if (session) return session;
+            console.log('[Auth] Bearer Decrypt Failed')
         }
     }
 
