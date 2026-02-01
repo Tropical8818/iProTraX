@@ -37,52 +37,98 @@ export async function createSession(userId: string, username: string, role: stri
     });
 }
 
-const API_KEY = process.env.DIGITAL_TWIN_API_KEY || 'iprotrax-twin-access-key';
+import { prisma } from '@/lib/prisma';
+import { createHash } from 'node:crypto';
+
+// ... (existing imports)
 
 export async function getSession(): Promise<Session | null> {
     const cookieStore = await cookies();
-    let token = cookieStore.get(SESSION_COOKIE)?.value;
+    const token = cookieStore.get(SESSION_COOKIE)?.value;
 
-    // Fallback: Check Authorization Header (Bearer Token)
-    if (!token) {
-        const headersList = await headers();
-        const authHeader = headersList.get('Authorization');
-        if (authHeader?.startsWith('Bearer ')) {
-            token = authHeader.split(' ')[1];
-        }
-    }
-
-    if (!token) return null;
-
-    // Direct API Key Check
-    if (token === API_KEY) {
-        return {
-            userId: 'digital-twin',
-            username: 'Digital Twin',
-            role: 'admin',
-            expiresAt: Date.now() + 24 * 60 * 60 * 1000 // Valid
-        };
-    }
-
-    try {
-        const payload = await decrypt(token);
-
-        // Convert payload back to typed Session
-        const session: Session = {
-            userId: payload.userId as string,
-            username: payload.username as string,
-            role: payload.role as UserRole,
-            expiresAt: payload.expiresAt as number
-        };
-
-        if (session.expiresAt < Date.now()) {
-            await destroySession();
+    // 1. Try Session Cookie (Browser User)
+    if (token) {
+        try {
+            const payload = await decrypt(token);
+            // ... (validate expiration)
+            if (payload.expiresAt && (payload.expiresAt as number) < Date.now()) {
+                await destroySession();
+                return null;
+            }
+            return {
+                userId: payload.userId as string,
+                username: payload.username as string,
+                role: payload.role as UserRole,
+                expiresAt: payload.expiresAt as number
+            };
+        } catch {
             return null;
         }
-        return session;
-    } catch {
-        return null;
     }
+
+    // 2. Try API Key (Digital Twin / External App)
+    const headersList = await headers();
+    const authHeader = headersList.get('Authorization');
+
+    if (authHeader) {
+        // Case A: Real API Key (sk_live_...)
+        if (authHeader.startsWith('Bearer sk_live_')) {
+            const apiKey = authHeader.substring(7);
+            // Basic format check
+            if (apiKey.length < 20) return null;
+
+            const keyHash = createHash('sha256').update(apiKey).digest('hex');
+
+            try {
+                const keyRecord = await prisma.apiKey.findUnique({
+                    where: { keyHash }
+                });
+
+                if (keyRecord && keyRecord.isActive) {
+                    // Check expiration if set
+                    if (keyRecord.expiresAt && keyRecord.expiresAt < new Date()) {
+                        return null;
+                    }
+
+                    // Update usage stats (fire and forget)
+                    prisma.apiKey.update({
+                        where: { id: keyRecord.id },
+                        data: { lastUsedAt: new Date() }
+                    }).catch(() => { });
+
+                    // Return Synthetic Session associated with the creator
+                    return {
+                        userId: keyRecord.createdById,
+                        username: `API Key (${keyRecord.name})`,
+                        role: 'admin', // Assume Admin for now, or fetch user role
+                        expiresAt: Date.now() + (24 * 60 * 60 * 1000)
+                    };
+                }
+            } catch (e) {
+                console.error('API Key Auth Error:', e);
+            }
+        }
+        // Case B: Bearer Session Token (No Cookie proxy needed)
+        else if (authHeader.startsWith('Bearer ')) {
+            const bearerToken = authHeader.split(' ')[1];
+            try {
+                const payload = await decrypt(bearerToken);
+                if (payload.expiresAt && (payload.expiresAt as number) < Date.now()) {
+                    return null;
+                }
+                return {
+                    userId: payload.userId as string,
+                    username: payload.username as string,
+                    role: payload.role as UserRole,
+                    expiresAt: payload.expiresAt as number
+                };
+            } catch {
+                // Invalid bearer token, ignore
+            }
+        }
+    }
+
+    return null;
 }
 
 export async function destroySession(): Promise<void> {
