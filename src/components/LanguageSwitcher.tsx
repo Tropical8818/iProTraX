@@ -20,6 +20,16 @@ const CNFlag = () => (
 
 export function LanguageSwitcher({ className = '' }: Props) {
     const currentLocale = useLocaleDetection();
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        // Delay to avoid strict linter warning about cascading renders
+        const timer = setTimeout(() => setMounted(true), 0);
+        return () => clearTimeout(timer);
+    }, []);
+
+    // Default to 'en' until hydrated to match Server HTML
+    const displayLocale = mounted ? currentLocale : 'en';
 
     const toggleLanguage = () => {
         const newLocale = currentLocale === 'en' ? 'zh' : 'en';
@@ -35,11 +45,11 @@ export function LanguageSwitcher({ className = '' }: Props) {
         <button
             onClick={toggleLanguage}
             className={`p-2.5 rounded-lg transition-all shadow-lg flex items-center justify-center ${className || 'text-slate-500 hover:bg-slate-100'}`}
-            title={currentLocale === 'en' ? '切换到中文' : 'Switch to English'}
+            title={displayLocale === 'en' ? '切换到中文' : 'Switch to English'}
             aria-label="Switch Language"
         >
-            <div className="w-7 h-5 flex items-center justify-center" suppressHydrationWarning>
-                {typeof window !== 'undefined' ? (currentLocale === 'en' ? <CNFlag /> : <USFlag />) : null}
+            <div className="w-7 h-5 flex items-center justify-center">
+                {displayLocale === 'zh' ? <CNFlag /> : <USFlag />}
             </div>
         </button>
     );
