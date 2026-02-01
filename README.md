@@ -150,7 +150,6 @@ After the initial deployment, use the following credentials to access the **Supe
 *   **Purpose**: Zero-latency collaboration.
 *   **Features**:
     *   **Instant Sync**: Updates appear on all screens (Kiosk, Dashboard) effectively instantly (<50ms).
-    *   **Instant Sync**: Updates appear on all screens (Kiosk, Dashboard) effectively instantly (<50ms).
     *   **No Polling**: Replaced old "refresh every minute" mechanism with efficient Server-Sent Events.
 
 ### 6. 🔔 Real-time Notifications (Webhook)
