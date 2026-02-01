@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { encrypt, decrypt } from './session';
 
 const SESSION_COOKIE = 'iprotrax_sess';
@@ -37,14 +37,35 @@ export async function createSession(userId: string, username: string, role: stri
     });
 }
 
+const API_KEY = process.env.DIGITAL_TWIN_API_KEY || 'iprotrax-twin-access-key';
+
 export async function getSession(): Promise<Session | null> {
     const cookieStore = await cookies();
-    const cookie = cookieStore.get(SESSION_COOKIE);
+    let token = cookieStore.get(SESSION_COOKIE)?.value;
 
-    if (!cookie) return null;
+    // Fallback: Check Authorization Header (Bearer Token)
+    if (!token) {
+        const headersList = await headers();
+        const authHeader = headersList.get('Authorization');
+        if (authHeader?.startsWith('Bearer ')) {
+            token = authHeader.split(' ')[1];
+        }
+    }
+
+    if (!token) return null;
+
+    // Direct API Key Check
+    if (token === API_KEY) {
+        return {
+            userId: 'digital-twin',
+            username: 'Digital Twin',
+            role: 'admin',
+            expiresAt: Date.now() + 24 * 60 * 60 * 1000 // Valid
+        };
+    }
 
     try {
-        const payload = await decrypt(cookie.value);
+        const payload = await decrypt(token);
 
         // Convert payload back to typed Session
         const session: Session = {
