@@ -239,7 +239,9 @@ flowchart TB
 ---
 
 ### 演示 (DEMO)
-https://iprotrax.work
+### 演示 (DEMO)
+*   **在线演示**: https://protracker.puppy101.dpdns.org/
+*   **项目主页/文档**: https://iprotrax.work
 联系作者获取访问权限: contact@iprotrax.work
 
 ---
