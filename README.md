@@ -40,7 +40,7 @@ flowchart TB
  subgraph AgileCore["Agile Collaboration Layer"]
         App["iProTraX Core"]
         Scheduler["Smart Scheduler
-        (Autopilot Engine)"]
+        (Autopilot / Auto-Flow)"]
         DB[("Real-time DB")]
         AI["AI Copilot (DeepSeek/GPT)"]
   end
@@ -183,13 +183,14 @@ flowchart TB
     subgraph Server ["Backend Services"]
         API[Next.js API Routes]
         Scheduler["Smart Scheduler
-        (Weighted Scoring / Heuristics)"]
+        (Weighted / Auto-Flow)"]
         Watcher[Chokidar File Watcher]
         Prisma[Prisma ORM]
     end
 
     subgraph Data ["Data Persistence"]
         Postgres[(PostgreSQL Database)]
+        Redis[(Redis Pub/Sub)]
         Excel["Excel Files (.xlsx)"]
         ApiKeyStore["ApiKey Store (Encrypted)"]
     end
@@ -204,6 +205,7 @@ flowchart TB
     API --> Scheduler
     Scheduler --> Prisma
     Prisma --> Postgres
+    API --> Redis
     Prisma --> ApiKeyStore
     Watcher -->|Auto-Import| Excel
     Watcher -->|Write| Prisma
@@ -218,7 +220,7 @@ flowchart TB
 
     class UI,TW,Icon,Chart fe;
     class API,Watcher,Prisma,Scheduler be;
-    class SQLite,Excel db;
+    class SQLite,Excel,Postgres,Redis,ApiKeyStore db;
     class OpenAI ai;
 ```
 

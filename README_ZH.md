@@ -39,7 +39,7 @@ flowchart TB
  subgraph AgileCore["Agile Collaboration Layer (敏捷协同中台)"]
         App["iProTraX Core"]
         Scheduler["Smart Scheduler
-        (智能排程/自动驾驶)"]
+        (智能排程/自动流转)"]
         DB[("Real-time DB")]
         AI["AI Copilot (DeepSeek/GPT)"]
   end
@@ -166,13 +166,14 @@ flowchart TB
     subgraph Server ["Backend Services (后端服务)"]
         API[Next.js API Routes]
         Scheduler["Smart Scheduler
-        (加权启发式算法 + AI)"]
+        (加权算法 / 自动流转)"]
         Watcher[Chokidar File Watcher]
         Prisma[Prisma ORM]
     end
 
     subgraph Data ["Data Persistence (数据持久化)"]
         Postgres[(PostgreSQL Database)]
+        Redis[(Redis Pub/Sub)]
         Excel["Excel Files (.xlsx)"]
         ApiKeyStore["ApiKey Store (加密存储)"]
     end
@@ -186,6 +187,7 @@ flowchart TB
     API --> Scheduler
     Scheduler --> Prisma
     Prisma --> Postgres
+    API --> Redis
     Prisma --> ApiKeyStore
     Watcher -->|Auto-Import| Excel
     Watcher -->|Write| Prisma
@@ -200,7 +202,7 @@ flowchart TB
 
     class UI,TW,Icon,Chart fe;
     class API,Watcher,Prisma,Scheduler be;
-    class SQLite,Excel db;
+    class SQLite,Excel,Postgres,Redis,ApiKeyStore db;
     class OpenAI ai;
 ```
 
