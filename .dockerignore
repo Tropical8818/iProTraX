@@ -51,3 +51,11 @@ eslint.config.mjs
 # Sensitive backups
 *.backup
 *.bak
+
+# Project Roadmaps
+project_roadmap*.md
+
+# Private Docs
+TUTORIAL_FOR_KIDS.md
+
+RECOMMENDED_READING.md

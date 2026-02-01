@@ -93,3 +93,11 @@ cookies.txt
 
 # Temporary Scripts
 check_users.js
+
+# Project Roadmaps
+project_roadmap*.md
+
+# Private Docs
+TUTORIAL_FOR_KIDS.md
+
+RECOMMENDED_READING.md

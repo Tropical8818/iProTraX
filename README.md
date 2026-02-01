@@ -136,6 +136,7 @@ After the initial deployment, use the following credentials to access the **Supe
     *   **Risk Analysis**: "Which orders are stuck in WIP for >24h?"
     *   **Context Aware**: Knows your specific product lines and terminology. Supports DeepSeek (China).
     *   **Smart Comments**: Tracks discussions per-step, allowing precise problem-solving directly in the flow.
+    *   **Zero-Wait Auto-Flow**: Automatically schedules the next step immediately upon completion, minimizing idle time (Pull System).
 
 ### 4. ⏱️ Productivity Engine (Efficiency Loop)
 *   **Purpose**: Quantify worker output and efficiency, eliminating guesswork.
@@ -143,7 +144,6 @@ After the initial deployment, use the following credentials to access the **Supe
     *   **Active Session Cards**: Integrated view for workers with **live timer**, **progress bar**, and **standard time (Std)** reference.
     *   **Compact Stop**: One-click quick stop with strict quantity validation/limits.
     *   **Standard Time Mgmt**: Admin configurable standard times (HH:MM) and target quantities per step.
-    *   **Zero-Wait Auto-Flow**: Automatically schedules the next step immediately upon completion, minimizing idle time (Pull System).
     *   **Efficiency Analytics**: Supervisor-exclusive dashboard showing daily output heatmaps and efficiency rankings.
 
 ### 5. ⚡ Real-time Engine (Redis)
