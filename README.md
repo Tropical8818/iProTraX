@@ -143,6 +143,7 @@ After the initial deployment, use the following credentials to access the **Supe
     *   **Active Session Cards**: Integrated view for workers with **live timer**, **progress bar**, and **standard time (Std)** reference.
     *   **Compact Stop**: One-click quick stop with strict quantity validation/limits.
     *   **Standard Time Mgmt**: Admin configurable standard times (HH:MM) and target quantities per step.
+    *   **Zero-Wait Auto-Flow**: Automatically schedules the next step immediately upon completion, minimizing idle time (Pull System).
     *   **Efficiency Analytics**: Supervisor-exclusive dashboard showing daily output heatmaps and efficiency rankings.
 
 ### 5. ⚡ Real-time Engine (Redis)
@@ -260,7 +261,7 @@ Contact author for access: contact@iprotrax.work
 ---
 
 ## 📝 Changelog highlights
-*   **v8.2.0**: **Smart Scheduler 2.0** - Simplified priority logic (Red Bonus/+1000) and optimized default weights (50/50). **Dashboard** - Enhanced sorting (Red > Yellow > Date). **Operation UI** - Improved target quantity display in header. Batch Edit stability fixes.
+*   **v8.2.0**: **Smart Scheduler 2.0** - "Zero-Wait" Auto-Flow feature, Simplified priority logic (Red Bonus/+1000) and optimized default weights (50/50). **Dashboard** - Enhanced sorting (Red > Yellow > Date). **Operation UI** - Improved target quantity display in header. Batch Edit stability fixes.
 *   **v8.1.0**: **Security Upgrade** - Implementing ES256 hardware-backed signing (YubiKey) for licenses. **Free Tier** - Now supports permanent free use for small teams (1 Line, 10 Users). Productivity Engine - "Active Sessions" card, Real-time Efficiency, Quick Stop.
 *   **v8.0.0**: Enterprise Edition - Full internationalization (English/Chinese), enhanced security (session encryption), comprehensive testing framework (Vitest/Playwright), performance optimizations, and improved Docker deployment automation.
 *   **v7.0.0**: Smart Comments (Order-level Collaboration), Configurable AI Visibility, Enhanced AI Privacy (Strict ID mode), Supervisor Excel Import, and Multi-tier Employee Cooperation.

@@ -43,17 +43,16 @@ export async function POST(request: NextRequest) {
             }
         });
 
-        // We might want to update the total quantity on the order too?
-        // But for now the order data is just a string 'WIP' or 'Done'.
-        // We can keep the order status as WIP until explicitly marked Done?
-        // Or if total quantity >= target, mark as Done?
-
-        // Let's check target quantity
         const order = await prisma.order.findUnique({ where: { id: existingSession.orderId }, include: { product: true } });
         if (order) {
+            const currentData = JSON.parse(order.data);
+            let isOrderDirty = false;
+            const logEntries: any[] = [];
+
             const productConfig = JSON.parse(order.product.config);
             const targetQty = productConfig.stepQuantities?.[existingSession.stepName];
 
+            // 1. Check Auto-Complete (Target Quantity)
             if (targetQty) {
                 // Calculate total completed including this one
                 // @ts-ignore
@@ -61,19 +60,9 @@ export async function POST(request: NextRequest) {
                     where: { orderId: existingSession.orderId, stepName: existingSession.stepName }
                 });
                 // @ts-ignore
-                const totalCompleted = allProgress.reduce((sum: number, p: any) => sum + p.quantity, 0); // Note: updatedSession is already in DB? Yes.
-
-                // Because we just updated the session, `allProgress` might include the OLD value if not careful with transaction?
-                // Wait, `prisma.stepProgress.update` happened. So `findMany` will see new value.
+                const totalCompleted = allProgress.reduce((sum: number, p: any) => sum + p.quantity, 0);
 
                 if (totalCompleted >= targetQty) {
-                    // Auto-mark as Done?
-                    // Let's leave it to the user or maybe auto-mark.
-                    // The user plan said: "Visual indicator of Total Completed vs Target".
-                    // Maybe auto-mark is nice.
-                    // I'll auto-mark as Done if total >= target.
-
-                    const currentData = JSON.parse(order.data);
                     // Auto-mark as Done with Timestamp
                     const now = new Date();
                     const year = now.getFullYear();
@@ -86,21 +75,77 @@ export async function POST(request: NextRequest) {
 
                     if (currentData[existingSession.stepName] !== timestamp) {
                         currentData[existingSession.stepName] = timestamp;
-                        await prisma.order.update({
-                            where: { id: order.id },
-                            data: { data: JSON.stringify(currentData) }
-                        });
-                        // Log
-                        await prisma.operationLog.create({
-                            data: {
-                                action: 'Done', // System Auto-Complete
-                                details: JSON.stringify({ step: existingSession.stepName, note: 'Auto-completed by quantity' }),
-                                userId: session.userId,
-                                orderId: order.id
-                            }
+                        isOrderDirty = true;
+
+                        logEntries.push({
+                            action: 'Done', // System Auto-Complete
+                            details: JSON.stringify({ step: existingSession.stepName, note: 'Auto-completed by quantity' }),
+                            userId: session.userId,
+                            orderId: order.id
                         });
                     }
                 }
+            }
+
+            // 2. Check Auto-Flow (Zero-Wait)
+            const currentStepStatus = currentData[existingSession.stepName];
+            // Only trigger if current step is completed (Timestamp or Done)
+            const isCompleted = currentStepStatus && currentStepStatus !== 'WIP' && currentStepStatus !== 'P' && currentStepStatus !== 'Hold' && currentStepStatus !== 'QN';
+
+            if (isCompleted && productConfig.schedulingConfig?.autoFlow) {
+                const steps = productConfig.steps || [];
+                const currentStepIndex = steps.indexOf(existingSession.stepName);
+
+                if (currentStepIndex !== -1 && currentStepIndex < steps.length - 1) {
+                    for (let i = currentStepIndex + 1; i < steps.length; i++) {
+                        const nextStep = steps[i];
+                        const nextStepStatus = currentData[nextStep];
+
+                        // Skip if explicitly marked N/C (Not Applicable)
+                        if (nextStepStatus === 'N/C' || nextStepStatus === 'N/A') {
+                            continue;
+                        }
+
+                        // If occupied (and not P), skip
+                        if (nextStepStatus && nextStepStatus !== 'P' && nextStepStatus !== '') {
+                            continue;
+                        }
+
+                        // Found an empty or 'P' slot
+                        if (!nextStepStatus || nextStepStatus === '') {
+                            currentData[nextStep] = 'P';
+                            isOrderDirty = true;
+
+                            logEntries.push({
+                                action: 'Auto-Schedule',
+                                details: JSON.stringify({
+                                    triggerStep: existingSession.stepName,
+                                    targetStep: nextStep,
+                                    note: 'Auto-Flow (Zero-Wait)'
+                                }),
+                                userId: session.userId,
+                                orderId: order.id
+                            });
+                            break; // Stop after scheduling the first available step
+                        }
+
+                        // If it was already 'P', we stop because it's already scheduled.
+                        if (nextStepStatus === 'P') {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // 3. Commit Updates if Dirty
+            if (isOrderDirty) {
+                await prisma.$transaction([
+                    prisma.order.update({
+                        where: { id: order.id },
+                        data: { data: JSON.stringify(currentData) }
+                    }),
+                    ...logEntries.map(log => prisma.operationLog.create({ data: log }))
+                ]);
             }
         }
 

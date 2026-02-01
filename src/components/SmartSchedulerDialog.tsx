@@ -5,8 +5,9 @@ import {
     X, Sparkles, Clock,
     AlertCircle,
     CheckCircle2, Info, Percent,
-    Download, RotateCcw, Calendar
+    Download, RotateCcw, Calendar, Zap
 } from 'lucide-react';
+import { updateProductSchedulingConfig } from '@/app/actions/product';
 import ExcelJS from 'exceljs';
 import { Product } from '@/lib/types/config';
 import { recommendSchedule, SchedulingResult } from '@/lib/scheduler';
@@ -32,6 +33,8 @@ export const SmartSchedulerDialog: React.FC<SmartSchedulerDialogProps> = ({
     onResetAllP
 }) => {
     const t = useTranslations('Dashboard');
+    const [autoFlow, setAutoFlow] = useState(product.schedulingConfig?.autoFlow || false);
+    const [isUpdatingAutoFlow, setIsUpdatingAutoFlow] = useState(false);
     const [standardHours, setStandardHours] = useState(product.shiftConfig?.standardHours || 8);
     const [overtimeHours, setOvertimeHours] = useState(product.shiftConfig?.overtimeHours || 0);
     const [weights, setWeights] = useState({
@@ -253,6 +256,32 @@ export const SmartSchedulerDialog: React.FC<SmartSchedulerDialogProps> = ({
         }
     };
 
+    const handleAutoFlowToggle = async () => {
+        setIsUpdatingAutoFlow(true);
+        try {
+            const newValue = !autoFlow;
+            // Optimistic update
+            setAutoFlow(newValue);
+
+            // Server update
+            const result = await updateProductSchedulingConfig(product.id, {
+                autoFlow: newValue
+            });
+
+            if (!result.success) {
+                // Revert on failure
+                setAutoFlow(!newValue);
+                console.error('Failed to update Auto-Flow:', result.error);
+                alert('Failed to update Auto-Flow setting');
+            }
+        } catch (error) {
+            setAutoFlow(!autoFlow);
+            console.error('Auto-Flow toggle error', error);
+        } finally {
+            setIsUpdatingAutoFlow(false);
+        }
+    };
+
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -283,6 +312,23 @@ export const SmartSchedulerDialog: React.FC<SmartSchedulerDialogProps> = ({
                         >
                             <Sparkles size={14} className={aiOverrides ? "text-purple-600" : "text-amber-500"} />
                             {isAutopilotLoading ? 'Autopilot...' : 'Autopilot'}
+                        </button>
+
+                        <button
+                            onClick={handleAutoFlowToggle}
+                            disabled={isUpdatingAutoFlow}
+                            title={t('autoFlowDesc')}
+                            className={`
+                                flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all border
+                                ${autoFlow
+                                    ? 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                                    : 'bg-white text-slate-400 border-slate-200 hover:bg-slate-50'
+                                }
+                                ${isUpdatingAutoFlow ? 'opacity-70 cursor-wait' : ''}
+                            `}
+                        >
+                            <Zap size={14} className={autoFlow ? "text-emerald-500 fill-emerald-500" : "text-slate-400"} />
+                            {t('autoFlow')}
                         </button>
                         <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
                             <X className="w-5 h-5 text-slate-400" />

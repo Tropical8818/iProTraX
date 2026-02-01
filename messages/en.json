@@ -144,6 +144,8 @@
         "aiAdvisorBoard": "AI Advisor Board",
         "aiAnalyzing": "AI is analyzing results...",
         "aiReadyToAnalyze": "Ready to provide auxiliary advice.",
+        "autoFlow": "Auto-Flow (Zero-Wait)",
+        "autoFlowDesc": "Automatically schedule next step as 'P' when current step is done.",
         "resetAllP": "Reset",
         "resetAllPConfirm": "Are you sure you want to clear all 'P' (Planned) statuses? This will reset all planned steps.",
         "planningHorizon": "Planning Horizon",

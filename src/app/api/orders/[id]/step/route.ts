@@ -194,6 +194,72 @@ export async function PATCH(
             console.error('Redis publish error:', rErr);
         }
 
+        // --- Auto-Flow (Zero-Wait) Logic ---
+        if (status === 'Done' && product) {
+            try {
+                const productConfig = JSON.parse(product.config || '{}');
+
+                if (productConfig.schedulingConfig?.autoFlow) {
+                    const steps = productConfig.steps || [];
+                    const currentStepIndex = steps.indexOf(step);
+
+                    if (currentStepIndex !== -1 && currentStepIndex < steps.length - 1) {
+                        // We need the LATEST data, which involves the update we just made.
+                        // We can use `currentData` which has the update.
+                        const orderData = { ...currentData };
+
+                        let foundNext = false;
+                        for (let i = currentStepIndex + 1; i < steps.length; i++) {
+                            const nextStep = steps[i];
+                            const nextStepStatus = orderData[nextStep];
+
+                            // Skip N/C
+                            if (nextStepStatus === 'N/C' || nextStepStatus === 'N/A') {
+                                continue;
+                            }
+
+                            // If occupied (and not P), skip
+                            if (nextStepStatus && nextStepStatus !== 'P' && nextStepStatus !== '') {
+                                continue;
+                            }
+
+                            // Empty or P -> Schedule
+                            if (!nextStepStatus || nextStepStatus === '') {
+                                orderData[nextStep] = 'P';
+                                foundNext = true;
+
+                                await prisma.order.update({
+                                    where: { id: order.id },
+                                    data: { data: JSON.stringify(orderData) }
+                                });
+
+                                await prisma.operationLog.create({
+                                    data: {
+                                        action: 'Auto-Schedule',
+                                        details: JSON.stringify({
+                                            triggerStep: step,
+                                            targetStep: nextStep,
+                                            note: 'Auto-Flow (Zero-Wait)'
+                                        }),
+                                        userId: session.userId,
+                                        orderId: order.id
+                                    }
+                                });
+                                break;
+                            }
+
+                            // If P, stop
+                            if (nextStepStatus === 'P') {
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (afError) {
+                console.error('Auto-Flow error:', afError);
+            }
+        }
+
         return NextResponse.json({ success: true, order: { ...updatedOrder, ...currentData } });
     } catch (error) {
         console.error('Update Step Error:', error);

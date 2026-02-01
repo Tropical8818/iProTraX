@@ -23,6 +23,7 @@ export interface SchedulingConfig {
     dateWeight: number;
     agingWeight: number;
     flowWeight?: number; // Optional weight for continuity (default 500)
+    autoFlow?: boolean; // Toggle for Zero-Wait Auto-Scheduling
 }
 
 // Product configuration

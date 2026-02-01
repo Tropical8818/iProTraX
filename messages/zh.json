@@ -144,6 +144,8 @@
         "aiAdvisorBoard": "AI 辅助排产建议",
         "aiAnalyzing": "AI 正在分析排产结果...",
         "aiReadyToAnalyze": "准备好为您提供辅助决策建议。",
+        "autoFlow": "自动流转 (零等待)",
+        "autoFlowDesc": "当前工序完成后，自动将下一工序计划为 'P'。",
         "resetAllP": "回退",
         "resetAllPConfirm": "确定要清除所有 'P' (计划) 状态吗？这将重置所有已计划的工序。",
         "planningHorizon": "计划时长",
