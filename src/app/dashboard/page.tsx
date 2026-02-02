@@ -30,6 +30,7 @@ import { calculateECD } from '@/lib/ecd';
 import { useLocaleDetection } from '@/hooks/useLocaleDetection';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
 import { useRealtime } from '@/hooks/useRealtime';
+import Portal from '@/components/common/Portal';
 
 // Dynamic import for barcode scanner (client-only)
 const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false });
@@ -103,7 +104,6 @@ export default function DashboardPage() {
     // Batch Operations State - Single Source of Truth
     const [activeBatchMode, setActiveBatchMode] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
-    const [batchMenuOpen, setBatchMenuOpen] = useState(false);
     const [eraseConfirmOpen, setEraseConfirmOpen] = useState(false);
 
     const [scannerOpen, setScannerOpen] = useState(false);
@@ -163,8 +163,46 @@ export default function DashboardPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [selectedProductId, setSelectedProductId] = useState<string>('');
     const [productMenuOpen, setProductMenuOpen] = useState(false);
+    const [productMenuPos, setProductMenuPos] = useState({ top: 0, left: 0, width: 200 });
     const productMenuRef = useRef<HTMLDivElement>(null);
+
+    const [batchMenuOpen, setBatchMenuOpen] = useState(false);
+    const [batchMenuPos, setBatchMenuPos] = useState({ top: 0, left: 0 });
     const batchMenuRef = useRef<HTMLDivElement>(null);
+
+    // Helper to calculate position
+    const updateDropdownPosition = (ref: React.RefObject<HTMLDivElement | null>, setPos: any, alignRight = false) => {
+        if (ref.current) {
+            const rect = ref.current.getBoundingClientRect();
+            setPos({
+                top: rect.bottom + 4, // 4px gap
+                left: alignRight ? rect.right : rect.left,
+                width: rect.width
+            });
+        }
+    };
+
+    // Update positions on scroll/resize
+    useEffect(() => {
+        const handleScroll = () => {
+            if (productMenuOpen) updateDropdownPosition(productMenuRef, setProductMenuPos);
+            if (batchMenuOpen) updateDropdownPosition(batchMenuRef, setBatchMenuPos, true);
+        };
+        window.addEventListener('scroll', handleScroll, true);
+        window.addEventListener('resize', handleScroll);
+        return () => {
+            window.removeEventListener('scroll', handleScroll, true);
+            window.removeEventListener('resize', handleScroll);
+        };
+    }, [productMenuOpen, batchMenuOpen]);
+
+    useEffect(() => {
+        if (productMenuOpen) updateDropdownPosition(productMenuRef, setProductMenuPos);
+    }, [productMenuOpen]);
+
+    useEffect(() => {
+        if (batchMenuOpen) updateDropdownPosition(batchMenuRef, setBatchMenuPos, true);
+    }, [batchMenuOpen]);
 
     // Logs state
     const [logs, setLogs] = useState<OperationLog[]>([]);
@@ -822,8 +860,8 @@ export default function DashboardPage() {
                         <img src="/logo.png" alt="iProTraX" className="h-9 w-auto" />
                     </button>
 
-                    <div className="flex-1 overflow-visible no-scrollbar flex items-center justify-end px-2">
-                        <nav className="flex items-center gap-1 sm:gap-2">
+                    <div className="flex-1 overflow-x-auto no-scrollbar flex items-center justify-end px-2 min-w-0">
+                        <nav className="flex items-center gap-1 sm:gap-2 whitespace-nowrap">
                             {/* Product Selector - Outside overflow container to prevent clipping */}
                             <div className="relative shrink-0" ref={productMenuRef}>
                                 <button
@@ -835,20 +873,32 @@ export default function DashboardPage() {
                                 </button>
 
                                 {productMenuOpen && products.length > 0 && (
-                                    <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-lg border border-slate-200 py-1 min-w-[200px] z-50 max-h-[80vh] overflow-y-auto">
-                                        {products.map(product => (
-                                            <button
-                                                key={product.id}
-                                                onClick={() => handleProductChange(product.id)}
-                                                className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${product.id === selectedProductId
-                                                    ? 'bg-indigo-50 text-indigo-700 font-medium border-r-4 border-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-400'
-                                                    : 'text-slate-700 dark:text-slate-400'
-                                                    }`}
-                                            >
-                                                {product.name}
-                                            </button>
-                                        ))}
-                                    </div>
+                                    <Portal>
+                                        <div
+                                            className="fixed bg-white rounded-lg shadow-lg border border-slate-200 py-1 min-w-[200px] z-[9999] max-h-[80vh] overflow-y-auto"
+                                            style={{
+                                                top: productMenuPos.top,
+                                                left: productMenuPos.left,
+                                                minWidth: Math.max(200, productMenuPos.width)
+                                            }}
+                                        >
+                                            {products.map(product => (
+                                                <button
+                                                    key={product.id}
+                                                    onClick={() => {
+                                                        handleProductChange(product.id);
+                                                        setProductMenuOpen(false);
+                                                    }}
+                                                    className={`w-full text-left px-4 py-3 text-sm hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors ${product.id === selectedProductId
+                                                        ? 'bg-indigo-50 text-indigo-700 font-medium border-r-4 border-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-400'
+                                                        : 'text-slate-700 dark:text-slate-400'
+                                                        }`}
+                                                >
+                                                    {product.name}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </Portal>
                                 )}
                             </div>
 
@@ -940,30 +990,38 @@ export default function DashboardPage() {
                                         </button>
 
                                         {batchMenuOpen && (
-                                            <div className="absolute top-full right-0 mt-1 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 min-w-[140px] z-[100]">
-                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('P'); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'P' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                    <Pencil className="w-4 h-4" /> Plan
-                                                </button>
-                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('N/A'); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'N/A' ? 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                    <Ban className="w-4 h-4" /> N/A
-                                                </button>
-                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('Hold'); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'Hold' ? 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                    <PauseCircle className="w-4 h-4" /> Hold
-                                                </button>
-                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('QN'); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'QN' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                    <AlertTriangle className="w-4 h-4" /> QN
-                                                </button>
-                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('WIP'); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'WIP' ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                    <Clock className="w-4 h-4" /> WIP
-                                                </button>
-                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('Complete'); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'Complete' ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                    <CheckCircle2 className="w-4 h-4" /> Complete
-                                                </button>
-                                                <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
-                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('Erase'); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'Erase' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-red-500 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30 dark:hover:text-red-200'}`}>
-                                                    <Eraser className="w-4 h-4" /> Erase
-                                                </button>
-                                            </div>
+                                            <Portal>
+                                                <div
+                                                    className="fixed bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 min-w-[140px] z-[9999]"
+                                                    style={{
+                                                        top: batchMenuPos.top,
+                                                        left: batchMenuPos.left - 140, // align right edge roughly
+                                                    }}
+                                                >
+                                                    <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('P'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'P' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                        <Pencil className="w-4 h-4" /> Plan
+                                                    </button>
+                                                    <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('N/A'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'N/A' ? 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                        <Ban className="w-4 h-4" /> N/A
+                                                    </button>
+                                                    <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('Hold'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'Hold' ? 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                        <PauseCircle className="w-4 h-4" /> Hold
+                                                    </button>
+                                                    <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('QN'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'QN' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                        <AlertTriangle className="w-4 h-4" /> QN
+                                                    </button>
+                                                    <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('WIP'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'WIP' ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                        <Clock className="w-4 h-4" /> WIP
+                                                    </button>
+                                                    <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('Complete'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'Complete' ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                        <CheckCircle2 className="w-4 h-4" /> Complete
+                                                    </button>
+                                                    <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                                                    <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('Erase'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'Erase' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-red-500 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30 dark:hover:text-red-200'}`}>
+                                                        <Eraser className="w-4 h-4" /> Erase
+                                                    </button>
+                                                </div>
+                                            </Portal>
                                         )}
                                     </div>
                                 )}
