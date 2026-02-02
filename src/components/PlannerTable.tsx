@@ -152,6 +152,44 @@ export default function PlannerTable({
     // --- MANUAL RESIZING LOGIC ---
     const [detailWidths, setDetailWidths] = useState<Record<string, number>>({});
     const [manualStepWidth, setManualStepWidth] = useState<number | null>(null);
+
+    // --- PERSISTENCE LOGIC ---
+    // Load from localStorage on mount
+    useEffect(() => {
+        try {
+            const savedDetailWidths = localStorage.getItem('ipro_table_detail_widths');
+            if (savedDetailWidths) {
+                setDetailWidths(JSON.parse(savedDetailWidths));
+            }
+
+            const savedStepWidth = localStorage.getItem('ipro_table_step_width');
+            if (savedStepWidth) {
+                setManualStepWidth(Number(savedStepWidth));
+            }
+        } catch (e) {
+            console.error('Failed to load table widths from localStorage', e);
+        }
+    }, []);
+
+    // Save to localStorage when widths change (Debounced to avoid excessive writes during drag)
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (Object.keys(detailWidths).length > 0) {
+                localStorage.setItem('ipro_table_detail_widths', JSON.stringify(detailWidths));
+            }
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, [detailWidths]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (manualStepWidth !== null) {
+                localStorage.setItem('ipro_table_step_width', String(manualStepWidth));
+            }
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, [manualStepWidth]);
+
     const [resizing, setResizing] = useState<{
         colKey: string;
         startX: number;

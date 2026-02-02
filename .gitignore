@@ -103,3 +103,12 @@ TUTORIAL_FOR_KIDS.md
 RECOMMENDED_READING.md
 
 DIGITAL_TWIN_ARCH_ZH.md
+
+# Sales Contracts
+docs/SALES_CONTRACT_DRAFT*.md
+
+# Docker
+Dockerfile
+docker-compose.yml
+docker-compose.override.yml
+.docker/
