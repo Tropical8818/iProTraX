@@ -74,6 +74,7 @@ export default function LoginPage() {
                         className="absolute top-6 right-6 z-50 px-3 py-2 rounded-lg transition-all shadow-lg text-white hover:text-indigo-300 hover:bg-white/20 border border-white/30 flex items-center justify-center min-w-[3.5rem]"
                         title={currentLocale === 'en' ? '切换到中文' : 'Switch to English'}
                         aria-label="Switch Language"
+                        suppressHydrationWarning
                     >
                         <div suppressHydrationWarning>
                             {mounted ? (

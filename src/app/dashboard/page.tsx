@@ -169,6 +169,7 @@ export default function DashboardPage() {
     const [batchMenuOpen, setBatchMenuOpen] = useState(false);
     const [batchMenuPos, setBatchMenuPos] = useState({ top: 0, left: 0 });
     const batchMenuRef = useRef<HTMLDivElement>(null);
+    const batchDropdownRef = useRef<HTMLDivElement>(null);
 
     // Helper to calculate position
     const updateDropdownPosition = (ref: React.RefObject<HTMLDivElement | null>, setPos: any, alignRight = false) => {
@@ -588,12 +589,13 @@ export default function DashboardPage() {
             if (productMenuRef.current && !productMenuRef.current.contains(event.target as Node)) {
                 setProductMenuOpen(false);
             }
-            if (batchMenuRef.current && !batchMenuRef.current.contains(event.target as Node)) {
+            if (batchMenuRef.current && !batchMenuRef.current.contains(event.target as Node) &&
+                (!batchDropdownRef.current || !batchDropdownRef.current.contains(event.target as Node))) {
                 setBatchMenuOpen(false);
             }
         };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        document.addEventListener('click', handleClickOutside);
+        return () => document.removeEventListener('click', handleClickOutside);
     }, []);
 
     // Fetch orders when product changes (after initial load)
@@ -992,6 +994,8 @@ export default function DashboardPage() {
                                         {batchMenuOpen && (
                                             <Portal>
                                                 <div
+                                                    ref={batchDropdownRef}
+                                                    onClick={(e) => e.stopPropagation()}
                                                     className="fixed bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 min-w-[140px] z-[9999]"
                                                     style={{
                                                         top: batchMenuPos.top,

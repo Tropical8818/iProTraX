@@ -56,6 +56,7 @@ next-env.d.ts
 
 # PPT template (internal use only)
 docs/ProTracker_PPT_Template.md
+docs/PROJECT_PRESENTATION.md
 
 # Rust
 **/target/
@@ -112,3 +113,6 @@ Dockerfile
 docker-compose.yml
 docker-compose.override.yml
 .docker/
+
+# Architecture Plan (Internal Only)
+architecture_plan.md
