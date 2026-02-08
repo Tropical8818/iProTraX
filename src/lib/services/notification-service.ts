@@ -17,6 +17,7 @@ interface OrderPayload {
 
 export class NotificationService {
     private static instance: NotificationService;
+    private dnsCache: Map<string, string> = new Map();
 
     private constructor() { }
 
@@ -499,11 +500,17 @@ export class NotificationService {
 
         // For extra security, resolve DNS to check real IP
         try {
-            const dns = await import('dns');
-            const { promisify } = await import('util');
-            const lookup = promisify(dns.lookup);
+            let address = this.dnsCache.get(url.hostname);
 
-            const { address } = await lookup(url.hostname);
+            if (!address) {
+                const dns = await import('dns');
+                const { promisify } = await import('util');
+                const lookup = promisify(dns.lookup);
+
+                const result = await lookup(url.hostname);
+                address = result.address;
+                this.dnsCache.set(url.hostname, address);
+            }
 
             // Basic Private IP Regex
             const isPrivate = /^(10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.|127\.|169\.254\.)/.test(address);

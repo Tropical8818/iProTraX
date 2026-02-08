@@ -167,13 +167,13 @@ export async function PATCH(
                 };
 
                 if (status === 'Hold') {
-                    await notifService.send('on_hold', payload);
+                    void notifService.send('on_hold', payload);
                 } else if (status === 'QN') {
-                    await notifService.send('on_qn', payload);
+                    void notifService.send('on_qn', payload);
                 } else if (status === 'Done') {
-                    await notifService.send('on_done', payload);
+                    void notifService.send('on_done', payload);
                 } else {
-                    await notifService.send('on_step_update', payload);
+                    void notifService.send('on_step_update', payload);
                 }
             } catch (webhookErr) {
                 console.error('[Webhook] Error triggering webhooks:', webhookErr);

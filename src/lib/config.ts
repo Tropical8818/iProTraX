@@ -80,8 +80,13 @@ function migrateConfig(parsed: Record<string, unknown>): Config {
     };
 }
 
+let configCache: Config | null = null;
+
 export function getConfig(): Config {
     try {
+        // Return cached config if available
+        if (configCache) return configCache;
+
         // Ensure data directory exists
         if (!fs.existsSync(DATA_DIR)) {
             console.log('[Config] Creating data directory:', DATA_DIR);
@@ -98,6 +103,7 @@ export function getConfig(): Config {
         const raw = fs.readFileSync(CONFIG_PATH, 'utf-8');
         const parsed = JSON.parse(raw);
         const config = migrateConfig(parsed);
+        configCache = config;
 
         // Save migrated config if format changed
         if (!Array.isArray(parsed.products)) {
@@ -122,6 +128,8 @@ export function updateConfig(newConfig: Partial<Config>): Config {
         const current = getConfig();
         const updated = { ...current, ...newConfig };
         fs.writeFileSync(CONFIG_PATH, JSON.stringify(updated, null, 4));
+        // Update cache
+        configCache = updated;
         return updated;
     } catch (err) {
         console.error('Config write error:', err);
