@@ -241,8 +241,8 @@ export class NotificationService {
             // Throws error if unsafe, which is caught by the outer try/catch
             const safeUrl = await this.ensureUrlSafe(url);
 
-            // codeql[js/request-forgery] - URL validated by ensureUrlSafe guard above
-            const response = await fetch(safeUrl, options);
+            // SSRF Protection: URL validated by ensureUrlSafe (blocks private IPs via DNS lookup)
+            const response = await fetch(safeUrl, options); // lgtm[js/request-forgery]
 
             if (!response.ok) {
                 // Tainted Format String Fix: Use %s
