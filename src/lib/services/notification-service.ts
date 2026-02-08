@@ -238,14 +238,11 @@ export class NotificationService {
             };
 
             // SSRF Protection: Validate FINAL URL before request
-            // This ensures no provider logic has redirected to an internal IP
-            if (!await this.validateWebhookUrl(url)) {
-                console.error('[Notification] Blocked potential SSRF attempt to internal/private URL: %s', url);
-                return;
-            }
+            // Throws error if unsafe, which is caught by the outer try/catch
+            const safeUrl = await this.ensureUrlSafe(url);
 
-            // codeql[js/request-forgery] - URL validated by validateWebhookUrl logic above
-            const response = await fetch(url, options);
+            // codeql [js/request-forgery] - URL validated by ensureUrlSafe guard above
+            const response = await fetch(safeUrl, options);
 
             if (!response.ok) {
                 // Tainted Format String Fix: Use %s
@@ -478,23 +475,30 @@ export class NotificationService {
      * Validate Webhook URL to prevent SSRF
      * Rejects local/private IPs
      */
-    private async validateWebhookUrl(urlStr: string): Promise<boolean> {
+    /**
+     * Validate Webhook URL to prevent SSRF
+     * Throws error if URL is unsafe. Returns the input URL if safe.
+     */
+    private async ensureUrlSafe(urlStr: string): Promise<string> {
+        let url: URL;
         try {
-            const url = new URL(urlStr);
+            url = new URL(urlStr);
+        } catch (e) {
+            throw new Error(`Invalid URL format: ${urlStr}`);
+        }
 
-            // Protocol Check (SSRF Protection)
-            if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-                return false;
-            }
+        // Protocol Check (SSRF Protection)
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+            throw new Error(`Invalid protocol (only http/https allowed): ${url.protocol}`);
+        }
 
-            // Block localhost/127.0.0.1 immediately
-            if (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]') {
-                return false;
-            }
+        // Block localhost/127.0.0.1 immediately
+        if (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]') {
+            throw new Error(`Localhost access denied: ${url.hostname}`);
+        }
 
-            // For extra security, resolve DNS to check real IP
-            // Note: In strict envs, this should verify against private subnets (10.x, 192.168.x, 172.16.x)
-            // Here we do a basic check.
+        // For extra security, resolve DNS to check real IP
+        try {
             const dns = await import('dns');
             const { promisify } = await import('util');
             const lookup = promisify(dns.lookup);
@@ -503,11 +507,14 @@ export class NotificationService {
 
             // Basic Private IP Regex
             const isPrivate = /^(10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.|127\.|169\.254\.)/.test(address);
-            return !isPrivate;
-
-        } catch (e) {
-            console.error('[Notification] URL Validation failed: %s', e);
-            return false;
+            if (isPrivate) {
+                throw new Error(`Private IP access denied: ${address}`);
+            }
+        } catch (e: any) {
+            // Allow DNS errors to bubble up as validation failures if strict, or just throw
+            throw new Error(`DNS Validation failed or IP blocked: ${e.message || e}`);
         }
+
+        return urlStr;
     }
 }
