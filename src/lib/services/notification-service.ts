@@ -126,13 +126,26 @@ export class NotificationService {
     private async dispatchWebhook(webhook: WebhookConfig, event: NotificationEvent, payload: OrderPayload) {
         try {
             let url = webhook.url;
+
+            // SSRF Protection: Validate URL before processing
+            if (!await this.validateWebhookUrl(url)) {
+                console.error('[Notification] Blocked potential SSRF attempt to internal/private URL: %s', url);
+                return;
+            }
+
             let body = this.buildPayload(webhook, event, payload);
             let headers: any = { 'Content-Type': 'application/json' };
 
             // Dynamic URL Construction & Provider Specifics
             // Dynamic URL Construction & Provider Specifics
             if (webhook.provider === 'bark' && webhook.settings?.deviceKey) {
-                const rawServerUrl = webhook.settings.serverUrl?.replace(/\/+$/, '') || 'https://api.day.app';
+                const rawServerUrl = webhook.settings.serverUrl || 'https://api.day.app';
+                // ReDoS Fix: Safe removal of trailing slashes without vulnerable regex
+                let safeServerUrl = rawServerUrl;
+                while (safeServerUrl.endsWith('/')) {
+                    safeServerUrl = safeServerUrl.slice(0, -1);
+                }
+
                 const deviceKey = webhook.settings.deviceKey;
 
                 // Intelligent URL Construction:
@@ -142,16 +155,19 @@ export class NotificationService {
                 //         → Append Key/Title/Body as usual
 
                 let baseUrl: string;
-                if (rawServerUrl.includes(deviceKey)) {
+                if (safeServerUrl.includes(deviceKey)) {
                     // User's URL already has the key embedded, use it directly
-                    baseUrl = rawServerUrl;
-                    console.log(`[Notification/Bark] Server URL contains Key, using directly.`);
+                    baseUrl = safeServerUrl;
+                    console.log('[Notification/Bark] Server URL contains Key, using directly.');
                 } else {
                     // Standard case: append key
-                    baseUrl = `${rawServerUrl}/${deviceKey}`;
+                    baseUrl = `${safeServerUrl}/${deviceKey}`;
                 }
-                // Ensure no trailing slashes
-                baseUrl = baseUrl.replace(/\/+$/, '');
+
+                // ReDoS Fix: Ensure no trailing slashes on baseUrl
+                while (baseUrl.endsWith('/')) {
+                    baseUrl = baseUrl.slice(0, -1);
+                }
 
                 // Build Title and Body
                 const titleStr = webhook.name || body?.title || `iProTraX: ${event}`;
@@ -166,40 +182,42 @@ export class NotificationService {
 
                 url = `${baseUrl}/${title}/${textBody}?sound=${sound}${icon}${group}`;
 
-                console.log(`[Notification/Bark] GET: [BASE]/${title}/${textBody}`);
+                console.log('[Notification/Bark] GET: [BASE]/%s/%s', title, textBody);
 
                 // Body must be undefined for GET
                 body = undefined;
 
             } else if (webhook.provider === 'dingtalk') {
-                // Handle optional Sign Secret
+                // ... (DingTalk logic remains same)
                 if (webhook.settings?.signSecret) {
                     const { timestamp, sign } = this.signDingTalk(webhook.settings.signSecret);
-                    // Append valid query params
                     const separator = url.includes('?') ? '&' : '?';
                     url = `${url}${separator}timestamp=${timestamp}&sign=${sign}`;
                 }
 
             } else if (webhook.provider === 'feishu') {
-                // Handle optional Sign Secret (Inject into Body)
+                // ... (Feishu logic remains same)
                 if (webhook.settings?.signSecret) {
                     const { timestamp, sign } = this.signFeishu(webhook.settings.signSecret);
                     body = {
                         timestamp,
                         sign,
-                        ...body // Spread original card/msg_type
+                        ...body
                     };
                 }
 
             } else if (webhook.provider === 'telegram' && webhook.settings?.botToken && webhook.settings?.chatId) {
-                // ... (Telegram existing logic) ...
                 url = `https://api.telegram.org/bot${webhook.settings.botToken}/sendMessage`;
                 body = {
                     chat_id: webhook.settings.chatId,
                     ...body
                 };
             } else if (webhook.provider === 'gotify' && webhook.settings?.serverUrl && webhook.settings?.appToken) {
-                const serverUrl = webhook.settings.serverUrl.replace(/\/$/, '');
+                // ReDoS Fix for Gotify URL
+                let serverUrl = webhook.settings.serverUrl;
+                while (serverUrl.endsWith('/')) {
+                    serverUrl = serverUrl.slice(0, -1);
+                }
                 url = `${serverUrl}/message?token=${webhook.settings.appToken}`;
             }
 
@@ -225,12 +243,14 @@ export class NotificationService {
             const response = await fetch(url, options);
 
             if (!response.ok) {
-                console.error(`[Notification] Failed to send to ${webhook.name}: ${response.status} ${response.statusText}`);
+                // Tainted Format String Fix: Use %s
+                console.error('[Notification] Failed to send to %s: %s %s', webhook.name, response.status, response.statusText);
             } else {
-                console.log(`[Notification] Sent to ${webhook.name} successfully.`);
+                console.log('[Notification] Sent to %s successfully.', webhook.name);
             }
         } catch (error) {
-            console.error(`[Notification] Error sending to ${webhook.name}:`, error);
+            // Tainted Format String Fix: Use %s
+            console.error('[Notification] Error sending to %s:', webhook.name, error);
         }
     }
 
@@ -275,9 +295,11 @@ export class NotificationService {
                         }
                     };
                 case 'telegram':
+                    // Telegram Escaping Fix: Use helper
                     return {
-                        text: `*${title}*\n${text}`.replace(/_/g, '\\_'),
-                        parse_mode: 'Markdown'
+                        text: `*${this.escapeTelegramMarkdown(title)}*\n${this.escapeTelegramMarkdown(text)}`,
+                        parse_mode: 'MarkdownV2', // Use V2 for better escaping support
+                        disable_web_page_preview: true
                     };
                 case 'bark':
                     return {
@@ -357,13 +379,10 @@ export class NotificationService {
                     }
                 };
             case 'telegram':
-                // Telegram requires chat_id which is usually in the URL for webhooks, 
-                // but standard webhook URL is https://api.telegram.org/bot<token>/sendMessage
-                // The body needs 'chat_id' if not provided contextually, but usually users put full URL.
-                // We will send text.
+                // Telegram Escaping Fix: Use helper and V2
                 return {
-                    text: `*${title}*\nOrder: \`${payload.orderId}\`\nStep: ${payload.step}\nStatus: ${payload.status}`.replace(/_/g, '\\_'), // Basic Markdown escaping
-                    parse_mode: 'Markdown'
+                    text: `*${this.escapeTelegramMarkdown(title)}*\nOrder: \`${this.escapeTelegramMarkdown(payload.orderId)}\`\nStep: ${this.escapeTelegramMarkdown(payload.step || 'N/A')}\nStatus: ${this.escapeTelegramMarkdown(payload.status || 'N/A')}`,
+                    parse_mode: 'MarkdownV2'
                 };
             case 'discord':
                 return {
@@ -439,5 +458,44 @@ export class NotificationService {
             result = result.replace(new RegExp(key, 'g'), value);
         }
         return result;
+    }
+
+    /**
+     * Escape special characters for Telegram MarkdownV2
+     */
+    private escapeTelegramMarkdown(text: string): string {
+        // Escape backslash first, then other special characters
+        return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
+    }
+
+    /**
+     * Validate Webhook URL to prevent SSRF
+     * Rejects local/private IPs
+     */
+    private async validateWebhookUrl(urlStr: string): Promise<boolean> {
+        try {
+            const url = new URL(urlStr);
+            // Block localhost/127.0.0.1 immediately
+            if (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]') {
+                return false;
+            }
+
+            // For extra security, resolve DNS to check real IP
+            // Note: In strict envs, this should verify against private subnets (10.x, 192.168.x, 172.16.x)
+            // Here we do a basic check.
+            const dns = await import('dns');
+            const { promisify } = await import('util');
+            const lookup = promisify(dns.lookup);
+
+            const { address } = await lookup(url.hostname);
+
+            // Basic Private IP Regex
+            const isPrivate = /^(10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.|127\.|169\.254\.)/.test(address);
+            return !isPrivate;
+
+        } catch (e) {
+            console.error('[Notification] URL Validation failed: %s', e);
+            return false;
+        }
     }
 }

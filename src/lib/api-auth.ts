@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createHash } from 'node:crypto';
+import { createHash } from 'node:crypto'; // Keeping for legacy fallback
+import { hashApiKey } from './auth'; // Import shared secure hash helper
 
 export interface ApiAuthResult {
     valid: boolean;
@@ -31,13 +32,30 @@ export async function validateApiKey(request: NextRequest): Promise<ApiAuthResul
     }
 
     // Hash the provided key to compare with stored hash
-    const keyHash = createHash('sha256').update(apiKey).digest('hex');
+    // Strategy: 1. Try Secure PBKDF2
+    const pbkdf2Hash = hashApiKey(apiKey);
+    let keyRecord = await prisma.apiKey.findUnique({
+        where: { keyHash: pbkdf2Hash }
+    });
 
-    try {
-        const keyRecord = await prisma.apiKey.findUnique({
-            where: { keyHash }
+    // 2. Fallback to Legacy SHA-256
+    if (!keyRecord) {
+        const sha256Hash = createHash('sha256').update(apiKey).digest('hex');
+        keyRecord = await prisma.apiKey.findUnique({
+            where: { keyHash: sha256Hash }
         });
 
+        // Auto-Migration
+        if (keyRecord) {
+            console.log(`[API Auth] Migrating Key ID ${keyRecord.id} to PBKDF2`);
+            prisma.apiKey.update({
+                where: { id: keyRecord.id },
+                data: { keyHash: pbkdf2Hash }
+            }).catch((e: any) => console.error('[API Auth] Migration failed:', e));
+        }
+    }
+
+    try {
         if (!keyRecord) {
             return { valid: false, error: 'Invalid API key' };
         }
@@ -92,7 +110,9 @@ export function generateApiKey(): { rawKey: string; keyHash: string; prefix: str
     );
     const keyBody = randomBytes.toString('base64url');
     const rawKey = `sk_live_${keyBody}`;
-    const keyHash = createHash('sha256').update(rawKey).digest('hex');
+
+    // Use Secure PBKDF2 for new keys
+    const keyHash = hashApiKey(rawKey);
     const prefix = rawKey.substring(0, 12); // "sk_live_xxxx"
 
     return { rawKey, keyHash, prefix };

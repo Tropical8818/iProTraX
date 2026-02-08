@@ -38,7 +38,17 @@ export async function createSession(userId: string, username: string, role: stri
 }
 
 import { prisma } from '@/lib/prisma';
-import { createHash } from 'node:crypto';
+import { createHash, pbkdf2Sync } from 'node:crypto';
+
+// Server-side pepper for deterministic API key hashing
+const API_KEY_PEPPER = process.env.API_KEY_PEPPER || 'default_iprotrax_pepper_change_me';
+
+/**
+ * Hash API Key using PBKDF2 (Deterministic for lookup)
+ */
+export function hashApiKey(key: string): string {
+    return pbkdf2Sync(key, API_KEY_PEPPER, 10000, 64, 'sha512').toString('hex');
+}
 
 // ... (existing imports)
 
@@ -77,13 +87,43 @@ export async function getSession(): Promise<Session | null> {
             // Basic format check
             if (apiKey.length < 20) return null;
 
-            const keyHash = createHash('sha256').update(apiKey).digest('hex');
+            // Strategy: Dual Lookup (PBKDF2 -> SHA256)
+            // 1. Try Secure PBKDF2 Hash first
+            const pbkdf2Hash = hashApiKey(apiKey);
+            let keyRecord = await prisma.apiKey.findUnique({
+                where: { keyHash: pbkdf2Hash }
+            });
 
-            try {
-                const keyRecord = await prisma.apiKey.findUnique({
-                    where: { keyHash }
+            // 2. If not found, try Legacy SHA-256 Hash
+            if (!keyRecord) {
+                const sha256Hash = createHash('sha256').update(apiKey).digest('hex');
+                keyRecord = await prisma.apiKey.findUnique({
+                    where: { keyHash: sha256Hash }
                 });
 
+                // Auto-Migration: If found via legacy hash, upgrade to PBKDF2
+                if (keyRecord) {
+                    console.log(`[Auth] Migrating API Key ${keyRecord.id} to PBKDF2...`);
+                    // We update the hash in background or await? Await to be safe.
+                    // We can capture the promise but not await it to speed up response, 
+                    // but for security updates, ensuring consistency is better.
+                    // But `findUnique` returned the record, so we have it.
+                    // We verify isActive later.
+
+                    // We should trigger update.
+                    try {
+                        await prisma.apiKey.update({
+                            where: { id: keyRecord.id },
+                            data: { keyHash: pbkdf2Hash }
+                        });
+                        console.log(`[Auth] Migration successful for Key ${keyRecord.id}`);
+                    } catch (err) {
+                        console.error(`[Auth] Migration failed for Key ${keyRecord.id}`, err);
+                    }
+                }
+            }
+
+            try {
                 if (keyRecord && keyRecord.isActive) {
                     // Check expiration if set
                     if (keyRecord.expiresAt && keyRecord.expiresAt < new Date()) {

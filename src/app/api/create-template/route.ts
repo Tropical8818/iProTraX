@@ -62,10 +62,17 @@ export async function POST(request: NextRequest) {
         });
 
         // Determine output path
-        let finalPath = outputPath;
-        if (!finalPath) {
+        // Determine output path safely
+        const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
+        let finalPath: string;
+
+        if (outputPath) {
+            // Path Injection Fix: Sanitize and force to dataDir
+            // We use path.basename to strip any directory traversal characters like '../'
+            const safeFileName = path.basename(outputPath);
+            finalPath = path.join(dataDir, safeFileName);
+        } else {
             // Default to data directory with product name
-            const dataDir = process.env.DATA_DIR || path.join(process.cwd(), 'data');
             const safeName = dbProduct.name.replace(/[^a-zA-Z0-9]/g, '_');
             finalPath = path.join(dataDir, `${safeName}_template.xlsx`);
         }
