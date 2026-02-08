@@ -470,7 +470,7 @@ export class NotificationService {
     private escapeTelegramMarkdown(text: string): string {
         // Escape backslash first, then other special characters
         // MarkdownV2 requires escaping: _ * [ ] ( ) ~ ` > # + - = | { } . ! \
-        return text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\$&');
+        return text.replace(/[\\_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
     }
 
     /**
@@ -480,6 +480,12 @@ export class NotificationService {
     private async validateWebhookUrl(urlStr: string): Promise<boolean> {
         try {
             const url = new URL(urlStr);
+
+            // Protocol Check (SSRF Protection)
+            if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+                return false;
+            }
+
             // Block localhost/127.0.0.1 immediately
             if (url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]') {
                 return false;

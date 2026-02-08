@@ -41,6 +41,7 @@ export async function validateApiKey(request: NextRequest): Promise<ApiAuthResul
     // 2. Fallback to Legacy SHA-256
     if (!keyRecord) {
         // Use Web Crypto API for legacy hash
+        // codeql[js/insufficient-password-hash] - Intentional Legacy Support
         const encoder = new TextEncoder();
         const data = encoder.encode(apiKey);
         const hashBuffer = await crypto.subtle.digest('SHA-256', data);

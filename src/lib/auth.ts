@@ -97,6 +97,7 @@ export async function getSession(): Promise<Session | null> {
             // 2. If not found, try Legacy SHA-256 Hash
             if (!keyRecord) {
                 // Use Web Crypto API for legacy hash to distinguish from password hashing context
+                // codeql[js/insufficient-password-hash] - Intentional Legacy Support
                 const encoder = new TextEncoder();
                 const data = encoder.encode(apiKey);
                 const hashBuffer = await crypto.subtle.digest('SHA-256', data);
