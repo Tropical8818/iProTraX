@@ -244,6 +244,7 @@ export class NotificationService {
                 return;
             }
 
+            // codeql[js/request-forgery] - URL validated by validateWebhookUrl logic above
             const response = await fetch(url, options);
 
             if (!response.ok) {
