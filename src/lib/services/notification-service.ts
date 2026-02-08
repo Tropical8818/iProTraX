@@ -127,11 +127,8 @@ export class NotificationService {
         try {
             let url = webhook.url;
 
-            // SSRF Protection: Validate URL before processing
-            if (!await this.validateWebhookUrl(url)) {
-                console.error('[Notification] Blocked potential SSRF attempt to internal/private URL: %s', url);
-                return;
-            }
+            // SSRF Protection: Moved to just before fetch() to cover all modifications
+
 
             let body = this.buildPayload(webhook, event, payload);
             let headers: any = { 'Content-Type': 'application/json' };
@@ -239,6 +236,13 @@ export class NotificationService {
                 headers: body ? headers : undefined,
                 body: body ? JSON.stringify(body) : undefined,
             };
+
+            // SSRF Protection: Validate FINAL URL before request
+            // This ensures no provider logic has redirected to an internal IP
+            if (!await this.validateWebhookUrl(url)) {
+                console.error('[Notification] Blocked potential SSRF attempt to internal/private URL: %s', url);
+                return;
+            }
 
             const response = await fetch(url, options);
 
@@ -465,7 +469,8 @@ export class NotificationService {
      */
     private escapeTelegramMarkdown(text: string): string {
         // Escape backslash first, then other special characters
-        return text.replace(/[_*[\]()~`>#+\-=|{}.!]/g, '\\$&');
+        // MarkdownV2 requires escaping: _ * [ ] ( ) ~ ` > # + - = | { } . ! \
+        return text.replace(/[_*[\]()~`>#+\-=|{}.!\\]/g, '\\$&');
     }
 
     /**

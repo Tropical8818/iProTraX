@@ -40,7 +40,13 @@ export async function validateApiKey(request: NextRequest): Promise<ApiAuthResul
 
     // 2. Fallback to Legacy SHA-256
     if (!keyRecord) {
-        const sha256Hash = createHash('sha256').update(apiKey).digest('hex');
+        // Use Web Crypto API for legacy hash
+        const encoder = new TextEncoder();
+        const data = encoder.encode(apiKey);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const sha256Hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
         keyRecord = await prisma.apiKey.findUnique({
             where: { keyHash: sha256Hash }
         });
