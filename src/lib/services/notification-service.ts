@@ -241,7 +241,7 @@ export class NotificationService {
             // Throws error if unsafe, which is caught by the outer try/catch
             const safeUrl = await this.ensureUrlSafe(url);
 
-            // codeql [js/request-forgery] - URL validated by ensureUrlSafe guard above
+            // codeql[js/request-forgery] - URL validated by ensureUrlSafe guard above
             const response = await fetch(safeUrl, options);
 
             if (!response.ok) {
