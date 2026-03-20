@@ -863,14 +863,14 @@ export default function DashboardPage() {
                     </button>
 
                     <div className="flex-1 overflow-x-auto no-scrollbar flex items-center justify-end px-2 min-w-0">
-                        <nav className="flex items-center gap-1 sm:gap-2 whitespace-nowrap">
+                        <nav className="flex items-center gap-1 lg:gap-2 whitespace-nowrap">
                             {/* Product Selector - Outside overflow container to prevent clipping */}
                             <div className="relative shrink-0" ref={productMenuRef}>
                                 <button
                                     onClick={() => setProductMenuOpen(!productMenuOpen)}
                                     className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-200 bg-white"
                                 >
-                                    <span className="max-w-[150px] truncate">{selectedProduct?.name || t('selectProduct')}</span>
+                                    <span className="max-w-[80px] xs:max-w-[120px] lg:max-w-[180px] truncate">{selectedProduct?.name || t('selectProduct')}</span>
                                     <ChevronDown className={`w-4 h-4 transition-transform ${productMenuOpen ? 'rotate-180' : ''}`} />
                                 </button>
 
@@ -935,7 +935,7 @@ export default function DashboardPage() {
                                     className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-sm font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200 transition-all active:scale-95"
                                 >
                                     <Sparkles className="w-4 h-4 animate-pulse" />
-                                    <span className="hidden sm:inline">{t('smartScheduleBtn')}</span>
+                                    <span className="hidden lg:inline">{t('smartScheduleBtn')}</span>
                                 </button>
                             )}
 
@@ -944,7 +944,7 @@ export default function DashboardPage() {
 
                                 <button className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium">
                                     <Table2 className="w-4 h-4" />
-                                    <span className="hidden sm:inline">{t('home')}</span>
+                                    <span className="hidden lg:inline">{t('home')}</span>
                                 </button>
 
 
@@ -955,7 +955,7 @@ export default function DashboardPage() {
                                     title={t('operation')}
                                 >
                                     <HardHat className="w-5 h-5 sm:w-4 sm:h-4" />
-                                    <span className="hidden sm:inline">{t('operation')}</span>
+                                    <span className="hidden lg:inline">{t('operation')}</span>
                                 </button>
 
 
@@ -970,7 +970,7 @@ export default function DashboardPage() {
                                         title={t('reports')}
                                     >
                                         <BarChart2 className="w-4 h-4" />
-                                        <span className="hidden sm:inline">{t('reports')}</span>
+                                        <span className="hidden lg:inline">{t('reports')}</span>
                                     </button>
                                 )}
 
@@ -985,7 +985,7 @@ export default function DashboardPage() {
                                                 }`}
                                         >
                                             <Layers className="w-4 h-4" />
-                                            <span className="hidden sm:inline">
+                                            <span className="hidden lg:inline">
                                                 {activeBatchMode === 'P' ? t('batch.plan') : activeBatchMode === 'N/A' ? t('batch.na') : activeBatchMode === 'Hold' ? t('batch.hold') : activeBatchMode === 'QN' ? t('batch.qn') : activeBatchMode === 'WIP' ? t('batch.wip') : activeBatchMode === 'Complete' ? t('batch.complete') : activeBatchMode === 'Erase' ? t('batch.erase') : t('batch.edit')}
                                             </span>
                                             <ChevronDown className={`w-3.5 h-3.5 transition-transform ${batchMenuOpen ? 'rotate-180' : ''}`} />
@@ -1040,7 +1040,7 @@ export default function DashboardPage() {
                                     title={showCompleted ? 'Hide Completed Orders' : 'Show Completed Orders'}
                                 >
                                     {showCompleted ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                                    <span className="hidden sm:inline">Completed</span>
+                                    <span className="hidden lg:inline">Completed</span>
                                     <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-200 text-slate-600">
                                         {orders.filter(o => {
                                             let completionStep = steps.find(s => s.toLowerCase() === 'receipt');
