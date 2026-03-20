@@ -116,3 +116,6 @@ docker-compose.override.yml
 
 # Architecture Plan (Internal Only)
 architecture_plan.md
+
+# Technical Stack
+TECH_STACK.md
