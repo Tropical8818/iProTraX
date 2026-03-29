@@ -5,8 +5,6 @@ FROM node:22-alpine AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
-# Upgrade npm to latest
-RUN npm install -g npm@latest
 
 COPY package.json package-lock.json* ./
 RUN npm ci
@@ -57,7 +55,6 @@ RUN echo "https://dl-cdn.alpinelinux.org/alpine/edge/main" >> /etc/apk/repositor
     zlib \
     busybox && \
     apk upgrade --no-cache && \
-    npm install -g npm@latest && \
     echo "--- Security Verification (Alpine Edge) ---" && \
     apk info -v zlib busybox curl
 
