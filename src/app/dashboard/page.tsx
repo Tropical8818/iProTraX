@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { format } from 'date-fns';
 import { useRouter } from 'next/navigation';
-import { parseShortTimestamp } from '@/lib/date-utils';
+import { parseShortTimestamp, parseFlexibleDate } from '@/lib/date-utils';
 import {
     Settings, LogOut,
     Maximize, Minimize, ScanBarcode, ArrowRight,
@@ -11,7 +11,7 @@ import {
     ChevronDown, Table2, Pencil, Eye, EyeOff, ClipboardList,
     RefreshCw, X, FileSpreadsheet, Check, Clock, CheckCircle2, Layers, AlertTriangle, Sparkles,
     History, Loader2, BarChart2, ZoomIn, ZoomOut,
-    LayoutGrid, List
+    LayoutGrid, List, FileDown
 } from 'lucide-react';
 import AnalyticsDashboard from '@/components/analytics/AnalyticsDashboard';
 import { useTranslations } from 'next-intl';
@@ -780,8 +780,8 @@ export default function DashboardPage() {
             const getDueDate = (order: any) => {
                 const due = order['WO DUE'] || order['WO_DUE'] || order['到期日期'];
                 if (!due) return new Date('9999-12-31'); // No due date goes last
-                const d = new Date(due);
-                return isNaN(d.getTime()) ? new Date('9999-12-31') : d;
+                const d = parseFlexibleDate(due);
+                return (!d || isNaN(d.getTime())) ? new Date('9999-12-31') : d;
             };
 
             const dateA = getDueDate(a).getTime();
@@ -852,26 +852,27 @@ export default function DashboardPage() {
         <div className="min-h-screen bg-slate-100">
             {/* Header */}
             <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
-                <div className="max-w-full mx-auto px-4 h-14 flex items-center justify-between">
-                    {/* Left: Logo */}
+                <div className="max-w-full mx-auto px-2 sm:px-3 h-12 flex items-center">
+                    {/* Left: Logo - always visible */}
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer shrink-0"
+                        className="flex items-center hover:opacity-80 transition-opacity cursor-pointer shrink-0 mr-2"
                         title="Return to Home"
                     >
-                        <img src="/logo.png" alt="iProTraX" className="h-9 w-auto" />
+                        <img src="/logo.png" alt="iProTraX" className="h-7 w-auto" />
                     </button>
 
-                    <div className="flex-1 overflow-x-auto no-scrollbar flex items-center justify-end px-2 min-w-0">
-                        <nav className="flex items-center gap-1 sm:gap-2 whitespace-nowrap">
-                            {/* Product Selector - Outside overflow container to prevent clipping */}
+                    {/* Scrollable toolbar area */}
+                    <div className="flex-1 overflow-x-auto scroll-smooth min-w-0 flex justify-end" style={{ scrollbarWidth: 'thin' }}>
+                        <nav className="flex items-center gap-0.5 whitespace-nowrap py-1 px-1">
+                            {/* Product Selector */}
                             <div className="relative shrink-0" ref={productMenuRef}>
                                 <button
                                     onClick={() => setProductMenuOpen(!productMenuOpen)}
-                                    className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 rounded-lg border border-slate-200 bg-white"
+                                    className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50 rounded-md border border-slate-200 bg-white"
                                 >
-                                    <span className="max-w-[150px] truncate">{selectedProduct?.name || t('selectProduct')}</span>
-                                    <ChevronDown className={`w-4 h-4 transition-transform ${productMenuOpen ? 'rotate-180' : ''}`} />
+                                    <span className="max-w-[120px] truncate">{selectedProduct?.name || t('selectProduct')}</span>
+                                    <ChevronDown className={`w-3 h-3 transition-transform ${productMenuOpen ? 'rotate-180' : ''}`} />
                                 </button>
 
                                 {productMenuOpen && products.length > 0 && (
@@ -905,7 +906,7 @@ export default function DashboardPage() {
                             </div>
 
                             {(role === 'admin' || role === 'supervisor') && (
-                                <div className="shrink-0 ml-1 mr-2">
+                                <div className="shrink-0">
                                     <input
                                         type="file"
                                         id="dashboard-import-input"
@@ -919,11 +920,11 @@ export default function DashboardPage() {
                                             document.getElementById('dashboard-import-input')?.click();
                                         }}
                                         disabled={isImporting}
-                                        className="flex items-center gap-2 px-3 py-2 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-blue-600 rounded-lg text-sm font-medium transition-colors shadow-sm"
+                                        className="flex items-center gap-1 px-2 py-1.5 border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-blue-600 rounded-md text-xs font-medium transition-colors"
                                         title={t('import')}
                                     >
-                                        <Upload className="w-4 h-4" />
-                                        {t('import')}
+                                        <Upload className="w-3.5 h-3.5" />
+                                        <span className="hidden lg:inline">{t('import')}</span>
                                     </button>
                                 </div>
                             )}
@@ -932,266 +933,253 @@ export default function DashboardPage() {
                                 <button
                                     title={t('aiSmartScheduler')}
                                     onClick={() => setShowSmartScheduler(true)}
-                                    className="px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-sm font-bold rounded-xl flex items-center gap-2 shadow-lg shadow-indigo-200 transition-all active:scale-95"
+                                    className="px-2 py-1.5 bg-gradient-to-r from-indigo-500 to-violet-600 hover:from-indigo-600 hover:to-violet-700 text-white text-xs font-bold rounded-lg flex items-center gap-1 shadow-sm transition-all active:scale-95 shrink-0"
                                 >
-                                    <Sparkles className="w-4 h-4 animate-pulse" />
-                                    <span className="hidden sm:inline">{t('smartScheduleBtn')}</span>
+                                    <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+                                    <span className="hidden lg:inline">{t('smartScheduleBtn')}</span>
                                 </button>
                             )}
 
-                            <div className="hidden md:flex items-center gap-2 px-1">
-                                <div className="w-px h-6 bg-slate-200" />
-
-                                <button className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium">
-                                    <Table2 className="w-4 h-4" />
-                                    <span className="hidden sm:inline">{t('home')}</span>
-                                </button>
+                            <div className="w-px h-5 bg-slate-200 shrink-0" />
 
 
+                            {/* Navigation buttons - always visible, compact */}
+                            <button
+                                onClick={() => router.push(`/dashboard/operation?product=${selectedProductId}`)}
+                                className="flex items-center gap-1 px-2 py-1.5 text-slate-600 hover:bg-slate-50 rounded-md text-xs font-medium shrink-0"
+                                title={t('operation')}
+                            >
+                                <HardHat className="w-3.5 h-3.5" />
+                                <span className="hidden lg:inline">{t('operation')}</span>
+                            </button>
 
+                            {(role === 'supervisor' || role === 'admin') && (
                                 <button
-                                    onClick={() => router.push(`/dashboard/operation?product=${selectedProductId}`)}
-                                    className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
-                                    title={t('operation')}
+                                    onClick={() => setShowAnalytics(!showAnalytics)}
+                                    className={`flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-medium transition-colors shrink-0 ${showAnalytics
+                                        ? 'bg-indigo-600 text-white shadow-sm dark:bg-indigo-500'
+                                        : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800'
+                                        }`}
+                                    title={t('reports')}
                                 >
-                                    <HardHat className="w-5 h-5 sm:w-4 sm:h-4" />
-                                    <span className="hidden sm:inline">{t('operation')}</span>
+                                    <BarChart2 className="w-3.5 h-3.5" />
+                                    <span className="hidden lg:inline">{t('reports')}</span>
                                 </button>
+                            )}
 
-
-
-                                {(role === 'supervisor' || role === 'admin') && (
+                            {/* Batch Operations Dropdown */}
+                            {(role === 'admin' || role === 'supervisor') && (
+                                <div className="relative shrink-0" ref={batchMenuRef}>
                                     <button
-                                        onClick={() => setShowAnalytics(!showAnalytics)}
-                                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${showAnalytics
-                                            ? 'bg-indigo-600 text-white shadow-sm dark:bg-indigo-500'
-                                            : 'text-slate-600 hover:bg-slate-50 dark:text-slate-400 dark:hover:bg-slate-800'
+                                        onClick={() => setBatchMenuOpen(!batchMenuOpen)}
+                                        className={`flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-medium transition-all ${activeBatchMode
+                                            ? 'bg-indigo-600 text-white shadow-sm'
+                                            : 'text-slate-700 hover:bg-slate-50 border border-slate-200'
                                             }`}
-                                        title={t('reports')}
                                     >
-                                        <BarChart2 className="w-4 h-4" />
-                                        <span className="hidden sm:inline">{t('reports')}</span>
+                                        <Layers className="w-3.5 h-3.5" />
+                                        <span className="hidden lg:inline">
+                                            {activeBatchMode === 'P' ? t('batch.plan') : activeBatchMode === 'N/A' ? t('batch.na') : activeBatchMode === 'Hold' ? t('batch.hold') : activeBatchMode === 'QN' ? t('batch.qn') : activeBatchMode === 'WIP' ? t('batch.wip') : activeBatchMode === 'Complete' ? t('batch.complete') : activeBatchMode === 'Erase' ? t('batch.erase') : t('batch.edit')}
+                                        </span>
+                                        <ChevronDown className={`w-3 h-3 transition-transform ${batchMenuOpen ? 'rotate-180' : ''}`} />
                                     </button>
-                                )}
 
-                                {/* Batch Operations Dropdown */}
-                                {(role === 'admin' || role === 'supervisor') && (
-                                    <div className="relative" ref={batchMenuRef}>
-                                        <button
-                                            onClick={() => setBatchMenuOpen(!batchMenuOpen)}
-                                            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${activeBatchMode
-                                                ? 'bg-indigo-600 text-white shadow-sm'
-                                                : 'text-slate-700 hover:bg-slate-50 border border-slate-200'
-                                                }`}
-                                        >
-                                            <Layers className="w-4 h-4" />
-                                            <span className="hidden sm:inline">
-                                                {activeBatchMode === 'P' ? t('batch.plan') : activeBatchMode === 'N/A' ? t('batch.na') : activeBatchMode === 'Hold' ? t('batch.hold') : activeBatchMode === 'QN' ? t('batch.qn') : activeBatchMode === 'WIP' ? t('batch.wip') : activeBatchMode === 'Complete' ? t('batch.complete') : activeBatchMode === 'Erase' ? t('batch.erase') : t('batch.edit')}
-                                            </span>
-                                            <ChevronDown className={`w-3.5 h-3.5 transition-transform ${batchMenuOpen ? 'rotate-180' : ''}`} />
-                                        </button>
-
-                                        {batchMenuOpen && (
-                                            <Portal>
-                                                <div
-                                                    ref={batchDropdownRef}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="fixed bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 min-w-[140px] z-[9999]"
-                                                    style={{
-                                                        top: batchMenuPos.top,
-                                                        left: batchMenuPos.left - 140, // align right edge roughly
-                                                    }}
-                                                >
-                                                    <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('P'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'P' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                        <Pencil className="w-4 h-4" /> Plan
-                                                    </button>
-                                                    <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('N/A'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'N/A' ? 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                        <Ban className="w-4 h-4" /> N/A
-                                                    </button>
-                                                    <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('Hold'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'Hold' ? 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                        <PauseCircle className="w-4 h-4" /> Hold
-                                                    </button>
-                                                    <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('QN'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'QN' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                        <AlertTriangle className="w-4 h-4" /> QN
-                                                    </button>
-                                                    <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('WIP'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'WIP' ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                        <Clock className="w-4 h-4" /> WIP
-                                                    </button>
-                                                    <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('Complete'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'Complete' ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
-                                                        <CheckCircle2 className="w-4 h-4" /> Complete
-                                                    </button>
-                                                    <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
-                                                    <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('Erase'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'Erase' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-red-500 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30 dark:hover:text-red-200'}`}>
-                                                        <Eraser className="w-4 h-4" /> Erase
-                                                    </button>
-                                                </div>
-                                            </Portal>
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Show/Hide Completed Toggle */}
-                                <button
-                                    onClick={() => setShowCompleted(!showCompleted)}
-                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${showCompleted
-                                        ? 'bg-slate-600 text-white shadow-md'
-                                        : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                                        }`}
-                                    title={showCompleted ? 'Hide Completed Orders' : 'Show Completed Orders'}
-                                >
-                                    {showCompleted ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                                    <span className="hidden sm:inline">Completed</span>
-                                    <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-200 text-slate-600">
-                                        {orders.filter(o => {
-                                            let completionStep = steps.find(s => s.toLowerCase() === 'receipt');
-                                            if (!completionStep) {
-                                                completionStep = steps.find(s =>
-                                                    s.toLowerCase() === 'outgoing' ||
-                                                    s.toLowerCase() === 'completion'
-                                                ) || steps[steps.length - 1];
-                                            }
-                                            const val = o[completionStep] || '';
-                                            return /\d{4}-\d{2}-\d{2}/.test(val) || /\d{2}[-\/]\w{3}/.test(val);
-                                        }).length}
-                                    </span>
-                                </button>
-
-
-
-                                <div className="w-px h-6 bg-slate-200 mx-1" />
-
-
-                                <button
-                                    onClick={openLogsModal}
-                                    className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
-                                    title={t('modals.operationLogs')}
-                                >
-                                    <ClipboardList className="w-5 h-5" />
-                                </button>
-
-                                <button
-                                    onClick={fetchOrders}
-                                    disabled={refreshing}
-                                    className={`p-2 rounded-lg transition-colors ${refreshing
-                                        ? 'text-indigo-500 bg-indigo-50 dark:text-indigo-300 dark:bg-indigo-900/30'
-                                        : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
-                                        }`}
-                                    title={t('refresh')}
-                                >
-                                    <RefreshCw className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`} />
-                                </button>
-
-                                {/* Barcode Scanner - Mobile only */}
-                                <button
-                                    onClick={() => setScannerOpen(true)}
-                                    className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg md:hidden"
-                                    title="Scan Barcode"
-                                >
-                                    <ScanBarcode className="w-6 h-6" />
-                                </button>
-
-                                <button
-                                    onClick={toggleFullscreen}
-                                    className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg"
-                                    title={t('fullscreen')}
-                                >
-                                    {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
-                                </button>
-
-                                <div className="w-px h-6 bg-slate-200 mx-1" />
-
-
-                                {/* View Toggle */}
-                                <div className="flex bg-slate-100 rounded-lg p-1 hidden md:flex">
-                                    <button
-                                        onClick={() => toggleViewMode()}
-                                        className={`p-1.5 rounded transition-all ${viewMode === 'table' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                                        title="Table View"
-                                    >
-                                        <List className="w-4 h-4" />
-                                    </button>
-                                    <button
-                                        onClick={() => toggleViewMode()}
-                                        className={`p-1.5 rounded transition-all ${viewMode === 'board' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                                        title="Kanban Board View"
-                                    >
-                                        <LayoutGrid className="w-4 h-4" />
-                                    </button>
+                                    {batchMenuOpen && (
+                                        <Portal>
+                                            <div
+                                                ref={batchDropdownRef}
+                                                onClick={(e) => e.stopPropagation()}
+                                                className="fixed bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 py-1 min-w-[140px] z-[9999]"
+                                                style={{
+                                                    top: batchMenuPos.top,
+                                                    left: batchMenuPos.left - 140,
+                                                }}
+                                            >
+                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('P'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'P' ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                    <Pencil className="w-4 h-4" /> Plan
+                                                </button>
+                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('N/A'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'N/A' ? 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                    <Ban className="w-4 h-4" /> N/A
+                                                </button>
+                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('Hold'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'Hold' ? 'bg-orange-50 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                    <PauseCircle className="w-4 h-4" /> Hold
+                                                </button>
+                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('QN'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'QN' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                    <AlertTriangle className="w-4 h-4" /> QN
+                                                </button>
+                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('WIP'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'WIP' ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                    <Clock className="w-4 h-4" /> WIP
+                                                </button>
+                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('Complete'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'Complete' ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-300' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-700/50 dark:hover:text-white'}`}>
+                                                    <CheckCircle2 className="w-4 h-4" /> Complete
+                                                </button>
+                                                <div className="border-t border-slate-100 dark:border-slate-700 my-1" />
+                                                <button onClick={(e) => { e.stopPropagation(); toggleBatchMode('Erase'); setBatchMenuOpen(false); }} className={`w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors ${activeBatchMode === 'Erase' ? 'bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-300' : 'text-red-500 hover:bg-red-50 dark:text-red-300 dark:hover:bg-red-900/30 dark:hover:text-red-200'}`}>
+                                                    <Eraser className="w-4 h-4" /> Erase
+                                                </button>
+                                            </div>
+                                        </Portal>
+                                    )}
                                 </div>
+                            )}
 
-                                <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
-                                    <button
-                                        onClick={() => updateFontSize(-0.1)}
-                                        className="p-1 text-slate-500 hover:bg-white hover:text-indigo-600 rounded"
-                                        title="Zoom Out"
-                                    >
-                                        <ZoomOut className="w-4 h-4" />
-                                    </button>
-                                    <span className="text-xs font-mono w-8 text-center text-slate-500">{Math.round(fontSizeScale * 100)}%</span>
-                                    <button
-                                        onClick={() => updateFontSize(0.1)}
-                                        className="p-1 text-slate-500 hover:bg-white hover:text-indigo-600 rounded"
-                                        title="Zoom In"
-                                    >
-                                        <ZoomIn className="w-4 h-4" />
-                                    </button>
-                                </div>
+                            {/* Show/Hide Completed Toggle */}
+                            <button
+                                onClick={() => setShowCompleted(!showCompleted)}
+                                className={`flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-medium transition-all shrink-0 ${showCompleted
+                                    ? 'bg-slate-600 text-white shadow-sm'
+                                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    }`}
+                                title={showCompleted ? 'Hide Completed Orders' : 'Show Completed Orders'}
+                            >
+                                {showCompleted ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                <span className="hidden lg:inline">Completed</span>
+                                <span className="px-1 py-0.5 rounded-full text-[9px] bg-slate-200 text-slate-600 leading-none">
+                                    {orders.filter(o => {
+                                        let completionStep = steps.find(s => s.toLowerCase() === 'receipt');
+                                        if (!completionStep) {
+                                            completionStep = steps.find(s =>
+                                                s.toLowerCase() === 'outgoing' ||
+                                                s.toLowerCase() === 'completion'
+                                            ) || steps[steps.length - 1];
+                                        }
+                                        const val = o[completionStep] || '';
+                                        return /\d{4}-\d{2}-\d{2}/.test(val) || /\d{2}[-\/]\w{3}/.test(val);
+                                    }).length}
+                                </span>
+                            </button>
 
-                                {/* Theme Switcher */}
-                                {/* Theme Switcher - Desktop only */}
-                                <ThemeSwitcher className="hidden md:flex text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700" />
+                            <div className="w-px h-5 bg-slate-200 shrink-0" />
 
-                                {/* SVG Flag Language Switcher - Matching Login Page */}
+                            {/* Utility buttons - icon-only for compactness */}
+                            <button
+                                onClick={openLogsModal}
+                                className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-md shrink-0"
+                                title={t('modals.operationLogs')}
+                            >
+                                <ClipboardList className="w-4 h-4" />
+                            </button>
+
+                            <button
+                                onClick={fetchOrders}
+                                disabled={refreshing}
+                                className={`p-1.5 rounded-md transition-colors shrink-0 ${refreshing
+                                    ? 'text-indigo-500 bg-indigo-50 dark:text-indigo-300 dark:bg-indigo-900/30'
+                                    : 'text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800'
+                                    }`}
+                                title={t('refresh')}
+                            >
+                                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                            </button>
+
+                            {/* Barcode Scanner - Mobile only */}
+                            <button
+                                onClick={() => setScannerOpen(true)}
+                                className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-md md:hidden shrink-0"
+                                title="Scan Barcode"
+                            >
+                                <ScanBarcode className="w-4 h-4" />
+                            </button>
+
+                            <button
+                                onClick={toggleFullscreen}
+                                className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-md shrink-0"
+                                title={t('fullscreen')}
+                            >
+                                {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+                            </button>
+
+                            <div className="w-px h-5 bg-slate-200 shrink-0" />
+
+                            {/* View Toggle */}
+                            <div className="flex bg-slate-100 rounded-md p-0.5 shrink-0">
                                 <button
-                                    suppressHydrationWarning
-                                    onClick={() => {
-                                        const locale = document.cookie
-                                            .split('; ')
-                                            .find(row => row.startsWith('NEXT_LOCALE='))
-                                            ?.split('=')[1] || 'en';
-                                        const newLocale = locale === 'en' ? 'zh' : 'en';
-                                        document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
-                                        window.location.reload();
-                                    }}
-                                    className="flex items-center gap-1 px-2.5 py-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-all"
-                                    title={currentLocale === 'en' ? '切换到中文' : 'Switch to English'}
+                                    onClick={() => toggleViewMode()}
+                                    className={`p-1 rounded transition-all ${viewMode === 'table' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                    title="Table View"
                                 >
-                                    <div className="w-7 h-5 flex items-center justify-center" suppressHydrationWarning>
-                                        {mounted ? (
-                                            currentLocale === 'en' ? (
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" className="w-7 h-5 rounded-sm shadow-sm">
-                                                    <rect width="30" height="20" fill="#de2910" /><path fill="#ffde00" d="M5 5l-1.123.816.429-1.321-1.123-.816h1.388L5 2.358l.429 1.321h1.388l-1.123.816.429 1.321L5 5z" /><circle fill="#ffde00" cx="10" cy="2" r="0.4" /><circle fill="#ffde00" cx="12" cy="4" r="0.4" /><circle fill="#ffde00" cx="12" cy="7" r="0.4" /><circle fill="#ffde00" cx="10" cy="9" r="0.4" />
-                                                </svg>
-                                            ) : (
-                                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 741 390" className="w-7 h-5 rounded-sm shadow-sm">
-                                                    <path fill="#b22234" d="M0 0h741v30H0zM0 60h741v30H0zM0 120h741v30H0zM0 180h741v30H0zM0 240h741v30H0zM0 300h741v30H0zM0 360h741v30H0z" /><path fill="#fff" d="M0 30h741v30H0zM0 90h741v30H0zM0 150h741v30H0zM0 210h741v30H0zM0 270h741v30H0zM0 330h741v30H0z" /><path fill="#3c3b6e" d="M0 0h296.4v210H0z" /><g fill="#fff"><path d="M24.7 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M74.1 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M123.5 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M172.9 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M222.3 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M271.7 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /></g>
-                                                </svg>
-                                            )
-                                        ) : null}
-                                    </div>
+                                    <List className="w-3.5 h-3.5" />
                                 </button>
-
                                 <button
-                                    onClick={() => router.push('/dashboard/settings')}
-                                    className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
+                                    onClick={() => toggleViewMode()}
+                                    className={`p-1 rounded transition-all ${viewMode === 'board' ? 'bg-white text-indigo-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                                    title="Kanban Board View"
                                 >
-                                    <Settings className="w-4 h-4" />
-                                    <span className="hidden sm:inline">{t('settings')}</span>
+                                    <LayoutGrid className="w-3.5 h-3.5" />
                                 </button>
                             </div>
+
+                            {/* Zoom controls */}
+                            <div className="flex items-center gap-0.5 bg-slate-100 rounded-md p-0.5 shrink-0">
+                                <button
+                                    onClick={() => updateFontSize(-0.1)}
+                                    className="p-1 text-slate-500 hover:bg-white hover:text-indigo-600 rounded"
+                                    title="Zoom Out"
+                                >
+                                    <ZoomOut className="w-3.5 h-3.5" />
+                                </button>
+                                <span className="text-[10px] font-mono w-7 text-center text-slate-500">{Math.round(fontSizeScale * 100)}%</span>
+                                <button
+                                    onClick={() => updateFontSize(0.1)}
+                                    className="p-1 text-slate-500 hover:bg-white hover:text-indigo-600 rounded"
+                                    title="Zoom In"
+                                >
+                                    <ZoomIn className="w-3.5 h-3.5" />
+                                </button>
+                            </div>
+
+                            {/* Theme Switcher */}
+                            <ThemeSwitcher className="hidden md:flex text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700" />
+
+                            {/* Language Switcher */}
+                            <button
+                                suppressHydrationWarning
+                                onClick={() => {
+                                    const locale = document.cookie
+                                        .split('; ')
+                                        .find(row => row.startsWith('NEXT_LOCALE='))
+                                        ?.split('=')[1] || 'en';
+                                    const newLocale = locale === 'en' ? 'zh' : 'en';
+                                    document.cookie = `NEXT_LOCALE=${newLocale}; path=/; max-age=31536000; SameSite=Lax`;
+                                    window.location.reload();
+                                }}
+                                className="flex items-center p-1.5 text-slate-600 hover:bg-slate-50 rounded-md transition-all shrink-0"
+                                title={currentLocale === 'en' ? '切换到中文' : 'Switch to English'}
+                            >
+                                <div className="w-5 h-4 flex items-center justify-center" suppressHydrationWarning>
+                                    {mounted ? (
+                                        currentLocale === 'en' ? (
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 20" className="w-5 h-3.5 rounded-sm shadow-sm">
+                                                <rect width="30" height="20" fill="#de2910" /><path fill="#ffde00" d="M5 5l-1.123.816.429-1.321-1.123-.816h1.388L5 2.358l.429 1.321h1.388l-1.123.816.429 1.321L5 5z" /><circle fill="#ffde00" cx="10" cy="2" r="0.4" /><circle fill="#ffde00" cx="12" cy="4" r="0.4" /><circle fill="#ffde00" cx="12" cy="7" r="0.4" /><circle fill="#ffde00" cx="10" cy="9" r="0.4" />
+                                            </svg>
+                                        ) : (
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 741 390" className="w-5 h-3.5 rounded-sm shadow-sm">
+                                                <path fill="#b22234" d="M0 0h741v30H0zM0 60h741v30H0zM0 120h741v30H0zM0 180h741v30H0zM0 240h741v30H0zM0 300h741v30H0zM0 360h741v30H0z" /><path fill="#fff" d="M0 30h741v30H0zM0 90h741v30H0zM0 150h741v30H0zM0 210h741v30H0zM0 270h741v30H0zM0 330h741v30H0z" /><path fill="#3c3b6e" d="M0 0h296.4v210H0z" /><g fill="#fff"><path d="M24.7 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M74.1 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M123.5 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M172.9 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M222.3 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /><path d="M271.7 10l1.2 3.7h3.9l-3.2 2.3 1.2 3.7-3.1-2.3-3.1 2.3 1.2-3.7-3.2-2.3h3.9z" /></g>
+                                            </svg>
+                                        )
+                                    ) : null}
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={() => router.push('/dashboard/settings')}
+                                className="flex items-center gap-1 px-2 py-1.5 text-slate-600 hover:bg-slate-50 rounded-md text-xs font-medium shrink-0"
+                            >
+                                <Settings className="w-3.5 h-3.5" />
+                                <span className="hidden lg:inline">{t('settings')}</span>
+                            </button>
                         </nav>
                     </div>
 
-                    {/* Fixed Actions (Logout) */}
-                    <div className="flex items-center shrink-0 ml-1 border-l border-slate-200 pl-2 gap-1">
+                    {/* Fixed Actions (Logout) - always visible on right */}
+                    <div className="flex items-center shrink-0 ml-1 border-l border-slate-200 pl-1 gap-0.5">
                         <MessageNotification />
-                        <div className="w-px h-6 bg-slate-200 mx-1" />
                         <button
                             onClick={handleLogout}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-md"
                             title={t('logout')}
                         >
-                            <LogOut className="w-5 h-5" />
+                            <LogOut className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
@@ -1220,13 +1208,14 @@ export default function DashboardPage() {
                                 <div className="text-xl font-bold text-slate-900">{displayedOrders.length}</div>
                             </div>
                             <div className={`rounded-lg border p-3 ${displayedOrders.filter(o => {
-                                const due = o['WO DUE'];
+                                const due = o['WO DUE'] || o['Due Date'] || o['WO_DUE'] || o['到期日期'];
                                 if (!due) return false;
                                 // Exclude completed orders (last step has date or N/A)
                                 const lastStep = steps[steps.length - 1];
                                 const lastStepValue = lastStep ? (o[lastStep] || '') : '';
                                 if (/\d{4}-\d{2}-\d{2}/.test(lastStepValue) || /\d{2}[-\/]\w{3}/.test(lastStepValue) || lastStepValue.toUpperCase() === 'N/A') return false;
-                                const dueDate = new Date(due);
+                                const dueDate = parseFlexibleDate(due);
+                                if (!dueDate) return false;
                                 const today = new Date();
                                 today.setHours(0, 0, 0, 0);
                                 dueDate.setHours(0, 0, 0, 0);
@@ -1237,12 +1226,13 @@ export default function DashboardPage() {
                                 }`}>
                                 <div className="text-xs text-slate-500">{t('stats.overdue')}</div>
                                 <div className={`text-xl font-bold ${displayedOrders.filter(o => {
-                                    const due = o['WO DUE'];
+                                    const due = o['WO DUE'] || o['Due Date'] || o['WO_DUE'] || o['到期日期'];
                                     if (!due) return false;
                                     const lastStep = steps[steps.length - 1];
                                     const lastStepValue = lastStep ? (o[lastStep] || '') : '';
                                     if (/\d{4}-\d{2}-\d{2}/.test(lastStepValue) || /\d{2}[-\/]\w{3}/.test(lastStepValue) || lastStepValue.toUpperCase() === 'N/A') return false;
-                                    const dueDate = new Date(due);
+                                    const dueDate = parseFlexibleDate(due);
+                                    if (!dueDate) return false;
                                     const today = new Date();
                                     today.setHours(0, 0, 0, 0);
                                     dueDate.setHours(0, 0, 0, 0);
@@ -1250,13 +1240,14 @@ export default function DashboardPage() {
                                 }).length > 0 ? 'text-red-600' : 'text-slate-900'
                                     }`}>
                                     {displayedOrders.filter(o => {
-                                        const due = o['WO DUE'];
+                                        const due = o['WO DUE'] || o['Due Date'] || o['WO_DUE'] || o['到期日期'];
                                         if (!due) return false;
                                         const lastStep = steps[steps.length - 1];
                                         const lastStepValue = lastStep ? (o[lastStep] || '') : '';
                                         if (/\d{4}-\d{2}-\d{2}/.test(lastStepValue) || /\d{2}[-\/]\w{3}/.test(lastStepValue) || lastStepValue.toUpperCase() === 'N/A') return false;
                                         if (/\d{4}-\d{2}-\d{2}/.test(lastStepValue) || /\d{2}[-\/]\w{3}/.test(lastStepValue)) return false;
-                                        const dueDate = new Date(due);
+                                        const dueDate = parseFlexibleDate(due);
+                                        if (!dueDate) return false;
                                         const today = new Date();
                                         today.setHours(0, 0, 0, 0);
                                         dueDate.setHours(0, 0, 0, 0);
@@ -1283,9 +1274,10 @@ export default function DashboardPage() {
                                 <div className="text-xs text-slate-500">{t('stats.dueToday')}</div>
                                 <div className="text-xl font-bold text-orange-700">
                                     {displayedOrders.filter(o => {
-                                        const due = o['WO DUE'];
+                                        const due = o['WO DUE'] || o['Due Date'] || o['WO_DUE'] || o['到期日期'];
                                         if (!due) return false;
-                                        const dueDate = new Date(due);
+                                        const dueDate = parseFlexibleDate(due);
+                                        if (!dueDate) return false;
                                         const today = new Date();
                                         today.setHours(0, 0, 0, 0);
                                         dueDate.setHours(0, 0, 0, 0);
@@ -1679,7 +1671,36 @@ export default function DashboardPage() {
                                     {t('modals.operationLogs')}
                                 </h3>
                                 <div className="flex items-center gap-2">
-
+                                    <button
+                                        onClick={() => {
+                                            if (!logs.length) return;
+                                            const bom = '\uFEFF';
+                                            const headers = ['Time', 'Operator', 'WO ID', 'Step', 'Action', 'Previous Value', 'New Value'];
+                                            const rows = logs.map(log => [
+                                                new Date(log.timestamp).toLocaleString(),
+                                                log.operatorId,
+                                                log.woId,
+                                                log.step,
+                                                log.action,
+                                                log.previousValue || '',
+                                                log.newValue || ''
+                                            ].map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(','));
+                                            const csvContent = bom + [headers.join(','), ...rows].join('\n');
+                                            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                                            const url = URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = `operation_logs_${new Date().toISOString().slice(0, 10)}.csv`;
+                                            a.click();
+                                            URL.revokeObjectURL(url);
+                                        }}
+                                        disabled={logs.length === 0}
+                                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-500 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                                        title="Export to CSV"
+                                    >
+                                        <FileDown className="w-4 h-4" />
+                                        CSV
+                                    </button>
                                     <button onClick={() => setShowLogsModal(false)} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors">
                                         <X className="w-6 h-6" />
                                     </button>

@@ -1,5 +1,5 @@
 import { Order } from '@/lib/excel';
-import { getNow, formatToShortTimestamp } from '@/lib/date-utils';
+import { getNow, formatToShortTimestamp, parseFlexibleDate } from '@/lib/date-utils';
 import { format } from 'date-fns';
 
 export interface ECDCalculationParams {
@@ -59,29 +59,50 @@ export const calculateECD = ({
         steps.forEach(s => { activeDurations[s] = 24; });
     }
 
-    // Check if last step is done
-    const lastStep = steps[steps.length - 1];
-    const lastVal = order[lastStep] || '';
-
     // Helper: Checks if a value is a valid completion date
-    // Now expects standard ISO-like strings (YYYY-MM-DD...) or legacy DD-MMM
+    // Uses parseFlexibleDate to robustly handle DD-MM-YYYY, DD-MMM, ISO formats
     const isDate = (val: string) => {
-        if (!val || val.length < 6) return false;
-        const v = val.toUpperCase();
-        if (['N/A', 'WIP', 'PENDING', 'QN', 'DIFA', 'P'].some(s => v.startsWith(s))) return false;
+        if (!val || val.length < 5) return false;
+        const v = val.toUpperCase().trim();
+        if (['N/A', 'WIP', 'PENDING', 'QN', 'DIFA', 'HOLD'].some(s => v.startsWith(s))) return false;
+        if (v === 'P' || v.startsWith('P,')) return false;
 
-        // Check for standard date (YYYY-MM-DD) or Legacy
-        const d = new Date(val);
-        return !isNaN(d.getTime()) && d.getFullYear() > 2000;
+        // Use the robust parseFlexibleDate utility
+        const d = parseFlexibleDate(val);
+        if (d && !isNaN(d.getTime()) && d.getFullYear() > 2000) return true;
+
+        // Fallback: try native Date for standard formats
+        const d2 = new Date(val);
+        return !isNaN(d2.getTime()) && d2.getFullYear() > 2000;
     };
+
+    // Helper: Parse a date value robustly
+    const parseDate = (val: string): Date | null => {
+        const d = parseFlexibleDate(val);
+        if (d && !isNaN(d.getTime()) && d.getFullYear() > 2000) return d;
+        const d2 = new Date(val);
+        if (!isNaN(d2.getTime()) && d2.getFullYear() > 2000) return d2;
+        return null;
+    };
+
+    // Check if ALL steps are completed (each has a valid date or N/A)
+    // This is the correct way to determine if an order is fully done
+    const allStepsCompleted = steps.every(step => {
+        const val = (order[step] || '').trim();
+        if (!val) return false;
+        const v = val.toUpperCase();
+        // N/A steps are considered "done" (skipped)
+        if (v === 'N/A') return true;
+        return isDate(val);
+    });
+
+    if (allStepsCompleted) return ''; // Truly completed orders have no ECD
 
     // Helper: Check for "QN" exception anywhere in the order
     const hasException = steps.some(step => {
         const val = (order[step] || '').toUpperCase();
         return val.includes('QN'); // Only QN triggers reset
     });
-
-    if (isDate(lastVal)) return ''; // Completed orders have no ECD
 
     // Normalization helper for fuzzy matching durations
     const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
@@ -99,21 +120,15 @@ export const calculateECD = ({
 
     for (const step of steps) {
         const val = order[step] || '';
-        const v = val.toUpperCase();
+        const v = val.toUpperCase().trim();
         const isNA = v === 'N/A';
         const dur = normalizedDurations[normalize(step)] || 0;
 
         if (!foundIncomplete) {
             if (isDate(val)) {
                 // Keep track of the latest completion time
-                try {
-                    // Because we now standardize on YYYY-MM-DD HH:mm, new Date(val) is safe
-                    // But for legacy partial dates (DD-MMM), new Date() might default to 2001 or such if not handled
-                    // However, we recently fixed Kiosk and Import to use YYYY-MM-DD.
-                    // If existing data has DD-MMM, we might have issues here.
-                    // For safety, let's assume valid date strings are parseable.
-                    lastCompletedDate = new Date(val);
-                } catch { }
+                const parsed = parseDate(val);
+                if (parsed) lastCompletedDate = parsed;
             } else if (!isNA) {
                 // Found first incomplete step
                 foundIncomplete = true;
@@ -130,6 +145,8 @@ export const calculateECD = ({
         } else {
             // Future steps
             if (!isNA) {
+                // If this future step already has a date (completed out of order), skip it
+                if (isDate(val)) continue;
                 remainingHours += dur;
             }
         }
@@ -156,7 +173,21 @@ export const calculateECD = ({
         // Condition: Not started -> Start from NOW
     }
 
-    if (remainingHours <= 0) return '';
+    // If remaining hours is 0 but order is NOT complete, use a minimum of 24h per incomplete step
+    // This prevents ECD from disappearing when durations aren't configured or are 0
+    if (remainingHours <= 0) {
+        // Count how many steps are truly incomplete (not date, not N/A)
+        const incompleteSteps = steps.filter(step => {
+            const val = (order[step] || '').trim();
+            if (!val) return true; // empty = incomplete
+            const v = val.toUpperCase();
+            if (v === 'N/A') return false;
+            return !isDate(val);
+        });
+        if (incompleteSteps.length === 0) return ''; // Actually all complete
+        // Assign a minimum of 24h per incomplete step
+        remainingHours = incompleteSteps.length * 24;
+    }
 
     // 3. Project Timeline (Skipping Weekends)
     const targetDate = new Date(startTime);
@@ -165,16 +196,6 @@ export const calculateECD = ({
 
     while (hoursLeft > 0 && opsCount < 365 * 24) { // Safety break
         opsCount++;
-
-        // Add minimal increment (e.g., 1 hour) to check day boundaries more granularly?
-        // Current logic: Add logic based on day chunks or simple day skipping.
-        // For simplicity and matching V4/V5 existing logic, we often just add hours but skip "Weekend Days".
-        // A robust approach adds hour by hour if we care about "Working Hours", but here we just care about "Working Days".
-
-        // Simple Algorithm:
-        // 1. Check if current day is working day.
-        // 2. If no, move to next day 00:00.
-        // 3. If yes, subtract hours.
 
         const dayOfWeek = targetDate.getDay(); // 0=Sun, 6=Sat
         const isSunday = dayOfWeek === 0;
@@ -189,12 +210,6 @@ export const calculateECD = ({
         }
 
         // It is a working day.
-        // Identify how many hours we can consume today.
-        // For continuous operations (24h), we consume up to 24h.
-        // The original logic was simpler: Just check day validness? 
-        // Let's refine: The previous logic iterated days. Let's do that for clarity.
-
-        // Current Hour
         const currentHour = targetDate.getHours();
         const hoursInDayRemaining = 24 - currentHour;
 
@@ -210,8 +225,5 @@ export const calculateECD = ({
     }
 
     // Format: dd-MMM (e.g. 26-Dec)
-    // We use date-fns format here BUT strictly speaking we should be careful about timezone.
-    // However, targetDate is a JS Date object constructed from local (server) time.
-    // If we simply format it, it uses local time.
     return format(targetDate, 'dd-MMM');
 };

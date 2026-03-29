@@ -519,61 +519,63 @@ function OperationContent() {
         <div className="min-h-screen bg-slate-100">
             {/* Header - Mobile optimized */}
             <header className="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-50">
-                <div className="max-w-full mx-auto px-2 sm:px-4 h-14 flex items-center justify-between gap-2">
+                <div className="max-w-full mx-auto px-2 sm:px-3 h-12 flex items-center">
                     <button
                         onClick={() => router.push('/dashboard')}
-                        className="flex items-center gap-2 sm:gap-3 hover:opacity-80 transition-opacity cursor-pointer"
+                        className="flex items-center hover:opacity-80 transition-opacity cursor-pointer shrink-0 mr-2"
                         title={t('returnToHome')}
                     >
-                        <img src="/logo.png" alt="iProTraX" className="h-9 w-auto" />
+                        <img src="/logo.png" alt="iProTraX" className="h-7 w-auto" />
                     </button>
 
-
-                    <nav className="flex items-center gap-1 sm:gap-2">
-                        <button
-                            onClick={() => router.push('/dashboard')}
-                            className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
-                        >
-                            <Table2 className="w-4 h-4" />
-                            <span className="hidden sm:inline">{tDash('home')}</span>
-                        </button>
-
-                        <button className="flex items-center gap-2 px-3 py-2 bg-indigo-50 text-indigo-700 rounded-lg text-sm font-medium">
-                            <HardHat className="w-4 h-4" />
-                            <span className="hidden sm:inline">{tDash('operation')}</span>
-                        </button>
-
-                        {(role === 'supervisor' || role === 'admin') && (
+                    <div className="flex-1 overflow-x-auto scroll-smooth min-w-0 flex justify-end" style={{ scrollbarWidth: 'thin' }}>
+                        <nav className="flex items-center gap-0.5 whitespace-nowrap py-1 px-1">
                             <button
-                                onClick={() => setShowAnalytics(!showAnalytics)}
-                                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${showAnalytics
-                                    ? 'bg-indigo-600 text-white shadow-sm dark:bg-indigo-500'
-                                    : 'text-slate-600 hover:bg-slate-50'
-                                    }`}
-                                title={tDash('reports')}
+                                onClick={() => router.push('/dashboard')}
+                                className="flex items-center gap-1 px-2 py-1.5 text-slate-600 hover:bg-slate-50 rounded-md text-xs font-medium shrink-0"
                             >
-                                <BarChart2 className="w-4 h-4" />
-                                <span className="hidden sm:inline">{tDash('reports')}</span>
+                                <Table2 className="w-3.5 h-3.5" />
+                                <span className="hidden lg:inline">{tDash('home')}</span>
                             </button>
-                        )}
 
-                        <button
-                            onClick={() => router.push('/dashboard/settings')}
-                            className="flex items-center gap-2 px-3 py-2 text-slate-600 hover:bg-slate-50 rounded-lg text-sm font-medium"
-                        >
-                            <Settings className="w-4 h-4" />
-                            <span className="hidden sm:inline">{tDash('settings')}</span>
-                        </button>
+                            <button className="flex items-center gap-1 px-2 py-1.5 bg-indigo-50 text-indigo-700 rounded-md text-xs font-medium shrink-0">
+                                <HardHat className="w-3.5 h-3.5" />
+                                <span className="hidden lg:inline">{tDash('operation')}</span>
+                            </button>
 
+                            {(role === 'supervisor' || role === 'admin') && (
+                                <button
+                                    onClick={() => setShowAnalytics(!showAnalytics)}
+                                    className={`flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-medium transition-colors shrink-0 ${showAnalytics
+                                        ? 'bg-indigo-600 text-white shadow-sm dark:bg-indigo-500'
+                                        : 'text-slate-600 hover:bg-slate-50'
+                                        }`}
+                                    title={tDash('reports')}
+                                >
+                                    <BarChart2 className="w-3.5 h-3.5" />
+                                    <span className="hidden lg:inline">{tDash('reports')}</span>
+                                </button>
+                            )}
+
+                            <button
+                                onClick={() => router.push('/dashboard/settings')}
+                                className="flex items-center gap-1 px-2 py-1.5 text-slate-600 hover:bg-slate-50 rounded-md text-xs font-medium shrink-0"
+                            >
+                                <Settings className="w-3.5 h-3.5" />
+                                <span className="hidden lg:inline">{tDash('settings')}</span>
+                            </button>
+                        </nav>
+                    </div>
+
+                    <div className="flex items-center shrink-0 ml-1 border-l border-slate-200 pl-1 gap-0.5">
                         <MessageNotification />
-
                         <button
                             onClick={handleLogout}
-                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+                            className="p-1.5 text-red-500 hover:bg-red-50 rounded-md"
                         >
-                            <LogOut className="w-5 h-5" />
+                            <LogOut className="w-4 h-4" />
                         </button>
-                    </nav>
+                    </div>
                 </div>
             </header>
 

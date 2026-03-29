@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     X, TrendingUp, BarChart2, PieChart, Filter, Save,
-    RefreshCw, Download, Layers, CheckCircle2, AlertTriangle, Info, Calendar, Clock
+    RefreshCw, Download, Layers, CheckCircle2, AlertTriangle, Info, Calendar, Clock, FileDown
 } from 'lucide-react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -137,6 +137,57 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
         fetchWorkerLogs(userId);
     };
 
+    // ---- CSV Export Helpers ----
+    const downloadCSV = (filename: string, headers: string[], rows: string[][]) => {
+        const bom = '\uFEFF';
+        const csvContent = bom + [headers.join(','), ...rows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(','))].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const exportOverviewCSV = () => {
+        if (!overviewData) return;
+        // Export trend data
+        const headers = ['Date', 'Output'];
+        const rows = overviewData.trend.map(d => [d.date, String(d.output)]);
+        // Append productivity data
+        rows.push([], ['', ''], ['Step', 'Count']);
+        overviewData.productivity.forEach(p => rows.push([p.name, String(p.count)]));
+        // Append summary
+        rows.push([], ['', ''], ['Summary', 'Value']);
+        rows.push(['Total Output (7d)', String(overviewData.summary.totalOutput)]);
+        rows.push(['Top Producer', overviewData.summary.topProducer]);
+        rows.push(['Bottleneck Step', overviewData.summary.bottleneck]);
+        downloadCSV(`analytics_overview_${startDate}_${endDate}.csv`, headers, rows);
+    };
+
+    const exportPerformanceCSV = () => {
+        if (!workerStats.length) return;
+        const headers = ['Worker', 'Sessions', 'Active Time (h)', 'Total Output', 'Efficiency (%)'];
+        const rows = workerStats.map(s => [
+            s.username, String(s.sessions), String(s.activeTimeHours),
+            String(s.totalQuantity), String(s.efficiency)
+        ]);
+        downloadCSV(`worker_performance_${startDate}_${endDate}.csv`, headers, rows);
+    };
+
+    const exportWorkerLogsCSV = () => {
+        if (!workerLogs.length || !selectedWorker) return;
+        const headers = ['WO ID', 'Step', 'Start Time', 'End Time', 'Duration (min)', 'Quantity'];
+        const rows = workerLogs.map(l => [
+            l.woId, l.stepName,
+            l.startTime ? format(new Date(l.startTime), 'yyyy-MM-dd HH:mm') : '',
+            l.endTime ? format(new Date(l.endTime), 'yyyy-MM-dd HH:mm') : '',
+            String(l.durationMinutes), String(l.quantity)
+        ]);
+        downloadCSV(`worker_${selectedWorker.name}_logs_${startDate}_${endDate}.csv`, headers, rows);
+    };
+
     if (!isOpen) return null;
 
     return (
@@ -155,22 +206,33 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
                         </div>
                     </div>
 
-                    {/* Date Picker - Only show if Performance tab is active (or if we enable for both) */}
-                    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
-                        <Calendar className="w-4 h-4 text-slate-400" />
-                        <input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            className="text-sm border-none focus:ring-0 text-slate-600 p-0"
-                        />
-                        <span className="text-slate-400">-</span>
-                        <input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            className="text-sm border-none focus:ring-0 text-slate-600 p-0"
-                        />
+                    {/* Date Picker + Export */}
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm">
+                            <Calendar className="w-4 h-4 text-slate-400" />
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="text-sm border-none focus:ring-0 text-slate-600 p-0"
+                            />
+                            <span className="text-slate-400">-</span>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="text-sm border-none focus:ring-0 text-slate-600 p-0"
+                            />
+                        </div>
+                        <button
+                            onClick={activeTab === 'overview' ? exportOverviewCSV : exportPerformanceCSV}
+                            disabled={activeTab === 'overview' ? !overviewData : workerStats.length === 0}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-500 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                            title="Export to CSV"
+                        >
+                            <FileDown className="w-4 h-4" />
+                            <span className="hidden sm:inline">CSV</span>
+                        </button>
                     </div>
 
                     <button onClick={onClose} className="hidden sm:block p-2 hover:bg-slate-200 rounded-full transition-colors text-slate-500">
@@ -281,15 +343,29 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
                                                 <TrendingUp className="w-4 h-4 text-indigo-500" /> {t('performance.outputByWorker')}
                                             </h3>
                                             <ResponsiveContainer width="100%" height={350}>
-                                                <BarChart data={workerStats} layout="vertical" margin={{ left: 40 }}>
+                                                <BarChart data={workerStats} margin={{ top: 5, right: 20, left: 10, bottom: workerStats.length > 5 ? 60 : 30 }}>
                                                     <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                                                    <XAxis type="number" fontSize={10} />
-                                                    <YAxis dataKey="username" type="category" width={80} fontSize={11} />
+                                                    <XAxis
+                                                        dataKey="username"
+                                                        fontSize={workerStats.length > 10 ? 9 : 11}
+                                                        angle={workerStats.length > 5 ? -45 : 0}
+                                                        textAnchor={workerStats.length > 5 ? 'end' : 'middle'}
+                                                        interval={0}
+                                                        tickFormatter={(name: string) => name.length > 8 ? name.slice(0, 8) + '…' : name}
+                                                        height={workerStats.length > 5 ? 70 : 30}
+                                                    />
+                                                    <YAxis fontSize={10} />
                                                     <Tooltip
                                                         contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                                         cursor={{ fill: '#f1f5f9' }}
                                                     />
-                                                    <Bar dataKey="totalQuantity" name={t('performance.columns.totalOutput')} fill="#6366f1" radius={[0, 4, 4, 0]} barSize={20} />
+                                                    <Bar
+                                                        dataKey="totalQuantity"
+                                                        name={t('performance.columns.totalOutput')}
+                                                        fill="#6366f1"
+                                                        radius={[4, 4, 0, 0]}
+                                                        maxBarSize={workerStats.length <= 5 ? 50 : workerStats.length <= 10 ? 35 : 20}
+                                                    />
                                                 </BarChart>
                                             </ResponsiveContainer>
                                         </div>
@@ -387,12 +463,23 @@ export default function AnalyticsDashboard({ isOpen, onClose, productId }: Analy
                                     <p className="text-xs text-slate-500">{t('modal.activityLog', { startDate, endDate })}</p>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => setSelectedWorker(null)}
-                                className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-medium hover:bg-indigo-100"
-                            >
-                                {t('modal.close')}
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={exportWorkerLogsCSV}
+                                    disabled={workerLogs.length === 0}
+                                    className="flex items-center gap-1.5 px-3 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-500 transition-colors shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                                    title="Export to CSV"
+                                >
+                                    <FileDown className="w-4 h-4" />
+                                    CSV
+                                </button>
+                                <button
+                                    onClick={() => setSelectedWorker(null)}
+                                    className="px-4 py-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm font-medium hover:bg-indigo-100"
+                                >
+                                    {t('modal.close')}
+                                </button>
+                            </div>
                         </div>
 
                         {/* Detail Content */}

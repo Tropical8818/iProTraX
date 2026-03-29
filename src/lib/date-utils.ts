@@ -178,3 +178,68 @@ export function formatToFullTimestamp(date: Date): string {
         return date.toISOString().slice(0, 16).replace('T', ' ');
     }
 }
+
+/**
+ * Parse flexible date strings into valid JS Date objects.
+ * Handles DD-MM-YYYY, DD/MM/YYYY, YYYY-MM-DD, DD-MMM, MMM-DD, and fallback Native Date formats securely.
+ */
+export function parseFlexibleDate(dateStr: string | null | undefined | Date): Date | null {
+    if (!dateStr) return null;
+    if (dateStr instanceof Date) return isNaN(dateStr.getTime()) ? null : dateStr;
+    const str = String(dateStr).trim();
+
+    // 1. Check DD-MM-YYYY or DD/MM/YYYY (Ex: 12-02-2026 -> [_, 12, 02, 2026])
+    const ddmmMatch = str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
+    if (ddmmMatch) {
+        const [_, day, month, year] = ddmmMatch;
+        return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+    }
+
+    // 2. Check YYYY-MM-DD or YYYY/MM/DD
+    const yyymmMatch = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
+    if (yyymmMatch) {
+         const [_, year, month, day] = yyymmMatch;
+         return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
+    }
+
+    // 3. Check DD-MMM (e.g., 31-Oct)
+    const ddmmmMatch = str.match(/^(\d{1,2})-([A-Za-z]{3})$/);
+    if (ddmmmMatch) {
+        const [_, day, rawMonth] = ddmmmMatch;
+        const monthStr = rawMonth.charAt(0).toUpperCase() + rawMonth.slice(1).toLowerCase();
+        const months: { [key: string]: number } = {
+            'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+            'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+        };
+        const monthIndex = months[monthStr];
+        if (monthIndex !== undefined) {
+            const year = new Date().getFullYear();
+            return new Date(year, monthIndex, parseInt(day, 10));
+        }
+    }
+
+    // 4. Check MMM-DD (e.g., Oct-31)
+    const mmmddMatch = str.match(/^([A-Za-z]{3})-(\d{1,2})$/);
+    if (mmmddMatch) {
+        const [_, rawMonth, day] = mmmddMatch;
+        const monthStr = rawMonth.charAt(0).toUpperCase() + rawMonth.slice(1).toLowerCase();
+        const months: { [key: string]: number } = {
+            'Jan': 0, 'Feb': 1, 'Mar': 2, 'Apr': 3, 'May': 4, 'Jun': 5,
+            'Jul': 6, 'Aug': 7, 'Sep': 8, 'Oct': 9, 'Nov': 10, 'Dec': 11
+        };
+        const monthIndex = months[monthStr];
+        if (monthIndex !== undefined) {
+            const year = new Date().getFullYear();
+            return new Date(year, monthIndex, parseInt(day, 10));
+        }
+    }
+
+    // 5. Catch-all native parse fallback
+    const fallbackDate = new Date(str);
+    if (!isNaN(fallbackDate.getTime())) {
+        return fallbackDate;
+    }
+
+    return null;
+}
+
