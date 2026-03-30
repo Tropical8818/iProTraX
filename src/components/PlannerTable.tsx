@@ -450,9 +450,26 @@ export default function PlannerTable({
 
         // Sort - only re-sort when sortVersion changes (user clicked to sort)
         // This prevents the table from jumping when data changes during editing
-        if (sortConfigs.length > 0) {
+        
+        // Enforce pinned "Priority" grouping (Priority always evaluates first, effectively creating tiers)
+        const effectiveSorts = [...sortConfigs];
+        const priorityCol = columns.find(c => c.toUpperCase().includes('PRIORITY'));
+        
+        if (priorityCol && (!effectiveSorts.length || effectiveSorts[0].key !== priorityCol)) {
+            // Remove priority if the user had it clicked as secondary/tertiary
+            const pIdx = effectiveSorts.findIndex(s => s.key === priorityCol);
+            let pDir: 'asc'|'desc' = 'asc';
+            if (pIdx >= 0) {
+                pDir = effectiveSorts[pIdx].dir;
+                effectiveSorts.splice(pIdx, 1);
+            }
+            // Force Priority as the undeniable Level 1 sort
+            effectiveSorts.unshift({ key: priorityCol, dir: pDir });
+        }
+
+        if (effectiveSorts.length > 0) {
             result.sort((a, b) => {
-                for (const config of sortConfigs) {
+                for (const config of effectiveSorts) {
                     const { key: sKey, dir: sDir } = config;
                     const aVal = getOrderValue(a as Record<string, unknown>, sKey).trim();
                     const bVal = getOrderValue(b as Record<string, unknown>, sKey).trim();
