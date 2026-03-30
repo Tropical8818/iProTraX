@@ -146,7 +146,21 @@ export default function PlannerTable({
 }: Props) {
 
     type SortCriterion = { key: string, dir: 'asc' | 'desc' };
-    const [sortConfigs, setSortConfigs] = useState<SortCriterion[]>([]);
+    // Sorting State with LocalStorage Persistence
+    const [sortConfigs, setSortConfigs] = useState<SortCriterion[]>(() => {
+        try {
+            const saved = localStorage.getItem('__iProTraX_sortConfigs');
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            return [];
+        }
+    });
+
+    useEffect(() => {
+        try {
+            localStorage.setItem('__iProTraX_sortConfigs', JSON.stringify(sortConfigs));
+        } catch (e) {}
+    }, [sortConfigs]);
     // sortVersion increments only when user clicks to sort - this prevents re-sorting on data changes
     const [sortVersion, setSortVersion] = useState(0);
 
