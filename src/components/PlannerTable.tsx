@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { ArrowUp, ArrowDown, ArrowUpDown, Lock, Unlock, Trash2 } from 'lucide-react';
 import { format, isValid } from 'date-fns';
+import { parseFlexibleDate } from '@/lib/date-utils';
 
 import type { Order } from '@/lib/excel';
 
@@ -459,17 +460,17 @@ export default function PlannerTable({
                     if (aVal === bVal) continue;
 
                     // Check if strings look like dates to prevent accidental parsing of "1", "2", "3" as years/months
-                    const isDateLike = (str: string) => /^\d{4}-\d{2}-\d{2}/.test(str) || /\d{1,2}[-\/]\w{3}/.test(str) || /\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/.test(str) || /^\d{4}$/.test(str);
+                    const isDateLike = (str: string) => /^\d{4}-\d{2}-\d{2}/.test(str) || /\d{1,2}[-\/]\w{3}/i.test(str) || /\w{3}[-\/]\d{1,2}/i.test(str) || /\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/.test(str);
                     
                     const aIsDate = aVal && isDateLike(aVal);
                     const bIsDate = bVal && isDateLike(bVal);
 
-                    // Try to parse both values as dates ONLY if they look like dates
-                    const aDate = aIsDate ? new Date(aVal) : new Date(NaN);
-                    const bDate = bIsDate ? new Date(bVal) : new Date(NaN);
+                    // Try to parse both values as dates ONLY if they look like dates using the robust parser
+                    const aDate = aIsDate ? parseFlexibleDate(aVal) : null;
+                    const bDate = bIsDate ? parseFlexibleDate(bVal) : null;
                     
-                    const aValid = aIsDate && isValid(aDate) && !isNaN(aDate.getTime());
-                    const bValid = bIsDate && isValid(bDate) && !isNaN(bDate.getTime());
+                    const aValid = aIsDate && aDate && !isNaN(aDate.getTime());
+                    const bValid = bIsDate && bDate && !isNaN(bDate.getTime());
 
                     let cmp = 0;
                     // If BOTH values are valid dates, use chronological comparison
