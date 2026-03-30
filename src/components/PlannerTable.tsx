@@ -144,8 +144,8 @@ export default function PlannerTable({
     fontSizeScale = 1
 }: Props) {
 
-    const [sortKey, setSortKey] = useState<string | null>(null);
-    const [sortDir, setSortDir] = useState<SortDir>(null);
+    type SortCriterion = { key: string, dir: 'asc' | 'desc' };
+    const [sortConfigs, setSortConfigs] = useState<SortCriterion[]>([]);
     // sortVersion increments only when user clicks to sort - this prevents re-sorting on data changes
     const [sortVersion, setSortVersion] = useState(0);
 
@@ -271,17 +271,25 @@ export default function PlannerTable({
     };
 
     const handleSort = (key: string) => {
-        if (sortKey === key) {
-            if (sortDir === 'asc') {
-                setSortDir('desc');
-            } else if (sortDir === 'desc') {
-                setSortKey(null);
-                setSortDir(null);
+        setSortConfigs(prev => {
+            const existingIdx = prev.findIndex(s => s.key === key);
+            const next = [...prev];
+            if (existingIdx === 0) {
+                // Currently primary sort -> flip or remove
+                if (next[0].dir === 'asc') {
+                    next[0].dir = 'desc';
+                } else {
+                    next.shift(); // Remove from sorts
+                }
+            } else {
+                // Not primary sort -> Move to front as 'asc', removing previous occurrence if exists
+                if (existingIdx > 0) {
+                    next.splice(existingIdx, 1);
+                }
+                next.unshift({ key, dir: 'asc' });
             }
-        } else {
-            setSortKey(key);
-            setSortDir('asc');
-        }
+            return next;
+        });
         // Increment sortVersion to trigger re-sort only on explicit user action
         setSortVersion(v => v + 1);
     };
@@ -441,30 +449,42 @@ export default function PlannerTable({
 
         // Sort - only re-sort when sortVersion changes (user clicked to sort)
         // This prevents the table from jumping when data changes during editing
-        if (sortKey && sortDir) {
+        if (sortConfigs.length > 0) {
             result.sort((a, b) => {
-                const aVal = String(a[sortKey] || '');
-                const bVal = String(b[sortKey] || '');
+                for (const config of sortConfigs) {
+                    const { key: sKey, dir: sDir } = config;
+                    const aVal = String(a[sKey] || '');
+                    const bVal = String(b[sKey] || '');
 
-                // Try to parse both values as dates (value-based detection, works for any column)
-                const aDate = new Date(aVal);
-                const bDate = new Date(bVal);
-                const aValid = aVal && isValid(aDate) && !isNaN(aDate.getTime());
-                const bValid = bVal && isValid(bDate) && !isNaN(bDate.getTime());
+                    if (aVal === bVal) continue;
 
-                // If BOTH values are valid dates, use chronological comparison
-                if (aValid && bValid) {
-                    const cmp = aDate.getTime() - bDate.getTime();
-                    return sortDir === 'asc' ? cmp : -cmp;
+                    // Try to parse both values as dates
+                    const aDate = new Date(aVal);
+                    const bDate = new Date(bVal);
+                    const aValid = aVal && isValid(aDate) && !isNaN(aDate.getTime());
+                    const bValid = bVal && isValid(bDate) && !isNaN(bDate.getTime());
+
+                    let cmp = 0;
+                    // If BOTH values are valid dates, use chronological comparison
+                    if (aValid && bValid) {
+                        cmp = aDate.getTime() - bDate.getTime();
+                    } 
+                    // If only one is a valid date, push invalid/empty ones to the end
+                    else if (aValid && !bValid) {
+                        cmp = -1;
+                    } else if (!aValid && bValid) {
+                        cmp = 1;
+                    } 
+                    // Default: string comparison with numeric awareness for non-date values
+                    else {
+                        cmp = aVal.localeCompare(bVal, undefined, { numeric: true });
+                    }
+
+                    if (cmp !== 0) {
+                        return sDir === 'asc' ? cmp : -cmp;
+                    }
                 }
-
-                // If only one is a valid date, push invalid/empty ones to the end
-                if (aValid && !bValid) return sortDir === 'asc' ? -1 : 1;
-                if (!aValid && bValid) return sortDir === 'asc' ? 1 : -1;
-
-                // Default: string comparison for non-date values
-                const cmp = aVal.localeCompare(bVal);
-                return sortDir === 'asc' ? cmp : -cmp;
+                return 0;
             });
         }
 
@@ -607,18 +627,28 @@ export default function PlannerTable({
                                     <span className="truncate">
                                         {i >= 5 ? getStepAbbrev(col) : col}
                                     </span>
-                                    {/* Sort icon - click this to sort */}
-                                    <button
-                                        onClick={() => handleSort(col)}
-                                        className={`shrink-0 p-0.5 rounded hover:bg-slate-300 transition-colors ${sortKey === col ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
-                                        title={`Sort by ${col}`}
-                                    >
-                                        {sortKey === col ? (
-                                            sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
-                                        ) : (
-                                            <ArrowUpDown className="w-3 h-3" />
-                                        )}
-                                    </button>
+                                    {(() => {
+                                        const config = sortConfigs.find(s => s.key === col);
+                                        const isPrimary = sortConfigs[0]?.key === col;
+                                        const rank = sortConfigs.findIndex(s => s.key === col) + 1;
+                                        
+                                        return (
+                                            <button
+                                                onClick={() => handleSort(col)}
+                                                className={`shrink-0 flex items-center p-0.5 rounded hover:bg-slate-300 transition-colors ${config ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                                title={`Sort by ${col}${rank > 1 ? ` (Level ${rank})` : ''}`}
+                                            >
+                                                {config ? (
+                                                    <div className="flex items-center">
+                                                        {config.dir === 'asc' ? <ArrowUp className={`w-3 h-3 ${!isPrimary ? 'opacity-50' : ''}`} /> : <ArrowDown className={`w-3 h-3 ${!isPrimary ? 'opacity-50' : ''}`} />}
+                                                        {rank > 1 && <span className="text-[8px] leading-none ml-0.5 font-bold opacity-70">{rank}</span>}
+                                                    </div>
+                                                ) : (
+                                                    <ArrowUpDown className="w-3 h-3" />
+                                                )}
+                                            </button>
+                                        );
+                                    })()}
                                 </div>
                                 <div
                                     className="absolute right-0 top-0 bottom-0 w-2 cursor-col-resize hover:bg-indigo-400/50 z-50 group-hover:bg-slate-300"
@@ -669,21 +699,31 @@ export default function PlannerTable({
                                     <div className="flex flex-col items-center w-full">
                                         <div className="flex items-center gap-0.5 justify-center w-full">
                                             <span className="truncate text-center">{getStepAbbrev(step)}</span>
-                                            {/* Sort icon - click this to sort */}
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation(); // Don't trigger bulk mode
-                                                    handleSort(step);
-                                                }}
-                                                className={`shrink-0 p-0.5 rounded hover:bg-slate-300 transition-colors ${sortKey === step ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
-                                                title={`Sort by ${step}`}
-                                            >
-                                                {sortKey === step ? (
-                                                    sortDir === 'asc' ? <ArrowUp className="w-2.5 h-2.5" /> : <ArrowDown className="w-2.5 h-2.5" />
-                                                ) : (
-                                                    <ArrowUpDown className="w-2.5 h-2.5" />
-                                                )}
-                                            </button>
+                                            {(() => {
+                                                const config = sortConfigs.find(s => s.key === step);
+                                                const isPrimary = sortConfigs[0]?.key === step;
+                                                const rank = sortConfigs.findIndex(s => s.key === step) + 1;
+
+                                                return (
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation(); // Don't trigger bulk mode
+                                                            handleSort(step);
+                                                        }}
+                                                        className={`shrink-0 flex items-center p-0.5 rounded hover:bg-slate-300 transition-colors ${config ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-600'}`}
+                                                        title={`Sort by ${step}${rank > 1 ? ` (Level ${rank})` : ''}`}
+                                                    >
+                                                        {config ? (
+                                                            <div className="flex items-center">
+                                                                {config.dir === 'asc' ? <ArrowUp className={`w-2.5 h-2.5 ${!isPrimary ? 'opacity-50' : ''}`} /> : <ArrowDown className={`w-2.5 h-2.5 ${!isPrimary ? 'opacity-50' : ''}`} />}
+                                                                {rank > 1 && <span className="text-[8px] leading-none ml-0.5 font-bold opacity-70">{rank}</span>}
+                                                            </div>
+                                                        ) : (
+                                                            <ArrowUpDown className="w-2.5 h-2.5" />
+                                                        )}
+                                                    </button>
+                                                );
+                                            })()}
                                         </div>
                                         <div className="flex gap-0.5 mt-1 font-normal text-[9px] opacity-70">
                                             <span className="text-green-600" title="Done (with dates)">{completeCount}</span>
