@@ -459,6 +459,13 @@ export default function PlannerTable({
 
                     if (aVal === bVal) continue;
 
+                    // ALWAYS push empty values to the very bottom, regardless of asc/desc sorting
+                    const aIsEmpty = !aVal;
+                    const bIsEmpty = !bVal;
+
+                    if (aIsEmpty && !bIsEmpty) return 1;  // empty goes to bottom
+                    if (!aIsEmpty && bIsEmpty) return -1; // empty goes to bottom
+
                     // Skip trying to parse strings that are exclusively numbers (like Priorities 1, 2, 3, or Excel Serials)
                     // Excel serials like "45413" sort chronologically via numeric string compare anyway.
                     const isPureNumber = (str: string) => /^-?\d+(\.\d+)?$/.test(str);
@@ -479,9 +486,10 @@ export default function PlannerTable({
                     if (aValid && bValid) {
                         cmp = aDate.getTime() - bDate.getTime();
                     } 
-                    // If only one is a valid date, push invalid/empty ones to the end
+                    // If only one is a valid date, the other is treated as a string or whatever
+                    // But we already filtered completely empty strings above. So if it reaches here, it's a valid date vs a non-date string (like "N/A" or a pure number).
                     else if (aValid && !bValid) {
-                        cmp = -1;
+                        cmp = -1; // valid date comes before non-date strings
                     } else if (!aValid && bValid) {
                         cmp = 1;
                     } 
