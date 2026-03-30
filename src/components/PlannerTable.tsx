@@ -443,7 +443,7 @@ export default function PlannerTable({
         Object.entries(filters).forEach(([key, value]) => {
             if (value) {
                 result = result.filter(o =>
-                    String(o[key] || '').toLowerCase().includes(value.toLowerCase())
+                    getOrderValue(o as Record<string, unknown>, key).toLowerCase().includes(value.toLowerCase())
                 );
             }
         });
@@ -454,8 +454,8 @@ export default function PlannerTable({
             result.sort((a, b) => {
                 for (const config of sortConfigs) {
                     const { key: sKey, dir: sDir } = config;
-                    const aVal = String(a[sKey] || '');
-                    const bVal = String(b[sKey] || '');
+                    const aVal = getOrderValue(a as Record<string, unknown>, sKey);
+                    const bVal = getOrderValue(b as Record<string, unknown>, sKey);
 
                     if (aVal === bVal) continue;
 
