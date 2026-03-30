@@ -817,15 +817,9 @@ export default function DashboardPage() {
         });
 
     // Shared helper: determine the completion step (used by displayedOrders, Overdue, Monthly Goal)
+    // Rule: completion step is ALWAYS the last step, regardless of its name.
     const getCompletionStep = (): string => {
-        let completionStep = steps.find(s => s.toLowerCase() === 'receipt');
-        if (!completionStep) {
-            completionStep = steps.find(s =>
-                s.toLowerCase() === 'outgoing' ||
-                s.toLowerCase() === 'completion'
-            ) || steps[steps.length - 1];
-        }
-        return completionStep || '';
+        return steps.length > 0 ? steps[steps.length - 1] : '';
     };
 
     // Shared helper: check if an order is completed (last step has a date or N/A)
