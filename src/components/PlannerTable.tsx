@@ -477,7 +477,20 @@ export default function PlannerTable({
                     } 
                     // Default: string comparison with numeric awareness for non-date values
                     else {
-                        cmp = aVal.localeCompare(bVal, undefined, { numeric: true });
+                        // Special handling for priority column values (!!!, !!, !)
+                        const countExclam = (str: string) => {
+                            const trimmed = str.trim();
+                            if (/^!+$/.test(trimmed)) return trimmed.length;
+                            return 0; // 0 for empty or non-exclamation strings
+                        };
+                        const aExclamCount = countExclam(aVal);
+                        const bExclamCount = countExclam(bVal);
+
+                        if (aExclamCount > 0 || bExclamCount > 0) {
+                            cmp = aExclamCount - bExclamCount;
+                        } else {
+                            cmp = aVal.localeCompare(bVal, undefined, { numeric: true });
+                        }
                     }
 
                     if (cmp !== 0) {
