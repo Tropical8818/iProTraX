@@ -454,23 +454,25 @@ export default function PlannerTable({
             result.sort((a, b) => {
                 for (const config of sortConfigs) {
                     const { key: sKey, dir: sDir } = config;
-                    const aVal = getOrderValue(a as Record<string, unknown>, sKey);
-                    const bVal = getOrderValue(b as Record<string, unknown>, sKey);
+                    const aVal = getOrderValue(a as Record<string, unknown>, sKey).trim();
+                    const bVal = getOrderValue(b as Record<string, unknown>, sKey).trim();
 
                     if (aVal === bVal) continue;
 
-                    // Check if strings look like dates to prevent accidental parsing of "1", "2", "3" as years/months
-                    const isDateLike = (str: string) => /^\d{4}-\d{2}-\d{2}/.test(str) || /\d{1,2}[-\/]\w{3}/i.test(str) || /\w{3}[-\/]\d{1,2}/i.test(str) || /\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/.test(str);
-                    
-                    const aIsDate = aVal && isDateLike(aVal);
-                    const bIsDate = bVal && isDateLike(bVal);
+                    // Skip trying to parse strings that are exclusively numbers (like Priorities 1, 2, 3, or Excel Serials)
+                    // Excel serials like "45413" sort chronologically via numeric string compare anyway.
+                    const isPureNumber = (str: string) => /^-?\d+(\.\d+)?$/.test(str);
+                    const isPriorityMark = (str: string) => /^!+$/.test(str);
 
-                    // Try to parse both values as dates ONLY if they look like dates using the robust parser
-                    const aDate = aIsDate ? parseFlexibleDate(aVal) : null;
-                    const bDate = bIsDate ? parseFlexibleDate(bVal) : null;
+                    const canParseA = aVal && !isPureNumber(aVal) && !isPriorityMark(aVal);
+                    const canParseB = bVal && !isPureNumber(bVal) && !isPriorityMark(bVal);
+
+                    // Try to parse values as dates using robust parser if they aren't explicit numbers/marks
+                    const aDate = canParseA ? parseFlexibleDate(aVal) : null;
+                    const bDate = canParseB ? parseFlexibleDate(bVal) : null;
                     
-                    const aValid = aIsDate && aDate && !isNaN(aDate.getTime());
-                    const bValid = bIsDate && bDate && !isNaN(bDate.getTime());
+                    const aValid = aDate && !isNaN(aDate.getTime());
+                    const bValid = bDate && !isNaN(bDate.getTime());
 
                     let cmp = 0;
                     // If BOTH values are valid dates, use chronological comparison

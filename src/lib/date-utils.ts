@@ -188,22 +188,22 @@ export function parseFlexibleDate(dateStr: string | null | undefined | Date): Da
     if (dateStr instanceof Date) return isNaN(dateStr.getTime()) ? null : dateStr;
     const str = String(dateStr).trim();
 
-    // 1. Check DD-MM-YYYY or DD/MM/YYYY (Ex: 12-02-2026 -> [_, 12, 02, 2026])
-    const ddmmMatch = str.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{4})$/);
+    // 1. Check DD-MM-YYYY, DD/MM/YYYY, DD.MM.YYYY, DD MM YYYY
+    const ddmmMatch = str.match(/^(\d{1,2})[-\/.\s](\d{1,2})[-\/.\s](\d{4})$/);
     if (ddmmMatch) {
         const [_, day, month, year] = ddmmMatch;
         return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
     }
 
-    // 2. Check YYYY-MM-DD or YYYY/MM/DD
-    const yyymmMatch = str.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})$/);
+    // 2. Check YYYY-MM-DD, YYYY/MM/DD, YYYY.MM.DD
+    const yyymmMatch = str.match(/^(\d{4})[-\/.\s](\d{1,2})[-\/.\s](\d{1,2})$/);
     if (yyymmMatch) {
          const [_, year, month, day] = yyymmMatch;
          return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
     }
 
-    // 3. Check DD-MMM (e.g., 31-Oct)
-    const ddmmmMatch = str.match(/^(\d{1,2})-([A-Za-z]{3})$/);
+    // 3. Check DD-MMM (e.g., 31-Oct, 31 Oct, 31.Oct)
+    const ddmmmMatch = str.match(/^(\d{1,2})[-\/.\s]([A-Za-z]{3})$/);
     if (ddmmmMatch) {
         const [_, day, rawMonth] = ddmmmMatch;
         const monthStr = rawMonth.charAt(0).toUpperCase() + rawMonth.slice(1).toLowerCase();
@@ -218,8 +218,8 @@ export function parseFlexibleDate(dateStr: string | null | undefined | Date): Da
         }
     }
 
-    // 4. Check MMM-DD (e.g., Oct-31)
-    const mmmddMatch = str.match(/^([A-Za-z]{3})-(\d{1,2})$/);
+    // 4. Check MMM-DD (e.g., Oct-31, Oct 31, Oct.31)
+    const mmmddMatch = str.match(/^([A-Za-z]{3})[-\/.\s](\d{1,2})$/);
     if (mmmddMatch) {
         const [_, rawMonth, day] = mmmddMatch;
         const monthStr = rawMonth.charAt(0).toUpperCase() + rawMonth.slice(1).toLowerCase();
