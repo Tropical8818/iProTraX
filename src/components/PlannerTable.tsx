@@ -458,11 +458,18 @@ export default function PlannerTable({
 
                     if (aVal === bVal) continue;
 
-                    // Try to parse both values as dates
-                    const aDate = new Date(aVal);
-                    const bDate = new Date(bVal);
-                    const aValid = aVal && isValid(aDate) && !isNaN(aDate.getTime());
-                    const bValid = bVal && isValid(bDate) && !isNaN(bDate.getTime());
+                    // Check if strings look like dates to prevent accidental parsing of "1", "2", "3" as years/months
+                    const isDateLike = (str: string) => /^\d{4}-\d{2}-\d{2}/.test(str) || /\d{1,2}[-\/]\w{3}/.test(str) || /\d{1,2}[-\/]\d{1,2}[-\/]\d{2,4}/.test(str) || /^\d{4}$/.test(str);
+                    
+                    const aIsDate = aVal && isDateLike(aVal);
+                    const bIsDate = bVal && isDateLike(bVal);
+
+                    // Try to parse both values as dates ONLY if they look like dates
+                    const aDate = aIsDate ? new Date(aVal) : new Date(NaN);
+                    const bDate = bIsDate ? new Date(bVal) : new Date(NaN);
+                    
+                    const aValid = aIsDate && isValid(aDate) && !isNaN(aDate.getTime());
+                    const bValid = bIsDate && isValid(bDate) && !isNaN(bDate.getTime());
 
                     let cmp = 0;
                     // If BOTH values are valid dates, use chronological comparison
