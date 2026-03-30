@@ -571,7 +571,39 @@ export default function PlannerTable({
                         return sDir === 'asc' ? cmp : -cmp;
                     }
                 }
-                
+
+                // 3. FACTORY FALLBACK: Always sort by Due Date chronologically (Old to New) if not explicitly overridden
+                const dueColName = columns.find(c => c.toUpperCase().includes('DUE'));
+                if (dueColName && !sortConfigs.find(s => s.key === dueColName)) {
+                    const aDue = getVal(a, dueColName);
+                    const bDue = getVal(b, dueColName);
+                    
+                    if (aDue !== bDue) {
+                        const aIsEmpty = !aDue;
+                        const bIsEmpty = !bDue;
+                        if (aIsEmpty && !bIsEmpty) return 1;
+                        if (!aIsEmpty && bIsEmpty) return -1;
+
+                        const aDate = parseFlexibleDate(aDue);
+                        const bDate = parseFlexibleDate(bDue);
+                        
+                        const aValid = aDate && !isNaN(aDate.getTime());
+                        const bValid = bDate && !isNaN(bDate.getTime());
+
+                        if (aValid && bValid) {
+                            return aDate.getTime() - bDate.getTime(); // Earliest due date at top
+                        } else if (aValid && !bValid) {
+                            return -1;
+                        } else if (!aValid && bValid) {
+                            return 1;
+                        } else {
+                            // If neither are dates, standard string sort
+                            const cmp = aDue.localeCompare(bDue);
+                            if (cmp !== 0) return cmp;
+                        }
+                    }
+                }
+
                 return 0;
             });
         }
