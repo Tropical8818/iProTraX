@@ -1037,17 +1037,7 @@ export default function DashboardPage() {
                                 {showCompleted ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                                 <span className="hidden lg:inline">Completed</span>
                                 <span className="px-1 py-0.5 rounded-full text-[9px] bg-slate-200 text-slate-600 leading-none">
-                                    {orders.filter(o => {
-                                        let completionStep = steps.find(s => s.toLowerCase() === 'receipt');
-                                        if (!completionStep) {
-                                            completionStep = steps.find(s =>
-                                                s.toLowerCase() === 'outgoing' ||
-                                                s.toLowerCase() === 'completion'
-                                            ) || steps[steps.length - 1];
-                                        }
-                                        const val = o[completionStep] || '';
-                                        return /\d{4}-\d{2}-\d{2}/.test(val) || /\d{2}[-\/]\w{3}/.test(val);
-                                    }).length}
+                                    {orders.filter(o => isOrderCompleted(o)).length}
                                 </span>
                             </button>
 
@@ -1265,46 +1255,8 @@ export default function DashboardPage() {
                                 <div className="text-xs text-slate-500">{t('stats.monthlyGoal')}</div>
                                 <div className="text-xl font-bold text-blue-700">
                                     {(() => {
-                                        const today = new Date();
-                                        const currentMonth = today.getMonth();
-                                        const currentYear = today.getFullYear();
-
-                                        // Helper to get value case-insensitively
-                                        const getStepValue = (o: any, stepName: string) => {
-                                            if (o[stepName]) return o[stepName];
-                                            const lower = stepName.toLowerCase();
-                                            for (const key of Object.keys(o)) {
-                                                if (key.toLowerCase() === lower) return o[key];
-                                            }
-                                            return '';
-                                        };
-
-                                        // Logic: Use the shared completion step (receipt > outgoing/completion > last step)
-                                        const completionCol = getCompletionStep();
-
-                                        let completed = 0;
-                                        if (completionCol) {
-                                            completed = orders.filter(o => {
-                                                const val = getStepValue(o, completionCol);
-                                                if (!val || val.toUpperCase() === 'N/A') return false;
-
-                                                // Priority: Try our custom parser first (formats to Current Year), then fallback to native.
-                                                // Now that we migrated data to YYYY-MM-DD, native parser works great too.
-                                                // But keeping robustness is good.
-                                                let d = parseShortTimestamp(val);
-                                                if (!d) {
-                                                    const native = new Date(val);
-                                                    if (!isNaN(native.getTime())) {
-                                                        d = native;
-                                                    }
-                                                }
-
-                                                if (!d) return false;
-
-                                                return d.getMonth() === currentMonth &&
-                                                    d.getFullYear() === currentYear;
-                                            }).length;
-                                        }
+                                        // Logic: Directly use the shared isOrderCompleted helper as requested
+                                        const completed = orders.filter(o => isOrderCompleted(o)).length;
 
                                         const target = (products.find(p => p.id === selectedProductId))?.monthlyTarget || 100;
                                         const percentage = Math.round((completed / target) * 100);
