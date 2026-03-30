@@ -434,115 +434,6 @@ export default function PlannerTable({
         });
         return counts;
     }, [orders, orderedSteps]);
-
-    // Apply filters and sorting
-    const processedOrders = useMemo(() => {
-        let result = [...orders];
-
-        // Filter
-        Object.entries(filters).forEach(([key, value]) => {
-            if (value) {
-                result = result.filter(o =>
-                    getOrderValue(o as Record<string, unknown>, key).toLowerCase().includes(value.toLowerCase())
-                );
-            }
-        });
-
-        // Sort - only re-sort when sortVersion changes (user clicked to sort)
-        // This prevents the table from jumping when data changes during editing
-        
-        // Enforce pinned "Priority" grouping (Priority always evaluates first, effectively creating tiers)
-        const effectiveSorts = [...sortConfigs];
-        const priorityCol = columns.find(c => c.toUpperCase().includes('PRIORITY'));
-        
-        if (priorityCol && (!effectiveSorts.length || effectiveSorts[0].key !== priorityCol)) {
-            // Remove priority if the user had it clicked as secondary/tertiary
-            const pIdx = effectiveSorts.findIndex(s => s.key === priorityCol);
-            let pDir: 'asc'|'desc' = 'asc';
-            if (pIdx >= 0) {
-                pDir = effectiveSorts[pIdx].dir;
-                effectiveSorts.splice(pIdx, 1);
-            }
-            // Force Priority as the undeniable Level 1 sort
-            effectiveSorts.unshift({ key: priorityCol, dir: pDir });
-        }
-
-        if (effectiveSorts.length > 0) {
-            result.sort((a, b) => {
-                for (const config of effectiveSorts) {
-                    const { key: sKey, dir: sDir } = config;
-                    const aVal = getOrderValue(a as Record<string, unknown>, sKey).trim();
-                    const bVal = getOrderValue(b as Record<string, unknown>, sKey).trim();
-
-                    if (aVal === bVal) continue;
-
-                    // ALWAYS push empty values to the very bottom, regardless of asc/desc sorting
-                    const aIsEmpty = !aVal;
-                    const bIsEmpty = !bVal;
-
-                    if (aIsEmpty && !bIsEmpty) return 1;  // empty goes to bottom
-                    if (!aIsEmpty && bIsEmpty) return -1; // empty goes to bottom
-
-                    // Skip trying to parse strings that are exclusively numbers (like Priorities 1, 2, 3, or Excel Serials)
-                    // Excel serials like "45413" sort chronologically via numeric string compare anyway.
-                    const isPureNumber = (str: string) => /^-?\d+(\.\d+)?$/.test(str);
-                    const isPriorityMark = (str: string) => /^!+$/.test(str);
-
-                    const canParseA = aVal && !isPureNumber(aVal) && !isPriorityMark(aVal);
-                    const canParseB = bVal && !isPureNumber(bVal) && !isPriorityMark(bVal);
-
-                    // Try to parse values as dates using robust parser if they aren't explicit numbers/marks
-                    const aDate = canParseA ? parseFlexibleDate(aVal) : null;
-                    const bDate = canParseB ? parseFlexibleDate(bVal) : null;
-                    
-                    const aValid = aDate && !isNaN(aDate.getTime());
-                    const bValid = bDate && !isNaN(bDate.getTime());
-
-                    let cmp = 0;
-                    // If BOTH values are valid dates, use chronological comparison
-                    if (aValid && bValid) {
-                        cmp = aDate.getTime() - bDate.getTime();
-                    } 
-                    // If only one is a valid date, the other is treated as a string or whatever
-                    // But we already filtered completely empty strings above. So if it reaches here, it's a valid date vs a non-date string (like "N/A" or a pure number).
-                    else if (aValid && !bValid) {
-                        cmp = -1; // valid date comes before non-date strings
-                    } else if (!aValid && bValid) {
-                        cmp = 1;
-                    } 
-                    // Default: string comparison with numeric awareness for non-date values
-                    else {
-                        // Special handling for priority column values (!!!, !!, !)
-                        const countExclam = (str: string) => {
-                            const trimmed = str.trim();
-                            if (/^!+$/.test(trimmed)) return trimmed.length;
-                            return 0; // 0 for empty or non-exclamation strings
-                        };
-                        const aExclamCount = countExclam(aVal);
-                        const bExclamCount = countExclam(bVal);
-
-                        if (aExclamCount > 0 || bExclamCount > 0) {
-                            cmp = aExclamCount - bExclamCount;
-                        } else {
-                            cmp = aVal.localeCompare(bVal, undefined, { numeric: true });
-                        }
-                    }
-
-                    if (cmp !== 0) {
-                        return sDir === 'asc' ? cmp : -cmp;
-                    }
-                }
-                return 0;
-            });
-        }
-
-        return result;
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [orders, filters, sortVersion]); // Use sortVersion instead of sortKey/sortDir to prevent re-sort on data changes
-
-    // Use provided detail columns or fallback to defaults (NOW REMOVED)
-    // Combine columns: Details + Steps
-    // Integrate extraColumns (ECD) into details after WO DUE
     // Combine columns: Details + Steps
     // Integrate extraColumns (ECD) into details after WO DUE
     const effectiveDetailColumns = useMemo(() => {
@@ -556,8 +447,141 @@ export default function PlannerTable({
         return cols;
     }, [detailColumns, orders.length, extraColumns]);
 
-    const columns = [...effectiveDetailColumns, ...orderedSteps];
+    const columns = useMemo(() => [...effectiveDetailColumns, ...orderedSteps], [effectiveDetailColumns, orderedSteps]);
 
+    const processedOrders = useMemo(() => {
+        let result = [...orders];
+
+        // Filter
+        Object.entries(filters).forEach(([key, value]) => {
+            if (value) {
+                result = result.filter(o =>
+                    getOrderValue(o as Record<string, unknown>, key).toLowerCase().includes(value.toLowerCase())
+                );
+            }
+        });
+
+        // Resolve absolute priorities and logic boundaries
+        const priorityColName = columns.find(c => c.toUpperCase().includes('PRIORITY'));
+        // Find if user specifically toggled a direction for priority anywhere in stack
+        const explicitPrioritySort = sortConfigs.find(s => s.key === priorityColName);
+
+        if (sortConfigs.length > 0 || priorityColName) {
+            result.sort((a, b) => {
+                const getVal = (item: any, key: string) => getOrderValue(item as Record<string, unknown>, key).trim();
+
+                // 1. PINNED PRIMARY SORT: Priority always dominates regardless of what the user clicked (if it exists)
+                if (priorityColName) {
+                    const aPri = getVal(a, priorityColName);
+                    const bPri = getVal(b, priorityColName);
+                    
+                    if (aPri !== bPri) {
+                        const aEmpty = !aPri;
+                        const bEmpty = !bPri;
+                        
+                        // Empty priorities are irrevocably cast to the abyss
+                        if (aEmpty && !bEmpty) return 1;
+                        if (!aEmpty && bEmpty) return -1;
+                        
+                        const countExclam = (str: string) => {
+                            if (/^!+$/.test(str)) return str.length;
+                            return 0;
+                        };
+                        const aExclamCount = countExclam(aPri);
+                        const bExclamCount = countExclam(bPri);
+
+                        let pCmp = 0;
+                        if (aExclamCount > 0 || bExclamCount > 0) {
+                            pCmp = aExclamCount - bExclamCount;  // standard 
+                        } else {
+                            const aNum = parseFloat(aPri);
+                            const bNum = parseFloat(bPri);
+                            if (!isNaN(aNum) && !isNaN(bNum)) {
+                                pCmp = aNum - bNum; // standard 1, 2, 3
+                            } else {
+                                // Default string descending for Priority to keep highest alphanumeric strings at top
+                                pCmp = aPri.localeCompare(bPri, undefined, { numeric: true });
+                            }
+                        }
+                        
+                        // Obey user's manual reverse direction on priority if they clicked it, otherwise default to 'desc' (so 3 > 2 > 1 dominates implicitly)
+                        const pDir = explicitPrioritySort ? explicitPrioritySort.dir : 'desc';
+                        return pDir === 'asc' ? pCmp : -pCmp;
+                    }
+                }
+
+                // 2. USER'S SECONDARY CLICKS (e.g. Due Date) sort within Priority buckets
+                for (const config of sortConfigs) {
+                    const { key: sKey, dir: sDir } = config;
+                    // Skip if evaluating Priority again to avoid redundant processing
+                    if (sKey === priorityColName) continue;
+
+                    const aVal = getVal(a, sKey);
+                    const bVal = getVal(b, sKey);
+
+                    if (aVal === bVal) continue;
+
+                    const aIsEmpty = !aVal;
+                    const bIsEmpty = !bVal;
+                    if (aIsEmpty && !bIsEmpty) return 1;
+                    if (!aIsEmpty && bIsEmpty) return -1;
+
+                    // Exclude specific single-string cases from Date coercion 
+                    const isPureNumber = (str: string) => /^-?\d+(\.\d+)?$/.test(str);
+                    const isPriorityMark = (str: string) => /^!+$/.test(str);
+
+                    const canParseA = !isPureNumber(aVal) && !isPriorityMark(aVal);
+                    const canParseB = !isPureNumber(bVal) && !isPriorityMark(bVal);
+
+                    const aDate = canParseA ? parseFlexibleDate(aVal) : null;
+                    const bDate = canParseB ? parseFlexibleDate(bVal) : null;
+
+                    const aValid = aDate && !isNaN(aDate.getTime());
+                    const bValid = bDate && !isNaN(bDate.getTime());
+
+                    let cmp = 0;
+                    if (aValid && bValid) {
+                        cmp = aDate.getTime() - bDate.getTime();
+                    } else if (aValid && !bValid) {
+                        cmp = -1;
+                    } else if (!aValid && bValid) {
+                        cmp = 1;
+                    } else {
+                        const countExclam = (str: string) => {
+                            if (/^!+$/.test(str)) return str.length;
+                            return 0;
+                        };
+                        const aExclamCount = countExclam(aVal);
+                        const bExclamCount = countExclam(bVal);
+
+                        if (aExclamCount > 0 || bExclamCount > 0) {
+                            cmp = aExclamCount - bExclamCount;
+                        } else {
+                            const aNum = parseFloat(aVal);
+                            const bNum = parseFloat(bVal);
+                            if (!isNaN(aNum) && !isNaN(bNum)) {
+                                cmp = aNum - bNum;
+                            } else {
+                                cmp = aVal.localeCompare(bVal);
+                            }
+                        }
+                    }
+
+                    if (cmp !== 0) {
+                        return sDir === 'asc' ? cmp : -cmp;
+                    }
+                }
+                
+                return 0;
+            });
+        }
+
+        return result;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [orders, filters, sortConfigs, sortVersion, columns]);
+
+    // Use provided detail columns or fallback to defaults (NOW REMOVED)
+    // Combine columns: Details + Steps
     // Memoize column widths for performance
     // AGGRESSIVE FIXED WIDTHS - ensure all steps visible without scrolling
     const columnWidths = useMemo(() => {
