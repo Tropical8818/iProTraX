@@ -816,23 +816,31 @@ export default function DashboardPage() {
             return priorityB - priorityA;
         });
 
+    // Shared helper: determine the completion step (used by displayedOrders, Overdue, Monthly Goal)
+    const getCompletionStep = (): string => {
+        let completionStep = steps.find(s => s.toLowerCase() === 'receipt');
+        if (!completionStep) {
+            completionStep = steps.find(s =>
+                s.toLowerCase() === 'outgoing' ||
+                s.toLowerCase() === 'completion'
+            ) || steps[steps.length - 1];
+        }
+        return completionStep || '';
+    };
+
+    // Shared helper: check if an order is completed (last step has a date or N/A)
+    const isOrderCompleted = (order: Order): boolean => {
+        const completionStep = getCompletionStep();
+        if (!completionStep) return false;
+        const val = order[completionStep] || '';
+        const hasDate = /\d{4}-\d{2}-\d{2}/.test(val) || /\d{2}[-\/]\w{3}/.test(val);
+        const isNA = val.toUpperCase() === 'N/A';
+        return hasDate || isNA;
+    };
+
     const displayedOrders = showCompleted
         ? sortedOrders
-        : sortedOrders.filter(order => {
-            // Prioritize 'Receipt' as completion step
-            let completionStep = steps.find(s => s.toLowerCase() === 'receipt');
-            if (!completionStep) {
-                completionStep = steps.find(s =>
-                    s.toLowerCase() === 'outgoing' ||
-                    s.toLowerCase() === 'completion'
-                ) || steps[steps.length - 1];
-            }
-
-            const val = order[completionStep] || '';
-            const hasDate = /\d{4}-\d{2}-\d{2}/.test(val) || /\d{2}[-\/]\w{3}/.test(val);
-            const isNA = val.toUpperCase() === 'N/A';
-            return !hasDate && !isNA;
-        });
+        : sortedOrders.filter(order => !isOrderCompleted(order));
 
 
     // Calculate highlighted WOs based on search query (for Barcode Scanner)
@@ -1207,54 +1215,28 @@ export default function DashboardPage() {
                                 <div className="text-xs text-slate-500">{t('stats.activeWOs')}</div>
                                 <div className="text-xl font-bold text-slate-900">{displayedOrders.length}</div>
                             </div>
-                            <div className={`rounded-lg border p-3 ${displayedOrders.filter(o => {
-                                const due = o['WO DUE'] || o['Due Date'] || o['WO_DUE'] || o['到期日期'];
-                                if (!due) return false;
-                                // Exclude completed orders (last step has date or N/A)
-                                const lastStep = steps[steps.length - 1];
-                                const lastStepValue = lastStep ? (o[lastStep] || '') : '';
-                                if (/\d{4}-\d{2}-\d{2}/.test(lastStepValue) || /\d{2}[-\/]\w{3}/.test(lastStepValue) || lastStepValue.toUpperCase() === 'N/A') return false;
-                                const dueDate = parseFlexibleDate(due);
-                                if (!dueDate) return false;
-                                const today = new Date();
-                                today.setHours(0, 0, 0, 0);
-                                dueDate.setHours(0, 0, 0, 0);
-                                return dueDate < today;
-                            }).length > 0
-                                ? 'bg-red-50 border-red-200'
-                                : 'bg-white border-slate-200'
-                                }`}>
-                                <div className="text-xs text-slate-500">{t('stats.overdue')}</div>
-                                <div className={`text-xl font-bold ${displayedOrders.filter(o => {
+                            {(() => {
+                                const overdueCount = displayedOrders.filter(o => {
                                     const due = o['WO DUE'] || o['Due Date'] || o['WO_DUE'] || o['到期日期'];
                                     if (!due) return false;
-                                    const lastStep = steps[steps.length - 1];
-                                    const lastStepValue = lastStep ? (o[lastStep] || '') : '';
-                                    if (/\d{4}-\d{2}-\d{2}/.test(lastStepValue) || /\d{2}[-\/]\w{3}/.test(lastStepValue) || lastStepValue.toUpperCase() === 'N/A') return false;
+                                    // Use shared isOrderCompleted helper
+                                    if (isOrderCompleted(o)) return false;
                                     const dueDate = parseFlexibleDate(due);
                                     if (!dueDate) return false;
                                     const today = new Date();
                                     today.setHours(0, 0, 0, 0);
                                     dueDate.setHours(0, 0, 0, 0);
                                     return dueDate < today;
-                                }).length > 0 ? 'text-red-600' : 'text-slate-900'
-                                    }`}>
-                                    {displayedOrders.filter(o => {
-                                        const due = o['WO DUE'] || o['Due Date'] || o['WO_DUE'] || o['到期日期'];
-                                        if (!due) return false;
-                                        const lastStep = steps[steps.length - 1];
-                                        const lastStepValue = lastStep ? (o[lastStep] || '') : '';
-                                        if (/\d{4}-\d{2}-\d{2}/.test(lastStepValue) || /\d{2}[-\/]\w{3}/.test(lastStepValue) || lastStepValue.toUpperCase() === 'N/A') return false;
-                                        if (/\d{4}-\d{2}-\d{2}/.test(lastStepValue) || /\d{2}[-\/]\w{3}/.test(lastStepValue)) return false;
-                                        const dueDate = parseFlexibleDate(due);
-                                        if (!dueDate) return false;
-                                        const today = new Date();
-                                        today.setHours(0, 0, 0, 0);
-                                        dueDate.setHours(0, 0, 0, 0);
-                                        return dueDate < today;
-                                    }).length}
-                                </div>
-                            </div>
+                                }).length;
+                                return (
+                                    <div className={`rounded-lg border p-3 ${overdueCount > 0 ? 'bg-red-50 border-red-200' : 'bg-white border-slate-200'}`}>
+                                        <div className="text-xs text-slate-500">{t('stats.overdue')}</div>
+                                        <div className={`text-xl font-bold ${overdueCount > 0 ? 'text-red-600' : 'text-slate-900'}`}>
+                                            {overdueCount}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
                             <div className="bg-amber-50 rounded-lg border border-amber-200 p-3">
                                 <div className="text-xs text-slate-500">{t('stats.holdQn')}</div>
                                 <div className="text-xl font-bold text-amber-700">
@@ -1303,13 +1285,13 @@ export default function DashboardPage() {
                                             return '';
                                         };
 
-                                        // Logic: The order is completed when the LAST step is finished (has a date)
-                                        const receiptCol = steps.length > 0 ? steps[steps.length - 1] : '';
+                                        // Logic: Use the shared completion step (receipt > outgoing/completion > last step)
+                                        const completionCol = getCompletionStep();
 
                                         let completed = 0;
-                                        if (receiptCol) {
+                                        if (completionCol) {
                                             completed = orders.filter(o => {
-                                                const val = getStepValue(o, receiptCol);
+                                                const val = getStepValue(o, completionCol);
                                                 if (!val || val.toUpperCase() === 'N/A') return false;
 
                                                 // Priority: Try our custom parser first (formats to Current Year), then fallback to native.
