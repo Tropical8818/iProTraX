@@ -11,6 +11,8 @@ import { format } from 'date-fns';
 import { APP_VERSION } from '@/lib/version';
 import { useTranslations } from 'next-intl';
 import { LanguageSwitcher } from '@/components/LanguageSwitcher';
+import { sortOrders, SortConfig } from '@/lib/order-sorting';
+import { parseFlexibleDate } from '@/lib/date-utils';
 
 interface Order {
     id: string;
@@ -169,9 +171,17 @@ export default function KioskPage() {
     const isOrderAtStep = (order: Order, step: string) => {
         const stepValue = String(order.data[step] || '');
         if (stepValue === '') return true;
-        if (['WIP', 'HOLD', 'QN', 'P'].includes(stepValue.toUpperCase())) return true;
-        // If it's a date-like string, the step is completed, so it shouldn't show up in a filter for this step
-        if (/\d{1,2}-\w{3}/.test(stepValue)) return false;
+        
+        const upperVal = stepValue.toUpperCase();
+        if (['WIP', 'HOLD', 'QN', 'P'].includes(upperVal)) return true;
+        
+        // Safely determine completion using robust parsing
+        const parsed = parseFlexibleDate(stepValue);
+        if (parsed && !isNaN(parsed.getTime())) return false; // Contains valid completition date
+
+        if (/\d{1,2}-\w{3}/.test(stepValue)) return false; // Legacy fallback
+        
+        // If it's a completely unknown random string, don't hide it arbitrarily
         return true;
     };
 
@@ -184,11 +194,23 @@ export default function KioskPage() {
         // In 'ALL' view, hide orders where every available step for this product is already completed
         const isFullyCompleted = availableSteps.length > 0 && availableSteps.every(step => {
             const val = String(order.data[step] || '');
-            return /\d{1,2}-\w{3}/.test(val);
+            const parsed = parseFlexibleDate(val);
+            return (parsed && !isNaN(parsed.getTime())) || /\d{1,2}-\w{3}/.test(val);
         });
 
         return !isFullyCompleted;
     });
+
+    // Apply dashboard sorting rules
+    let sortedFilteredOrders = filteredOrders;
+    try {
+        const savedSorts = localStorage.getItem('__iProTraX_sortConfigs');
+        if (savedSorts && orders.length > 0) {
+            const sortConfigs: SortConfig[] = JSON.parse(savedSorts);
+            const columns = Object.keys(orders[0].data);
+            sortedFilteredOrders = sortOrders(filteredOrders, columns, sortConfigs, (o, key) => String(o.data[key] || ''));
+        }
+    } catch {}
 
     return (
         <div className="min-h-screen bg-[#0a0a0c] text-slate-200 overflow-hidden flex flex-col font-sans">
@@ -361,8 +383,8 @@ export default function KioskPage() {
                         <Activity className="w-16 h-16 text-indigo-500 animate-pulse" />
                         <span className="text-2xl font-bold tracking-widest text-slate-500 animate-pulse">CONNECTING TO HUB...</span>
                     </div>
-                ) : filteredOrders.length > 0 ? (
-                    filteredOrders.map((order) => {
+                ) : sortedFilteredOrders.length > 0 ? (
+                    sortedFilteredOrders.map((order) => {
                         const status = getStatusInfo(order.data, selectedStep);
 
                         return (

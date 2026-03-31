@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { ArrowUp, ArrowDown, ArrowUpDown, Lock, Unlock, Trash2 } from 'lucide-react';
 import { format, isValid } from 'date-fns';
+import { sortOrders } from '@/lib/order-sorting';
 import { parseFlexibleDate } from '@/lib/date-utils';
 
 import type { Order } from '@/lib/excel';
@@ -475,152 +476,8 @@ export default function PlannerTable({
             }
         });
 
-        // Resolve absolute priorities and logic boundaries
-        const priorityColName = columns.find(c => c.toUpperCase().includes('PRIORITY'));
-        // Find if user specifically toggled a direction for priority anywhere in stack
-        const explicitPrioritySort = sortConfigs.find(s => s.key === priorityColName);
-
-        if (sortConfigs.length > 0 || priorityColName) {
-            result.sort((a, b) => {
-                const getVal = (item: any, key: string) => getOrderValue(item as Record<string, unknown>, key).trim();
-
-                // 1. PINNED PRIMARY SORT: Priority always dominates regardless of what the user clicked (if it exists)
-                if (priorityColName) {
-                    const aPri = getVal(a, priorityColName);
-                    const bPri = getVal(b, priorityColName);
-                    
-                    if (aPri !== bPri) {
-                        const aEmpty = !aPri;
-                        const bEmpty = !bPri;
-                        
-                        // Empty priorities are irrevocably cast to the abyss
-                        if (aEmpty && !bEmpty) return 1;
-                        if (!aEmpty && bEmpty) return -1;
-                        
-                        const countExclam = (str: string) => {
-                            if (/^!+$/.test(str)) return str.length;
-                            return 0;
-                        };
-                        const aExclamCount = countExclam(aPri);
-                        const bExclamCount = countExclam(bPri);
-
-                        let pCmp = 0;
-                        if (aExclamCount > 0 || bExclamCount > 0) {
-                            pCmp = aExclamCount - bExclamCount;  // standard 
-                        } else {
-                            const aNum = parseFloat(aPri);
-                            const bNum = parseFloat(bPri);
-                            if (!isNaN(aNum) && !isNaN(bNum)) {
-                                pCmp = aNum - bNum; // standard 1, 2, 3
-                            } else {
-                                // Default string descending for Priority to keep highest alphanumeric strings at top
-                                pCmp = aPri.localeCompare(bPri, undefined, { numeric: true });
-                            }
-                        }
-                        
-                        // Obey user's manual reverse direction on priority if they clicked it, otherwise default to 'desc' (so 3 > 2 > 1 dominates implicitly)
-                        const pDir = explicitPrioritySort ? explicitPrioritySort.dir : 'desc';
-                        return pDir === 'asc' ? pCmp : -pCmp;
-                    }
-                }
-
-                // 2. USER'S SECONDARY CLICKS (e.g. Due Date) sort within Priority buckets
-                for (const config of sortConfigs) {
-                    const { key: sKey, dir: sDir } = config;
-                    // Skip if evaluating Priority again to avoid redundant processing
-                    if (sKey === priorityColName) continue;
-
-                    const aVal = getVal(a, sKey);
-                    const bVal = getVal(b, sKey);
-
-                    if (aVal === bVal) continue;
-
-                    const aIsEmpty = !aVal;
-                    const bIsEmpty = !bVal;
-                    if (aIsEmpty && !bIsEmpty) return 1;
-                    if (!aIsEmpty && bIsEmpty) return -1;
-
-                    // Exclude specific single-string cases from Date coercion 
-                    const isPureNumber = (str: string) => /^-?\d+(\.\d+)?$/.test(str);
-                    const isPriorityMark = (str: string) => /^!+$/.test(str);
-
-                    const canParseA = !isPureNumber(aVal) && !isPriorityMark(aVal);
-                    const canParseB = !isPureNumber(bVal) && !isPriorityMark(bVal);
-
-                    const aDate = canParseA ? parseFlexibleDate(aVal) : null;
-                    const bDate = canParseB ? parseFlexibleDate(bVal) : null;
-
-                    const aValid = aDate && !isNaN(aDate.getTime());
-                    const bValid = bDate && !isNaN(bDate.getTime());
-
-                    let cmp = 0;
-                    if (aValid && bValid) {
-                        cmp = aDate.getTime() - bDate.getTime();
-                    } else if (aValid && !bValid) {
-                        cmp = -1;
-                    } else if (!aValid && bValid) {
-                        cmp = 1;
-                    } else {
-                        const countExclam = (str: string) => {
-                            if (/^!+$/.test(str)) return str.length;
-                            return 0;
-                        };
-                        const aExclamCount = countExclam(aVal);
-                        const bExclamCount = countExclam(bVal);
-
-                        if (aExclamCount > 0 || bExclamCount > 0) {
-                            cmp = aExclamCount - bExclamCount;
-                        } else {
-                            const aNum = parseFloat(aVal);
-                            const bNum = parseFloat(bVal);
-                            if (!isNaN(aNum) && !isNaN(bNum)) {
-                                cmp = aNum - bNum;
-                            } else {
-                                cmp = aVal.localeCompare(bVal);
-                            }
-                        }
-                    }
-
-                    if (cmp !== 0) {
-                        return sDir === 'asc' ? cmp : -cmp;
-                    }
-                }
-
-                // 3. FACTORY FALLBACK: Always sort by Due Date chronologically (Old to New) if not explicitly overridden
-                const dueColName = columns.find(c => c.toUpperCase().includes('DUE'));
-                if (dueColName && !sortConfigs.find(s => s.key === dueColName)) {
-                    const aDue = getVal(a, dueColName);
-                    const bDue = getVal(b, dueColName);
-                    
-                    if (aDue !== bDue) {
-                        const aIsEmpty = !aDue;
-                        const bIsEmpty = !bDue;
-                        if (aIsEmpty && !bIsEmpty) return 1;
-                        if (!aIsEmpty && bIsEmpty) return -1;
-
-                        const aDate = parseFlexibleDate(aDue);
-                        const bDate = parseFlexibleDate(bDue);
-                        
-                        const aValid = aDate && !isNaN(aDate.getTime());
-                        const bValid = bDate && !isNaN(bDate.getTime());
-
-                        if (aValid && bValid) {
-                            return aDate.getTime() - bDate.getTime(); // Earliest due date at top
-                        } else if (aValid && !bValid) {
-                            return -1;
-                        } else if (!aValid && bValid) {
-                            return 1;
-                        } else {
-                            // If neither are dates, standard string sort
-                            const cmp = aDue.localeCompare(bDue);
-                            if (cmp !== 0) return cmp;
-                        }
-                    }
-                }
-
-                return 0;
-            });
-        }
+        // Apply Sorts via Unified Sorting Engine
+        result = sortOrders(result, columns, sortConfigs, (item: any, key: string) => getOrderValue(item as Record<string, unknown>, key) || '');
 
         return result;
         // eslint-disable-next-line react-hooks/exhaustive-deps
