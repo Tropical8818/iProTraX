@@ -256,7 +256,6 @@ Simplified, touch-friendly interface for operators on the floor.
 ---
 
 ### DEMO
-### DEMO
 *   **Live App**: https://protracker.puppy101.dpdns.org/
 *   **Showcase & Docs**: https://iprotrax.work
 Contact author for access: contact@iprotrax.work
