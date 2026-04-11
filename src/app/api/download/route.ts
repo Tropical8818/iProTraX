@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
         const fileBuffer = fs.readFileSync(absolutePath);
 
         // Sanitize filename to prevent Content-Disposition header injection
-        const safeFilename = (name || 'file.xlsx').replace(/["\r\n\\]/g, '_');
+        const safeFilename = (name || 'file.xlsx').replace(/[^a-zA-Z0-9._-]/g, '_');
 
         return new NextResponse(fileBuffer, {
             headers: {
