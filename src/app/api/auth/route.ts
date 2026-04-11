@@ -7,7 +7,6 @@ import bcrypt from 'bcryptjs';
 export async function POST(request: Request) {
     try {
         const { employeeId, password } = await request.json();
-        console.log('Login attempt ID:', employeeId);
         if (!employeeId || !password) {
             return NextResponse.json(
                 { success: false, error: 'Employee ID and password required' },
@@ -18,8 +17,6 @@ export async function POST(request: Request) {
         const user = await prisma.user.findUnique({
             where: { employeeId }
         });
-
-        console.log('User found:', user);
 
         if (!user || !bcrypt.compareSync(password, user.passwordHash)) {
             return NextResponse.json(

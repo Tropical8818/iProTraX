@@ -22,19 +22,14 @@ export async function GET(request: NextRequest) {
         // 1. Resolve to absolute path
         const absolutePath = path.resolve(filePath.startsWith('/') ? filePath : path.join(process.cwd(), filePath));
 
-        // 2. Define allowed root (Project Root)
-        const projectRoot = path.resolve(process.cwd());
+        // 2. Restrict downloads to the data directory only (allowlist approach)
+        const dataDir = path.resolve(process.env.DATA_DIR || path.join(process.cwd(), 'data'));
 
-        // 3. Strict Check: File must be within project root
-        if (!absolutePath.startsWith(projectRoot)) {
-            console.error(`[Security Block] Attempted access outside root: ${absolutePath}`);
+        // 3. Strict Check: File must be within the data directory.
+        //    Append path.sep to prevent bypasses like /data-evil matching /data
+        if (!absolutePath.startsWith(dataDir + path.sep) && absolutePath !== dataDir) {
+            console.error(`[Security Block] Attempted access outside data dir: ${absolutePath}`);
             return NextResponse.json({ error: 'Access denied: Invalid file path' }, { status: 403 });
-        }
-
-        // 4. Block access to sensitive files explicitly
-        const sensitiveFiles = ['.env', '.git', 'package.json', 'tsconfig.json'];
-        if (sensitiveFiles.some(f => absolutePath.includes(f))) {
-            return NextResponse.json({ error: 'Access denied: Sensitive file' }, { status: 403 });
         }
 
         if (!fs.existsSync(absolutePath)) {
@@ -43,10 +38,13 @@ export async function GET(request: NextRequest) {
 
         const fileBuffer = fs.readFileSync(absolutePath);
 
+        // Sanitize filename to prevent Content-Disposition header injection
+        const safeFilename = (name || 'file.xlsx').replace(/["\r\n\\]/g, '_');
+
         return new NextResponse(fileBuffer, {
             headers: {
                 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                'Content-Disposition': `attachment; filename="${name}"`,
+                'Content-Disposition': `attachment; filename="${safeFilename}"`,
             },
         });
     } catch (error) {

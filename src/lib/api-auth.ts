@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createHash } from 'node:crypto'; // Keeping for legacy fallback
+import { createHash, randomBytes } from 'node:crypto'; // Keeping for legacy fallback
 import { hashApiKey } from './auth'; // Import shared secure hash helper
 
 export interface ApiAuthResult {
@@ -112,10 +112,7 @@ export function hasPermission(permissions: string[], required: string): boolean 
  * Returns the raw key (only shown once) and the hash for storage.
  */
 export function generateApiKey(): { rawKey: string; keyHash: string; prefix: string } {
-    const randomBytes = Buffer.from(
-        Array.from({ length: 32 }, () => Math.floor(Math.random() * 256))
-    );
-    const keyBody = randomBytes.toString('base64url');
+    const keyBody = randomBytes(32).toString('base64url');
     const rawKey = `sk_live_${keyBody}`;
 
     // Use Secure PBKDF2 for new keys
