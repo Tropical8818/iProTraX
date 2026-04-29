@@ -40,18 +40,17 @@ export async function createSession(userId: string, username: string, role: stri
 import { prisma } from '@/lib/prisma';
 import { createHash, pbkdf2Sync } from 'node:crypto';
 
-const envPepper = process.env.API_KEY_PEPPER;
-
-if (process.env.NODE_ENV === 'production' && !envPepper) {
-    throw new Error('CRITICAL SECURITY ERROR: API_KEY_PEPPER is missing in production environment variables.');
-}
-
-const API_KEY_PEPPER = envPepper || 'default_iprotrax_pepper_change_me';
-
 /**
  * Hash API Key using PBKDF2 (Deterministic for lookup)
  */
 export function hashApiKey(key: string): string {
+    const envPepper = process.env.API_KEY_PEPPER;
+
+    if (process.env.NODE_ENV === 'production' && !envPepper) {
+        throw new Error('CRITICAL SECURITY ERROR: API_KEY_PEPPER is missing in production environment variables.');
+    }
+
+    const API_KEY_PEPPER = envPepper || 'default_iprotrax_pepper_change_me';
     return pbkdf2Sync(key, API_KEY_PEPPER, 10000, 64, 'sha512').toString('hex');
 }
 
