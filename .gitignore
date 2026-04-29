@@ -71,12 +71,16 @@ scripts/diagnose-*.ts
 scripts/create-test-*.js
 scripts/create-test-*.ts
 scripts/validate-session.ts
+fix-database.sh
 
 # Data Persistence
 data/postgres/
 data/redis/
 data/config.json
 data/.config.json
+data/machine-id
+data/operation_logs.json
+data/db/*.backup.*
 
 # Business Plan (Internal)
 business_plan/
