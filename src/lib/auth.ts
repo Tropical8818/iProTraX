@@ -40,8 +40,13 @@ export async function createSession(userId: string, username: string, role: stri
 import { prisma } from '@/lib/prisma';
 import { createHash, pbkdf2Sync } from 'node:crypto';
 
-// Server-side pepper for deterministic API key hashing
-const API_KEY_PEPPER = process.env.API_KEY_PEPPER || 'default_iprotrax_pepper_change_me';
+const envPepper = process.env.API_KEY_PEPPER;
+
+if (process.env.NODE_ENV === 'production' && !envPepper) {
+    throw new Error('CRITICAL SECURITY ERROR: API_KEY_PEPPER is missing in production environment variables.');
+}
+
+const API_KEY_PEPPER = envPepper || 'default_iprotrax_pepper_change_me';
 
 /**
  * Hash API Key using PBKDF2 (Deterministic for lookup)

@@ -61,6 +61,7 @@ docs/PROJECT_PRESENTATION.md
 # Rust
 **/target/
 !src/lib/wasm-pkg/
+native/license-verifier/src/
 
 # Debug & One-off Scripts
 scripts/check_*.js
@@ -78,6 +79,7 @@ data/postgres/
 data/redis/
 data/config.json
 data/.config.json
+data/*.xlsx
 data/machine-id
 data/operation_logs.json
 data/db/*.backup.*
@@ -120,6 +122,7 @@ docker-compose.override.yml
 
 # Architecture Plan (Internal Only)
 architecture_plan.md
+*.afphoto
 
 # Technical Stack
 TECH_STACK.md
