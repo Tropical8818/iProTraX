@@ -217,6 +217,17 @@ export default function PlannerTable({
     const [isSuperEditing, setIsSuperEditing] = useState(false);
     // Delete confirmation state - prevents dialog flashing due to React re-renders
     const [deleteConfirm, setDeleteConfirm] = useState<{ orderId: string; woId: string } | null>(null);
+    // Adaptive comment tooltip state (uses fixed viewport coordinates to avoid thead/overflow clipping)
+    const [commentTooltip, setCommentTooltip] = useState<{
+        dotCenterX: number;
+        dotTop: number;
+        dotBottom: number;
+        placement: 'top' | 'bottom';
+        align: 'left' | 'right';
+        total: number;
+        unread: number;
+        previews: Array<{ username: string; content: string }>;
+    } | null>(null);
 
     useEffect(() => {
         if (!resizing) return;
@@ -529,7 +540,10 @@ export default function PlannerTable({
     }, [effectiveDetailColumns, orderedSteps, processedOrders, detailWidths, manualStepWidth]);
 
     return (
-        <div className="overflow-x-auto bg-white rounded-xl shadow-sm border border-slate-200 max-h-[calc(100vh-200px)]">
+        <div
+            className="overflow-x-auto bg-white rounded-xl shadow-sm border border-slate-200 max-h-[calc(100vh-200px)]"
+            onScroll={() => commentTooltip && setCommentTooltip(null)}
+        >
             <table className="border-collapse w-full table-fixed" style={{ fontSize: `${12 * fontSizeScale}px` }}>
                 <colgroup>
                     {/* Detail Columns */}
@@ -987,35 +1001,43 @@ export default function PlannerTable({
 
                                                     return (
                                                         <div
-                                                            className="group/tooltip absolute -top-1 -right-1 p-0.5 cursor-pointer z-10"
+                                                            className="absolute -top-1 -right-1 p-0.5 cursor-pointer z-10"
+                                                            onMouseEnter={(e) => {
+                                                                const rect = e.currentTarget.getBoundingClientRect();
+                                                                const tableEl = e.currentTarget.closest('table');
+                                                                const theadBottom = tableEl?.querySelector('thead')?.getBoundingClientRect().bottom ?? 0;
+                                                                // Estimate tooltip height (~75px + ~22px per preview item)
+                                                                const estimatedHeight = 60 + Math.min(3, previews.length) * 26;
+                                                                const spaceAboveInTable = rect.top - theadBottom;
+                                                                const spaceAboveInViewport = rect.top;
+                                                                // Flip to bottom if too close to sticky thead or top of viewport
+                                                                const placement: 'top' | 'bottom' =
+                                                                    spaceAboveInTable < estimatedHeight + 12 || spaceAboveInViewport < estimatedHeight + 20
+                                                                        ? 'bottom'
+                                                                        : 'top';
+                                                                const align: 'left' | 'right' = rect.right < 260 ? 'left' : 'right';
+
+                                                                setCommentTooltip({
+                                                                    dotCenterX: rect.left + rect.width / 2,
+                                                                    dotTop: rect.top,
+                                                                    dotBottom: rect.bottom,
+                                                                    placement,
+                                                                    align,
+                                                                    total,
+                                                                    unread,
+                                                                    previews
+                                                                });
+                                                            }}
+                                                            onMouseLeave={() => setCommentTooltip(null)}
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
+                                                                setCommentTooltip(null);
                                                                 if (onOpenComments && order.id) {
                                                                     onOpenComments(String(order.id), step);
                                                                 }
                                                             }}
                                                         >
                                                             <div className={`w-2 h-2 rounded-full border border-white cursor-pointer ${unread > 0 ? 'bg-red-500 animate-pulse' : 'bg-indigo-400'}`} />
-
-                                                            {/* Instant tooltip - appears on hover with no delay */}
-                                                            <div className="hidden group-hover/tooltip:block absolute bottom-full right-0 mb-1 z-[100] pointer-events-none">
-                                                                <div className="bg-slate-800 text-white text-[10px] rounded-lg px-2 py-1.5 shadow-lg whitespace-pre-wrap max-w-[250px] min-w-[120px]">
-                                                                    <div className="font-semibold text-slate-200 mb-1">
-                                                                        {total} comment{total > 1 ? 's' : ''}{unread > 0 ? ` (${unread} unread)` : ''}
-                                                                    </div>
-                                                                    {previews.length > 0 && (
-                                                                        <div className="border-t border-slate-600 pt-1 mt-1 space-y-1">
-                                                                            {previews.slice(0, 3).map((p: any, idx: number) => (
-                                                                                <div key={idx} className="text-slate-300">
-                                                                                    <span className="text-slate-400">{p.username}:</span> {p.content.length > 40 ? p.content.substring(0, 40) + '...' : p.content}
-                                                                                </div>
-                                                                            ))}
-                                                                        </div>
-                                                                    )}
-                                                                </div>
-                                                                {/* Arrow */}
-                                                                <div className="absolute bottom-0 right-1 transform translate-y-1/2 rotate-45 w-2 h-2 bg-slate-800" />
-                                                            </div>
                                                         </div>
                                                     );
                                                 })()}
@@ -1034,6 +1056,45 @@ export default function PlannerTable({
                     <div className="py-10 text-center text-slate-400">No orders found</div>
                 )
             }
+
+            {/* Auto-adaptive Floating Comment Tooltip (Fixed to viewport to prevent thead & overflow clipping) */}
+            {commentTooltip && (
+                <div
+                    className="fixed z-[9999] pointer-events-none"
+                    style={{
+                        ...(commentTooltip.placement === 'top'
+                            ? { bottom: `${window.innerHeight - commentTooltip.dotTop + 6}px` }
+                            : { top: `${commentTooltip.dotBottom + 6}px` }),
+                        ...(commentTooltip.align === 'right'
+                            ? { right: `${Math.max(8, window.innerWidth - commentTooltip.dotCenterX - 8)}px` }
+                            : { left: `${Math.max(8, commentTooltip.dotCenterX - 8)}px` })
+                    }}
+                >
+                    <div className="relative bg-slate-800 text-white text-[10px] rounded-lg px-2.5 py-1.5 shadow-xl whitespace-pre-wrap max-w-[250px] min-w-[130px] border border-slate-700">
+                        <div className="font-semibold text-slate-100 mb-0.5">
+                            {commentTooltip.total} comment{commentTooltip.total > 1 ? 's' : ''}{commentTooltip.unread > 0 ? ` (${commentTooltip.unread} unread)` : ''}
+                        </div>
+                        {commentTooltip.previews.length > 0 && (
+                            <div className="border-t border-slate-600/80 pt-1 mt-1 space-y-1">
+                                {commentTooltip.previews.slice(0, 3).map((p: any, idx: number) => (
+                                    <div key={idx} className="text-slate-200 leading-snug">
+                                        <span className="text-slate-400 font-medium">{p.username}:</span>{' '}
+                                        {p.content.length > 40 ? p.content.substring(0, 40) + '...' : p.content}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        {/* Adaptive Arrow */}
+                        <div
+                            className={`absolute w-2 h-2 bg-slate-800 rotate-45 ${
+                                commentTooltip.placement === 'top'
+                                    ? 'bottom-0 translate-y-1/2 border-r border-b border-slate-700'
+                                    : 'top-0 -translate-y-1/2 border-l border-t border-slate-700'
+                            } ${commentTooltip.align === 'right' ? 'right-1.5' : 'left-1.5'}`}
+                        />
+                    </div>
+                </div>
+            )}
 
             {/* Delete Confirmation Modal - React controlled to prevent flashing */}
             {deleteConfirm && onDeleteOrder && (
