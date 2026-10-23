@@ -15,36 +15,6 @@ interface Props {
 
 }
 
-// Abbreviation mapping (Shared with PlannerTable)
-const STEP_ABBREV: Record<string, string> = {
-    'WO Released': 'WO Rel',
-    'Housing Readiness': 'Housing',
-    'Shaft Readiness': 'Shaft',
-    'MTR Material Received': 'MTR Mat',
-    'Lam Pressing': 'Lam',
-    '1st Straigtening': '1st Str',
-    'Flush & Dry': 'F&D',
-    'ENCAP Flush & Dry': 'ENC F&D',
-    'Mag Wire Cutting': 'MagWire',
-    'Winding': 'Wind',
-    'Epoxy': 'Epoxy',
-    'GT ENCAP LEAD': 'GT ENC',
-    'ENCAP': 'ENCAP',
-    'Shaft Straighten': 'Sh Str',
-    'PICKING': 'PICK',
-    'Motor ASSY': 'Mtr Assy',
-    'WELDING': 'WELD',
-    'Dye Pen': 'DyePen',
-    'Painting': 'Paint',
-    'MIST': 'MIST',
-    'Outgoing': 'Outgo',
-    'Receipt': 'Receipt',
-};
-
-function getStepAbbrev(step: string): string {
-    return STEP_ABBREV[step] || step;
-}
-
 export default function MobilePlannerCards({
     orders,
     steps,
@@ -105,7 +75,7 @@ export default function MobilePlannerCards({
                 const woDue = order['WO DUE'] || '';
 
                 // Active Step Display
-                const activeStepName = nextAction ? getStepAbbrev(nextAction.step) : 'Completed';
+                const activeStepName = nextAction ? nextAction.step : 'Completed';
                 const activeStepStatus = nextAction ? nextAction.val : '';
 
                 // Status Color Logic
@@ -157,9 +127,9 @@ export default function MobilePlannerCards({
                             </div>
 
                             <div className="flex gap-2">
-                                <div className={`flex-1 p-3 rounded-lg border flex items-center justify-between ${statusColor}`}>
-                                    <div className="font-semibold text-sm">{activeStepName}</div>
-                                    <div className="text-xs font-bold uppercase tracking-wide bg-white/50 px-2 py-1 rounded">
+                                <div className={`flex-1 min-w-0 p-3 rounded-lg border flex items-center justify-between gap-2 ${statusColor}`}>
+                                    <div className="font-semibold text-sm truncate min-w-0" title={activeStepName}>{activeStepName}</div>
+                                    <div className="text-xs font-bold uppercase tracking-wide bg-white/50 px-2 py-1 rounded shrink-0">
                                         {activeStepStatus || (nextAction ? 'Pending' : 'Done')}
                                     </div>
                                 </div>
@@ -217,7 +187,7 @@ export default function MobilePlannerCards({
                                             className={`p-2.5 rounded-lg border text-xs flex justify-between items-center transition-all ${cardStyle}`}
                                         >
                                             <div className="flex flex-col min-w-0 pr-2">
-                                                <span className="font-semibold truncate" title={step}>{getStepAbbrev(step)}</span>
+                                                <span className="font-semibold truncate" title={step}>{step}</span>
                                                 {isDate && (
                                                     <span className="text-[10px] opacity-80 font-medium mt-0.5">
                                                         {formatDate(val)}

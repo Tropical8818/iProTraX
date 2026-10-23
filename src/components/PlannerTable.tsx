@@ -30,38 +30,6 @@ interface Props {
 
 type SortDir = 'asc' | 'desc' | null;
 
-// Abbreviation mapping for long step names
-const STEP_ABBREV: Record<string, string> = {
-    'WO Released': 'WO Rel',
-    'Housing Readiness': 'Housing',
-    'Shaft Readiness': 'Shaft',
-    'MTR Material Received': 'MTR Mat',
-    'Lam Pressing': 'Lam',
-    '1st Straigtening': '1st Str',
-    'Flush & Dry': 'F&D',
-    'ENCAP Flush & Dry': 'ENC F&D',
-    'Mag Wire Cutting': 'MagWire',
-    'Winding': 'Wind',
-    'Epoxy': 'Epoxy',
-    'GT ENCAP LEAD': 'GT ENC',
-    'ENCAP': 'ENCAP',
-    'Shaft Straighten': 'Sh Str',
-    'PICKING': 'PICK',
-    'Lead': 'Lead',
-    'Motor ASSY': 'Mtr Assy',
-    'WELDING': 'WELD',
-    'Dye Pen': 'DyePen',
-    'Painting': 'Paint',
-    'MIST': 'MIST',
-    'Outgoing': 'Outgo',
-    'Receipt': 'Receipt',
-};
-
-// Get abbreviated step name or use original if not mapped
-function getStepAbbrev(step: string): string {
-    return STEP_ABBREV[step] || step;
-}
-
 // Column name alias mapping - maps config names to possible data key names
 // This handles the case where column mapping standardizes names during import
 // e.g., "Due date" in config -> data key might be "WO DUE" after normalization
@@ -353,20 +321,18 @@ export default function PlannerTable({
         return {};
     };
 
-    // Identify completion column once
+    // Identify completion column once (always the last configured step, matching dashboard/page.tsx)
     const completionStep = useMemo(() => {
-        return orderedSteps.find(s =>
-            s.toLowerCase() === 'receipt' ||
-            s.toLowerCase() === 'outgoing' ||
-            s.toLowerCase() === 'completion'
-        ) || orderedSteps[orderedSteps.length - 1];
+        return orderedSteps.length > 0 ? orderedSteps[orderedSteps.length - 1] : '';
     }, [orderedSteps]);
 
     const isOrderCompleted = (order: Order) => {
         if (!completionStep) return false;
-        const val = order[completionStep] as string; // Type assertion
+        const val = (order[completionStep] as string) || '';
         if (!val) return false;
-        return /\d{4}-\d{2}-\d{2}/.test(val) || /\d{2}[-\/]\w{3}/.test(val);
+        const hasDate = /\d{4}-\d{2}-\d{2}/.test(val) || /\d{2}[-\/]\w{3}/.test(val);
+        const isNA = val.toUpperCase() === 'N/A';
+        return hasDate || isNA;
     };
 
     // Due date warning - returns style and countdown text
@@ -615,8 +581,8 @@ export default function PlannerTable({
                                 title={col}
                             >
                                 <div className="flex items-center gap-0.5 justify-center overflow-hidden">
-                                    <span className="truncate">
-                                        {i >= 5 ? getStepAbbrev(col) : col}
+                                    <span className="truncate min-w-0">
+                                        {col}
                                     </span>
                                     {(() => {
                                         const config = sortConfigs.find(s => s.key === col);
@@ -687,9 +653,9 @@ export default function PlannerTable({
                                     }}
                                     title={isBulkMode ? `Click to Fill ${step} with ${activeBatchMode}` : step}
                                 >
-                                    <div className="flex flex-col items-center w-full">
-                                        <div className="flex items-center gap-0.5 justify-center w-full">
-                                            <span className="truncate text-center">{getStepAbbrev(step)}</span>
+                                    <div className="flex flex-col items-center w-full overflow-hidden">
+                                        <div className="flex items-center gap-0.5 justify-center w-full overflow-hidden">
+                                            <span className="truncate text-center min-w-0">{step}</span>
                                             {(() => {
                                                 const config = sortConfigs.find(s => s.key === step);
                                                 const isPrimary = sortConfigs[0]?.key === step;
