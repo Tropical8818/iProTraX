@@ -29,6 +29,11 @@ export function useRealtime(productId: string | undefined, onUpdate: () => void)
 
                 // Filter logic
                 if (data.type === 'ORDER_UPDATE') {
+                    // Always notify header message bell to refresh unread count in real time
+                    if (typeof window !== 'undefined') {
+                        window.dispatchEvent(new Event('messages-updated'));
+                    }
+
                     // Refresh if:
                     // 1. It's for the current product
                     // 2. OR it's a batch update (might affect us)

@@ -23,6 +23,14 @@ interface Comment {
         id: string;
         username: string;
     }>;
+    structuredData?: {
+        mentionGroup?: string;
+        [key: string]: any;
+    } | null;
+    replyTo?: {
+        id: string;
+        user?: { username: string };
+    } | null;
 }
 
 export function CommentList({ orderId, stepName }: Props) {
@@ -39,6 +47,16 @@ export function CommentList({ orderId, stepName }: Props) {
             if (res.ok) {
                 const data = await res.json();
                 setComments(data.comments || []);
+
+                // Mark step comments as read when viewed
+                await fetch('/api/comments/mark-read', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId, stepName })
+                });
+                if (typeof window !== 'undefined') {
+                    window.dispatchEvent(new Event('messages-updated'));
+                }
             }
         } catch (error) {
             console.error('Failed to fetch comments:', error);
@@ -107,7 +125,19 @@ export function CommentList({ orderId, stepName }: Props) {
                                 <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">
                                     {getCategoryLabel(comment.category)}
                                 </span>
-                                {comment.mentionedUsers && comment.mentionedUsers.length > 0 && (
+                                {comment.replyTo?.user?.username && (
+                                    <span className="text-[8px] px-1 py-0.5 bg-blue-50 text-blue-600 rounded font-medium">
+                                        ↩ @{comment.replyTo.user.username}
+                                    </span>
+                                )}
+                                {comment.structuredData?.mentionGroup ? (
+                                    <>
+                                        <span className="text-[8px] text-slate-400">→</span>
+                                        <span className="text-[8px] px-1 py-0.5 bg-indigo-50 text-indigo-600 rounded font-bold">
+                                            {comment.structuredData.mentionGroup}
+                                        </span>
+                                    </>
+                                ) : comment.mentionedUsers && comment.mentionedUsers.length > 0 && (
                                     <>
                                         <span className="text-[8px] text-slate-400">→</span>
                                         {comment.mentionedUsers.map((user: any) => (  

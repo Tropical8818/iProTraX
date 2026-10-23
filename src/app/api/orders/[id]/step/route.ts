@@ -100,18 +100,34 @@ export async function PATCH(
             })
         ]);
 
-        // Auto-notify supervisors when Hold or QN is set
+        // Auto-notify supervisors & admins when Hold or QN is set
         if (status === 'Hold' || status === 'QN') {
             try {
-                // Get all supervisors and admins
+                // Get all approved supervisors and admins (excluding the user who triggered it)
                 const supervisors = await prisma.user.findMany({
                     where: {
+                        status: 'approved',
                         role: { in: ['admin', 'supervisor'] }
                     },
                     select: { id: true }
                 });
 
-                const supervisorIds = supervisors.map((s: { id: string }) => s.id);
+                let recipientIds = supervisors
+                    .map((s: { id: string }) => s.id)
+                    .filter((id: string) => id !== session.userId);
+
+                // Fallback: if the actor is the only supervisor/admin, notify all other approved non-kiosk users
+                if (recipientIds.length === 0) {
+                    const otherUsers = await prisma.user.findMany({
+                        where: {
+                            status: 'approved',
+                            role: { not: 'kiosk' },
+                            id: { not: session.userId }
+                        },
+                        select: { id: true }
+                    });
+                    recipientIds = otherUsers.map((u: { id: string }) => u.id);
+                }
 
                 // Get current user's username
                 const currentUser = await prisma.user.findUnique({
@@ -127,12 +143,16 @@ export async function PATCH(
                 await prisma.comment.create({
                     data: {
                         content: alertMessage,
+                        category: status === 'Hold' ? 'MATERIAL_SHORTAGE' : 'QUALITY_ISSUE',
+                        triggeredStatus: status,
                         userId: session.userId,
                         orderId: order.id,
                         stepName: step,
-                        mentionedUserIds: JSON.stringify(supervisorIds),
+                        readBy: JSON.stringify([session.userId]),
+                        mentionedUserIds: JSON.stringify(recipientIds),
                         structuredData: JSON.stringify({
                             type: status === 'Hold' ? 'hold_alert' : 'qn_alert',
+                            mentionGroup: '@Supervisor',
                             woId,
                             step,
                             productName,
@@ -141,43 +161,43 @@ export async function PATCH(
                     }
                 });
 
-                console.log(`[Notification] ${status} alert sent to ${supervisorIds.length} supervisors for WO ${woId}`);
+                console.log(`[Notification] ${status} alert sent to ${recipientIds.length} recipients for WO ${woId}`);
             } catch (notifyError) {
                 // Don't fail the main operation if notification fails
                 console.error('Failed to send supervisor notification:', notifyError);
             }
+        }
 
-            // Webhook Integrations
-            try {
-                const notifService = NotificationService.getInstance();
-                const operator = session.username || 'Unknown';
-                const details = {
-                    step,
-                    previousValue,
-                    newValue: status
-                };
+        // Webhook Integrations (moved outside Hold/QN block so on_done and on_step_update work)
+        try {
+            const notifService = NotificationService.getInstance();
+            const operator = session.username || 'Unknown';
+            const details = {
+                step,
+                previousValue,
+                newValue: status
+            };
 
-                const payload = {
-                    orderId: woId,
-                    step,
-                    status,
-                    productName,
-                    operator,
-                    details
-                };
+            const payload = {
+                orderId: woId,
+                step,
+                status,
+                productName,
+                operator,
+                details
+            };
 
-                if (status === 'Hold') {
-                    void notifService.send('on_hold', payload);
-                } else if (status === 'QN') {
-                    void notifService.send('on_qn', payload);
-                } else if (status === 'Done') {
-                    void notifService.send('on_done', payload);
-                } else {
-                    void notifService.send('on_step_update', payload);
-                }
-            } catch (webhookErr) {
-                console.error('[Webhook] Error triggering webhooks:', webhookErr);
+            if (status === 'Hold') {
+                void notifService.send('on_hold', payload);
+            } else if (status === 'QN') {
+                void notifService.send('on_qn', payload);
+            } else if (status === 'Done') {
+                void notifService.send('on_done', payload);
+            } else {
+                void notifService.send('on_step_update', payload);
             }
+        } catch (webhookErr) {
+            console.error('[Webhook] Error triggering webhooks:', webhookErr);
         }
 
 

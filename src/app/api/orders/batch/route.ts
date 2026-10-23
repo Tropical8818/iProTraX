@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { NotificationService } from '@/lib/services/notification-service';
 import type { Order } from '@prisma/client';
 
 interface StepUpdate {
@@ -121,9 +122,76 @@ export async function PATCH(request: Request) {
 
         successCount = orderUpdates.length;
 
-        // Publish event (fire and forget)
+        // Publish event & notifications (fire and forget)
         (async () => {
             try {
+                // Check for Hold / QN updates in batch to trigger notifications
+                const alertUpdates = (updates as StepUpdate[]).filter(
+                    u => u.status === 'Hold' || u.status === 'QN'
+                );
+
+                if (alertUpdates.length > 0) {
+                    const product = await prisma.product.findUnique({ where: { id: productId } });
+                    const productName = product?.name || 'Unknown';
+                    const currentUser = await prisma.user.findUnique({
+                        where: { id: session.userId },
+                        select: { username: true }
+                    });
+                    const operatorName = currentUser?.username || session.username || 'Unknown';
+
+                    const supervisors = await prisma.user.findMany({
+                        where: { status: 'approved', role: { in: ['admin', 'supervisor'] } },
+                        select: { id: true }
+                    });
+                    let recipientIds = supervisors.map((s: { id: string }) => s.id).filter((id: string) => id !== session.userId);
+                    if (recipientIds.length === 0) {
+                        const otherUsers = await prisma.user.findMany({
+                            where: { status: 'approved', role: { not: 'kiosk' }, id: { not: session.userId } },
+                            select: { id: true }
+                        });
+                        recipientIds = otherUsers.map((u: { id: string }) => u.id);
+                    }
+
+                    const notifService = NotificationService.getInstance();
+                    for (const u of alertUpdates) {
+                        const order = orderMap.get(u.woId);
+                        if (!order) continue;
+
+                        const alertMessage = u.status === 'Hold'
+                            ? `🟠 HOLD Alert: WO ${u.woId} marked as HOLD at step "${u.step}" by ${operatorName}`
+                            : `🔴 QN Alert: WO ${u.woId} marked as QN at step "${u.step}" by ${operatorName}`;
+
+                        await prisma.comment.create({
+                            data: {
+                                content: alertMessage,
+                                category: u.status === 'Hold' ? 'MATERIAL_SHORTAGE' : 'QUALITY_ISSUE',
+                                triggeredStatus: u.status,
+                                userId: session.userId,
+                                orderId: order.id,
+                                stepName: u.step,
+                                readBy: JSON.stringify([session.userId]),
+                                mentionedUserIds: JSON.stringify(recipientIds),
+                                structuredData: JSON.stringify({
+                                    type: u.status === 'Hold' ? 'hold_alert' : 'qn_alert',
+                                    mentionGroup: '@Supervisor',
+                                    woId: u.woId,
+                                    step: u.step,
+                                    productName,
+                                    setBy: operatorName
+                                })
+                            }
+                        });
+
+                        void notifService.send(u.status === 'Hold' ? 'on_hold' : 'on_qn', {
+                            orderId: u.woId,
+                            step: u.step,
+                            status: u.status,
+                            productName,
+                            operator: operatorName
+                        });
+                    }
+                }
+
                 const { redis } = await import('@/lib/redis');
                 await redis.publish('system-updates', JSON.stringify({
                     type: 'ORDER_UPDATE',
@@ -131,7 +199,7 @@ export async function PATCH(request: Request) {
                     batch: true
                 }));
             } catch (e) {
-                console.error('Redis batch publish error', e);
+                console.error('Redis batch publish / notification error', e);
             }
         })();
 

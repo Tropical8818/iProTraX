@@ -41,12 +41,15 @@ export function MessageNotification() {
     };
 
     const handleMessageClick = async (msg: any) => {
-        // Mark as read
-        try {
-            await fetch(`/api/messages/${msg.id}/read`, { method: 'POST' });
-            fetchMessages(); // Refresh
-        } catch (error) {
-            console.error('Failed to mark as read:', error);
+        // Mark as read if currently unread
+        if (msg.isUnread) {
+            try {
+                await fetch(`/api/messages/${msg.id}/read`, { method: 'POST' });
+                fetchMessages(); // Refresh
+                window.dispatchEvent(new Event('messages-updated'));
+            } catch (error) {
+                console.error('Failed to mark as read:', error);
+            }
         }
 
         // Navigate to order and step
@@ -91,6 +94,7 @@ export function MessageNotification() {
                                             try {
                                                 await fetch('/api/messages/read-all', { method: 'POST' });
                                                 fetchMessages();
+                                                window.dispatchEvent(new Event('messages-updated'));
                                             } catch (error) {
                                                 console.error('Failed to mark all as read:', error);
                                             }
@@ -114,7 +118,7 @@ export function MessageNotification() {
                                     <p className="text-slate-500 text-sm">No new messages</p>
                                 </div>
                             ) : (
-                                messages.slice(0, 10).map((msg: any) => (
+                                messages.slice(0, 25).map((msg: any) => (
                                     <div
                                         key={msg.id}
                                         onClick={() => handleMessageClick(msg)}
@@ -152,9 +156,9 @@ export function MessageNotification() {
                             )}
                         </div>
 
-                        {messages.length > 10 && (
+                        {messages.length > 25 && (
                             <div className="p-2 border-t border-slate-50 dark:border-slate-700 bg-slate-50/50 text-center">
-                                <span className="text-[10px] uppercase tracking-wider font-medium text-slate-400">Showing recent 10</span>
+                                <span className="text-[10px] uppercase tracking-wider font-medium text-slate-400">Showing recent 25</span>
                             </div>
                         )}
                     </div>

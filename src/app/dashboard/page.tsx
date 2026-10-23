@@ -1425,6 +1425,7 @@ export default function DashboardPage() {
                                                 }}
 
                                                 onDeleteOrder={handleDeleteOrder}
+                                                onOpenComments={(orderId, step) => setCommentModal({ orderId, step })}
                                                 fontSizeScale={fontSizeScale}
                                             />
                                         </div>
@@ -1438,7 +1439,10 @@ export default function DashboardPage() {
                             <StructuredCommentDialog
                                 orderId={commentModal.orderId}
                                 stepName={commentModal.step}
-                                onClose={() => setCommentModal(null)}
+                                onClose={() => {
+                                    setCommentModal(null);
+                                    fetchOrders();
+                                }}
                                 onSubmit={async (data) => {
                                     try {
                                         const res = await fetch('/api/comments', {
@@ -1450,11 +1454,12 @@ export default function DashboardPage() {
                                                 category: data.category,
                                                 content: data.note,
                                                 structuredData: data.structuredData,
-                                                triggeredStatus: data.triggeredStatus
+                                                triggeredStatus: data.triggeredStatus,
+                                                mentions: data.mentions
                                             })
                                         });
                                         if (res.ok) {
-                                            alert('Comment sent successfully');
+                                            window.dispatchEvent(new Event('messages-updated'));
                                             // Refresh orders to show updated status if triggered
                                             fetchOrders();
                                         } else {

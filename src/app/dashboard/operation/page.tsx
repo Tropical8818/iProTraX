@@ -60,6 +60,7 @@ function OperationContent() {
     const [loadingComments, setLoadingComments] = useState(false);
     const [mentionMenuOpen, setMentionMenuOpen] = useState(false);
     const [selectedMention, setSelectedMention] = useState('');
+    const [replyToComment, setReplyToComment] = useState<{ id: string; username: string; userId: string } | null>(null);
 
     const [supervisors, setSupervisors] = useState<any[]>([]); // List of supervisors for mentions
     const [unreadStats, setUnreadStats] = useState<Record<string, { unread: number }>>({}); // Per-user unread stats
@@ -151,9 +152,10 @@ function OperationContent() {
             setStepQuantities(ordersData.stepQuantities || {});
             setStepUnits(ordersData.stepUnits || {});
 
-            // Auto-select from URL
-            const woParam = searchParams.get('wo');
-            const stepParam = searchParams.get('step');
+            // Auto-select from live URL query string (so replaceState actually clears it for 30s interval polling)
+            const liveParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : searchParams;
+            const woParam = liveParams.get('wo');
+            const stepParam = liveParams.get('step');
 
             if (woParam) {
                 // Flexible WO ID matching - handles various column name formats
@@ -445,19 +447,22 @@ function OperationContent() {
                 body: JSON.stringify({
                     orderId: commentModal.orderId,
                     stepName: commentModal.step,
-                    category: commentCategory,
+                    category: commentCategory || 'GENERAL',
                     content: commentText.trim(),
-                    mentions: selectedMention ? [selectedMention] : [] // Backend will parse ID or Username
+                    replyToId: replyToComment?.id || undefined,
+                    mentions: selectedMention ? [selectedMention] : [] // Backend defaults to @Supervisor / @Everyone if empty
                 })
             });
 
             if (res.ok) {
                 setCommentSuccess(true);
+                window.dispatchEvent(new Event('messages-updated'));
                 setTimeout(() => {
                     setCommentModal(null);
                     setCommentText('');
                     setCommentCategory('');
                     setSelectedMention('');
+                    setReplyToComment(null);
                     setCommentSuccess(false);
                 }, 1500);
             } else {
@@ -1104,10 +1109,22 @@ function OperationContent() {
                                                                     return t('category_other');
                                                                 })()}
                                                             </span>
-                                                            {comment.mentionedUsers && comment.mentionedUsers.length > 0 && (
+                                                            {comment.replyTo?.user?.username && (
+                                                                <span className="text-[8px] px-1 py-0.5 bg-blue-50 text-blue-600 rounded font-medium">
+                                                                    ↩ @{comment.replyTo.user.username}
+                                                                </span>
+                                                            )}
+                                                            {comment.structuredData?.mentionGroup ? (
                                                                 <>
                                                                     <span className="text-[8px] text-slate-400">→</span>
-                                                                    {comment.mentionedUsers.map((user: any, idx: number) => (
+                                                                    <span className="text-[8px] px-1 py-0.5 bg-indigo-50 text-indigo-600 rounded font-bold">
+                                                                        {comment.structuredData.mentionGroup}
+                                                                    </span>
+                                                                </>
+                                                            ) : comment.mentionedUsers && comment.mentionedUsers.length > 0 && (
+                                                                <>
+                                                                    <span className="text-[8px] text-slate-400">→</span>
+                                                                    {comment.mentionedUsers.map((user: any) => (
                                                                         <span
                                                                             key={user.id}
                                                                             className="text-[8px] px-1 py-0.5 bg-indigo-50 text-indigo-600 rounded font-medium"
@@ -1174,6 +1191,11 @@ function OperationContent() {
                                                             {/* Reply button */}
                                                             <button
                                                                 onClick={() => {
+                                                                    setReplyToComment({
+                                                                        id: comment.id,
+                                                                        username: comment.user?.username || 'User',
+                                                                        userId: comment.userId
+                                                                    });
                                                                     setSelectedMention(comment.userId);
                                                                     // Scroll to input area and focus
                                                                     const textarea = document.querySelector('textarea');
@@ -1243,71 +1265,74 @@ function OperationContent() {
                                                                 : 'bg-slate-50 text-slate-500 border-slate-200'
                                                                 }`}
                                                         >
-                                                            {selectedMention ? (selectedMention.startsWith('@') ? `To: ${selectedMention}` : `To: ${supervisors.find(s => s.id === selectedMention)?.username || 'User'}`) : t('mentionPlaceholder')}
+                                                            {selectedMention
+                                                                ? (selectedMention.startsWith('@')
+                                                                    ? `To: ${selectedMention}`
+                                                                    : `To: @${supervisors.find(s => s.id === selectedMention)?.username || replyToComment?.username || 'User'}`)
+                                                                : t('mentionPlaceholder')}
                                                         </button>
 
                                                         {mentionMenuOpen && (
-                                                            <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 w-48 overflow-hidden max-h-60 overflow-y-auto">
+                                                            <div className="absolute right-0 top-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-10 w-52 overflow-hidden max-h-64 overflow-y-auto">
                                                                 <div className="text-[10px] text-slate-400 px-3 py-1 bg-slate-50 border-b">{t('selectRecipient')}</div>
 
-                                                                {role === 'user' ? (
-                                                                    <>
-                                                                        <div className="px-2 py-1 text-[10px] text-slate-400 bg-slate-50 font-medium">{t('supervisors')}</div>
-                                                                        {supervisors
-                                                                            .filter(s => s.role === 'supervisor') // Strict requirement: Only Supervisors, no Admins
-                                                                            .map(s => (
-                                                                                <button
-                                                                                    key={s.id}
-                                                                                    onClick={() => { setSelectedMention(s.id); setMentionMenuOpen(false); }}
-                                                                                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 text-indigo-600 truncate"
-                                                                                >
-                                                                                    @{s.username}
-                                                                                </button>
-                                                                            ))}
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <div className="px-2 py-1 text-[10px] text-slate-400 bg-slate-50 font-medium">{t('groups')}</div>
-                                                                        <button
-                                                                            onClick={() => { setSelectedMention('@Everyone'); setMentionMenuOpen(false); }}
-                                                                            className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 text-indigo-600 font-bold"
-                                                                        >
-                                                                            @Everyone
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => { setSelectedMention('@Operator'); setMentionMenuOpen(false); }}
-                                                                            className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 text-blue-600 font-bold"
-                                                                        >
-                                                                            @Operators
-                                                                        </button>
+                                                                <div className="px-2 py-1 text-[10px] text-slate-400 bg-slate-50 font-medium">{t('groups')}</div>
+                                                                <button
+                                                                    onClick={() => { setSelectedMention('@Everyone'); setReplyToComment(null); setMentionMenuOpen(false); }}
+                                                                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 text-indigo-600 font-bold"
+                                                                >
+                                                                    @Everyone (所有人)
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => { setSelectedMention('@Supervisor'); setReplyToComment(null); setMentionMenuOpen(false); }}
+                                                                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 text-purple-600 font-bold"
+                                                                >
+                                                                    @Supervisor (主管/管理员)
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => { setSelectedMention('@Operator'); setReplyToComment(null); setMentionMenuOpen(false); }}
+                                                                    className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 text-blue-600 font-bold"
+                                                                >
+                                                                    @Operator (操作员)
+                                                                </button>
 
-                                                                        <div className="px-2 py-1 text-[10px] text-slate-400 bg-slate-50 font-medium border-t">Supervisors</div>
-                                                                        {supervisors.filter(s => s.role === 'admin' || s.role === 'supervisor').map(s => (
-                                                                            <button
-                                                                                key={s.id}
-                                                                                onClick={() => { setSelectedMention(s.id); setMentionMenuOpen(false); }}
-                                                                                className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 text-purple-600 truncate"
-                                                                            >
-                                                                                @{s.username} <span className="text-[10px] text-slate-400">({s.role})</span>
-                                                                            </button>
-                                                                        ))}
+                                                                <div className="px-2 py-1 text-[10px] text-slate-400 bg-slate-50 font-medium border-t">{t('supervisors')}</div>
+                                                                {supervisors.filter(s => s.role === 'admin' || s.role === 'supervisor').map(s => (
+                                                                    <button
+                                                                        key={s.id}
+                                                                        onClick={() => { setSelectedMention(s.id); setReplyToComment(null); setMentionMenuOpen(false); }}
+                                                                        className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 text-purple-600 truncate"
+                                                                    >
+                                                                        @{s.username} <span className="text-[10px] text-slate-400">({s.role})</span>
+                                                                    </button>
+                                                                ))}
 
-                                                                        <div className="px-2 py-1 text-[10px] text-slate-400 bg-slate-50 font-medium border-t">Operators</div>
-                                                                        {supervisors.filter(s => s.role === 'user').map(s => (
-                                                                            <button
-                                                                                key={s.id}
-                                                                                onClick={() => { setSelectedMention(s.id); setMentionMenuOpen(false); }}
-                                                                                className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 text-blue-600 truncate"
-                                                                            >
-                                                                                @{s.username}
-                                                                            </button>
-                                                                        ))}
-                                                                    </>
-                                                                )}
+                                                                <div className="px-2 py-1 text-[10px] text-slate-400 bg-slate-50 font-medium border-t">Operators</div>
+                                                                {supervisors.filter(s => s.role === 'user').map(s => (
+                                                                    <button
+                                                                        key={s.id}
+                                                                        onClick={() => { setSelectedMention(s.id); setReplyToComment(null); setMentionMenuOpen(false); }}
+                                                                        className="w-full text-left px-3 py-2 text-sm hover:bg-slate-50 text-blue-600 truncate"
+                                                                    >
+                                                                        @{s.username}
+                                                                    </button>
+                                                                ))}
                                                             </div>
                                                         )}
                                                     </div>
                                                 </div>
+                                                {replyToComment && (
+                                                    <div className="flex items-center justify-between bg-blue-50 text-blue-700 text-xs px-3 py-1.5 rounded-lg mb-2">
+                                                        <span>↩ Replying to <strong>@{replyToComment.username}</strong></span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => { setReplyToComment(null); setSelectedMention(''); }}
+                                                            className="text-blue-400 hover:text-blue-600"
+                                                        >
+                                                            <X className="w-3.5 h-3.5" />
+                                                        </button>
+                                                    </div>
+                                                )}
                                                 <textarea
                                                     value={commentText}
                                                     onChange={(e) => setCommentText(e.target.value)}
@@ -1317,7 +1342,7 @@ function OperationContent() {
                                                 {selectedMention && (
                                                     <p className="text-xs text-indigo-600 mt-1 flex items-center gap-1">
                                                         <span className="w-1.5 h-1.5 bg-indigo-600 rounded-full inline-block"></span>
-                                                        Wait for response from: <strong>{selectedMention.startsWith('@') ? selectedMention : supervisors.find(s => s.id === selectedMention)?.username}</strong>
+                                                        Wait for response from: <strong>{selectedMention.startsWith('@') ? selectedMention : `@${supervisors.find(s => s.id === selectedMention)?.username || replyToComment?.username || 'User'}`}</strong>
                                                     </p>
                                                 )}
 
@@ -1330,7 +1355,7 @@ function OperationContent() {
                                                             fetchStepComments(commentModal.orderId, commentModal.step);
                                                         }
                                                     }}
-                                                    disabled={sendingComment || !commentText.trim() || (role === 'user' && !commentCategory && !selectedMention)}
+                                                    disabled={sendingComment || !commentText.trim()}
                                                     className="w-full py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-4"
                                                 >
                                                     {sendingComment ? (

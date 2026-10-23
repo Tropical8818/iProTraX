@@ -24,6 +24,7 @@ interface Props {
     role?: string;
     onUpdateDetail?: (woId: string, field: string, value: string) => Promise<void>;
     onDeleteOrder?: (woId: string) => Promise<void>;
+    onOpenComments?: (orderId: string, step: string) => void;
     fontSizeScale?: number;
 }
 
@@ -143,6 +144,7 @@ export default function PlannerTable({
 
     onUpdateDetail,
     onDeleteOrder,
+    onOpenComments,
     fontSizeScale = 1
 }: Props) {
 
@@ -984,8 +986,16 @@ export default function PlannerTable({
                                                     const previews = (order as any).commentPreviews?.[step] || [];
 
                                                     return (
-                                                        <div className="group/tooltip absolute -top-0.5 -right-0.5">
-                                                            <div className={`w-1.5 h-1.5 rounded-full border border-white cursor-pointer ${unread > 0 ? 'bg-red-500 animate-pulse' : 'bg-indigo-400'}`} />
+                                                        <div
+                                                            className="group/tooltip absolute -top-1 -right-1 p-0.5 cursor-pointer z-10"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (onOpenComments && order.id) {
+                                                                    onOpenComments(String(order.id), step);
+                                                                }
+                                                            }}
+                                                        >
+                                                            <div className={`w-2 h-2 rounded-full border border-white cursor-pointer ${unread > 0 ? 'bg-red-500 animate-pulse' : 'bg-indigo-400'}`} />
 
                                                             {/* Instant tooltip - appears on hover with no delay */}
                                                             <div className="hidden group-hover/tooltip:block absolute bottom-full right-0 mb-1 z-[100] pointer-events-none">

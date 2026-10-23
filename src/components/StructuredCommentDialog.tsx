@@ -1,7 +1,8 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Package, Wrench, AlertTriangle, MessageSquare, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { CommentList } from './CommentList';
 
 interface CommentData {
     orderId: string;
@@ -10,6 +11,7 @@ interface CommentData {
     structuredData: Record<string, string>;
     note: string;
     triggeredStatus: string | null;
+    mentions?: string[];
 }
 
 interface Props {
@@ -24,8 +26,19 @@ export function StructuredCommentDialog({ orderId, stepName, onClose, onSubmit }
     const [category, setCategory] = useState<string>('');
     const [formData, setFormData] = useState<{ note?: string }>({});
     const [submitting, setSubmitting] = useState(false);
+    const [users, setUsers] = useState<Array<{ id: string; username: string; role: string }>>([]);
+    const [selectedMention, setSelectedMention] = useState<string>('@Supervisor');
 
     const t = useTranslations('StructuredCommentDialog');
+
+    useEffect(() => {
+        fetch('/api/users/supervisors')
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                if (data?.supervisors) setUsers(data.supervisors);
+            })
+            .catch(() => {});
+    }, []);
 
     const CategorySelection = () => (
         <div className="space-y-3">
@@ -88,13 +101,14 @@ export function StructuredCommentDialog({ orderId, stepName, onClose, onSubmit }
                     (category === 'MATERIAL_SHORTAGE' || category === 'EQUIPMENT_FAILURE') ? 'HOLD' :
                         null;
 
-            const payload = {
+            const payload: CommentData = {
                 orderId,
                 stepName,
                 category,
                 structuredData: { category, ...formData },
                 note: formData.note || '',
-                triggeredStatus
+                triggeredStatus,
+                mentions: selectedMention ? [selectedMention] : ['@Supervisor']
             };
 
             await onSubmit(payload);
@@ -109,9 +123,18 @@ export function StructuredCommentDialog({ orderId, stepName, onClose, onSubmit }
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={onClose}>
             <div
-                className="bg-white rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto mx-4"
+                className="bg-white rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto mx-4 relative"
                 onClick={(e) => e.stopPropagation()}
             >
+                <div className="mb-4 pb-4 border-b border-gray-100">
+                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">
+                        Step Messages ({stepName})
+                    </div>
+                    <div className="max-h-48 overflow-y-auto">
+                        <CommentList orderId={orderId} stepName={stepName} />
+                    </div>
+                </div>
+
                 {step === 'category' && <CategorySelection />}
 
                 {step === 'details' && (
@@ -122,6 +145,35 @@ export function StructuredCommentDialog({ orderId, stepName, onClose, onSubmit }
                             {category === 'QUALITY_ISSUE' && t('details.qualityTitle')}
                             {category === 'GENERAL' && t('details.generalTitle')}
                         </h3>
+
+                        <div>
+                            <label className="block text-sm font-medium mb-1">Notify (@Mention)</label>
+                            <select
+                                value={selectedMention}
+                                onChange={(e) => setSelectedMention(e.target.value)}
+                                className="w-full p-2 border rounded text-sm bg-white"
+                            >
+                                <optgroup label="Groups">
+                                    <option value="@Everyone">@Everyone (所有人)</option>
+                                    <option value="@Supervisor">@Supervisor (主管/管理员)</option>
+                                    <option value="@Operator">@Operator (操作员)</option>
+                                </optgroup>
+                                {users.filter(u => u.role === 'admin' || u.role === 'supervisor').length > 0 && (
+                                    <optgroup label="Supervisors & Admins">
+                                        {users.filter(u => u.role === 'admin' || u.role === 'supervisor').map(u => (
+                                            <option key={u.id} value={u.id}>@{u.username} ({u.role})</option>
+                                        ))}
+                                    </optgroup>
+                                )}
+                                {users.filter(u => u.role === 'user').length > 0 && (
+                                    <optgroup label="Operators">
+                                        {users.filter(u => u.role === 'user').map(u => (
+                                            <option key={u.id} value={u.id}>@{u.username}</option>
+                                        ))}
+                                    </optgroup>
+                                )}
+                            </select>
+                        </div>
 
                         <div>
                             <label className="block text-sm font-medium mb-1">{t('details.descLabel')}</label>

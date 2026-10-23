@@ -59,6 +59,20 @@ export async function POST(req: NextRequest) {
         // HOWEVER, my task is about the MessageNotification (Header), which fetches `/api/messages/my`. 
         // So updating the `Comment` model is sufficient for `/api/messages/my` to reflect the change.
 
+        if (updatedCount > 0) {
+            try {
+                const { redis } = await import('@/lib/redis');
+                await redis.publish('system-updates', JSON.stringify({
+                    type: 'ORDER_UPDATE',
+                    subType: 'COMMENT_READ',
+                    orderId,
+                    step: stepName
+                }));
+            } catch (rErr) {
+                console.error('Redis publish error on mark-read:', rErr);
+            }
+        }
+
         return NextResponse.json({ success: true, updatedCount });
 
     } catch (error) {

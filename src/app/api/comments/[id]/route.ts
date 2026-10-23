@@ -37,6 +37,19 @@ export async function DELETE(
         // Update the order's comment stats
         await updateOrderCommentStats(comment.orderId);
 
+        // Publish real-time update
+        try {
+            const { redis } = await import('@/lib/redis');
+            await redis.publish('system-updates', JSON.stringify({
+                type: 'ORDER_UPDATE',
+                subType: 'COMMENT_DELETE',
+                orderId: comment.orderId,
+                step: comment.stepName
+            }));
+        } catch (rErr) {
+            console.error('Redis publish error on comment delete:', rErr);
+        }
+
         // Note: Related messages will be handled by database cascade if configured
         // If not, we can delete them manually here if the Message model exists
 

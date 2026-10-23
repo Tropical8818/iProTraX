@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/auth';
+import { NotificationService } from '@/lib/services/notification-service';
 
 // POST /api/comments - Create a new comment
 // Note: Ensure Prisma Client is generated: `npx prisma generate`
@@ -12,7 +13,7 @@ export async function POST(req: NextRequest) {
 
     try {
         const body = await req.json();
-        const { orderId, stepName, category, structuredData, note, triggeredStatus, content, mentions } = body;
+        const { orderId, stepName, category, structuredData, note, triggeredStatus, content, mentions, replyToId } = body;
 
         // Use 'content' or 'note' as message text
         const messageText = content || note || '';
@@ -21,12 +22,10 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'orderId and stepName are required' }, { status: 400 });
         }
 
-        // Logic to resolve mentions to user IDs
-
         // VALIDATION: Check if stepName is valid for this product
         const order = await prisma.order.findUnique({
             where: { id: orderId },
-            select: { productId: true }
+            select: { id: true, woId: true, productId: true, data: true }
         });
 
         if (!order) {
@@ -49,40 +48,80 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        let targetUserIds: string[] = [];
-        if (Array.isArray(mentions) && mentions.length > 0) {
-            // Fetch all users to map roles/names
-            const allUsers = await prisma.user.findMany({ select: { id: true, role: true, username: true } });
+        // Fetch all approved non-kiosk users to map roles/names
+        const allUsers = await prisma.user.findMany({
+            where: {
+                status: 'approved',
+                role: { not: 'kiosk' }
+            },
+            select: { id: true, role: true, username: true }
+        });
 
-            mentions.forEach((mention: string) => {
-                if (mention === '@Supervisor') {
-                    // Add all admins and supervisors
-                    const supervisors = allUsers.filter((u: any) => u.role === 'admin' || u.role === 'supervisor').map((u: any) => u.id);
-                    targetUserIds.push(...supervisors);
-                } else if (mention === '@Everyone') {
-                    // Add all users
-                    targetUserIds.push(...allUsers.map((u: any) => u.id));
-                } else if (mention === '@Operator') {
-                    // Add all operators
-                    const operators = allUsers.filter((u: any) => u.role === 'user').map((u: any) => u.id);
-                    targetUserIds.push(...operators);
+        // Default mention behavior when user doesn't explicitly pick a recipient:
+        // - Operators ('user') notify '@Supervisor' (admins + supervisors) by default
+        // - Supervisors/Admins notify '@Everyone' by default
+        const effectiveMentions: string[] = Array.isArray(mentions) && mentions.length > 0
+            ? mentions
+            : [session.role === 'user' ? '@Supervisor' : '@Everyone'];
+
+        let mentionGroup: string | undefined;
+        let targetUserIds: string[] = [];
+
+        effectiveMentions.forEach((mention: string) => {
+            if (mention === '@Supervisor' || mention === '@Supervisors') {
+                mentionGroup = '@Supervisor';
+                const supervisors = allUsers.filter((u: any) => u.role === 'admin' || u.role === 'supervisor').map((u: any) => u.id);
+                targetUserIds.push(...supervisors);
+            } else if (mention === '@Everyone') {
+                mentionGroup = '@Everyone';
+                targetUserIds.push(...allUsers.map((u: any) => u.id));
+            } else if (mention === '@Operator' || mention === '@Operators') {
+                mentionGroup = '@Operator';
+                const operators = allUsers.filter((u: any) => u.role === 'user').map((u: any) => u.id);
+                targetUserIds.push(...operators);
+            } else {
+                // Specific User ID or Username
+                const byId = allUsers.find((u: any) => u.id === mention);
+                if (byId) {
+                    targetUserIds.push(byId.id);
                 } else {
-                    // Assume it's a specific User ID or Username
-                    // Check if it looks like a UUID
-                    const byId = allUsers.find((u: any) => u.id === mention);
-                    if (byId) {
-                        targetUserIds.push(byId.id);
-                    } else {
-                        // Check by username
-                        const byName = allUsers.find((u: any) => u.username === mention.replace('@', '')); // Remove @ if present
-                        if (byName) targetUserIds.push(byName.id);
-                    }
+                    const cleanName = mention.replace(/^@/, '');
+                    const byName = allUsers.find((u: any) => u.username.toLowerCase() === cleanName.toLowerCase());
+                    if (byName) targetUserIds.push(byName.id);
                 }
+            }
+        });
+
+        // If replying to a specific comment, make sure that comment's author is notified
+        let validReplyToId: string | null = null;
+        if (replyToId) {
+            const parentComment = await prisma.comment.findUnique({
+                where: { id: replyToId },
+                select: { id: true, userId: true }
             });
+            if (parentComment) {
+                validReplyToId = parentComment.id;
+                targetUserIds.push(parentComment.userId);
+            }
         }
 
-        // Deduplicate
-        targetUserIds = Array.from(new Set(targetUserIds));
+        // Deduplicate and exclude sender from receiving self-notification
+        targetUserIds = Array.from(new Set(targetUserIds)).filter(id => id !== session.userId);
+
+        // Fallback: if default '@Supervisor' yielded 0 other users (e.g., no other supervisor account), notify all other approved users
+        if (targetUserIds.length === 0 && (!Array.isArray(mentions) || mentions.length === 0)) {
+            targetUserIds = allUsers.map((u: any) => u.id).filter((id: string) => id !== session.userId);
+        }
+
+        const mergedStructuredData = {
+            ...(structuredData || {}),
+            ...(mentionGroup ? { mentionGroup } : {})
+        };
+
+        // Normalize triggeredStatus ('HOLD' -> 'Hold', 'QN' -> 'QN')
+        const normalizedTriggeredStatus = triggeredStatus
+            ? (triggeredStatus.toUpperCase() === 'HOLD' ? 'Hold' : triggeredStatus.toUpperCase() === 'QN' ? 'QN' : triggeredStatus)
+            : null;
 
         // Create comment
         const comment = await prisma.comment.create({
@@ -91,9 +130,10 @@ export async function POST(req: NextRequest) {
                 stepName,
                 content: messageText, // Required field
                 category: category || 'GENERAL',
-                structuredData: structuredData ? JSON.stringify(structuredData) : null,
+                structuredData: Object.keys(mergedStructuredData).length > 0 ? JSON.stringify(mergedStructuredData) : null,
                 note: note || null,
-                triggeredStatus: triggeredStatus || null,
+                triggeredStatus: normalizedTriggeredStatus,
+                replyToId: validReplyToId,
                 userId: session.userId,
                 readBy: JSON.stringify([session.userId]), // Creator has read it
                 mentionedUserIds: JSON.stringify(targetUserIds)
@@ -105,8 +145,98 @@ export async function POST(req: NextRequest) {
             }
         });
 
+        // If triggeredStatus is Hold or QN, actually update the Order's step status and create OperationLog
+        if (normalizedTriggeredStatus === 'Hold' || normalizedTriggeredStatus === 'QN') {
+            try {
+                const currentData = JSON.parse(order.data || '{}');
+                const previousValue = currentData[stepName] || '';
+                currentData[stepName] = normalizedTriggeredStatus;
+
+                await prisma.$transaction([
+                    prisma.order.update({
+                        where: { id: order.id },
+                        data: { data: JSON.stringify(currentData) }
+                    }),
+                    prisma.operationLog.create({
+                        data: {
+                            action: normalizedTriggeredStatus,
+                            details: JSON.stringify({
+                                step: stepName,
+                                previousValue,
+                                newValue: normalizedTriggeredStatus,
+                                reason: messageText
+                            }),
+                            userId: session.userId,
+                            orderId: order.id,
+                            snapshot: JSON.stringify({
+                                woId: order.woId,
+                                productName: product?.name || 'Unknown'
+                            })
+                        }
+                    })
+                ]);
+            } catch (statusErr) {
+                console.error('Failed to update order status from comment triggeredStatus:', statusErr);
+            }
+        }
+
         // Update commentStats cache on the order
         await updateOrderCommentStats(orderId);
+
+        // Trigger External Webhooks (on_message, plus on_hold / on_qn if status was triggered)
+        try {
+            const notifService = NotificationService.getInstance();
+            const senderName = comment.user?.username || session.username || 'User';
+            const productName = product?.name || 'Unknown';
+
+            void notifService.send('on_message', {
+                orderId: order.woId,
+                step: stepName,
+                status: normalizedTriggeredStatus || category || 'COMMENT',
+                productName,
+                operator: senderName,
+                sender: senderName,
+                message: `[WO: ${order.woId} | ${stepName}] ${messageText}`
+            });
+
+            if (normalizedTriggeredStatus === 'Hold') {
+                void notifService.send('on_hold', {
+                    orderId: order.woId,
+                    step: stepName,
+                    status: 'Hold',
+                    productName,
+                    operator: senderName,
+                    message: messageText
+                });
+            } else if (normalizedTriggeredStatus === 'QN') {
+                void notifService.send('on_qn', {
+                    orderId: order.woId,
+                    step: stepName,
+                    status: 'QN',
+                    productName,
+                    operator: senderName,
+                    message: messageText
+                });
+            }
+        } catch (webhookErr) {
+            console.error('[Webhook] Error sending comment notification:', webhookErr);
+        }
+
+        // Publish real-time SSE update so other users' tables and notification bells refresh immediately
+        try {
+            const { redis } = await import('@/lib/redis');
+            await redis.publish('system-updates', JSON.stringify({
+                type: 'ORDER_UPDATE',
+                subType: 'COMMENT_UPDATE',
+                productId: order.productId,
+                woId: order.woId,
+                orderId: order.id,
+                step: stepName,
+                action: normalizedTriggeredStatus || 'COMMENT'
+            }));
+        } catch (rErr) {
+            console.error('Redis publish error on comment create:', rErr);
+        }
 
         return NextResponse.json({
             success: true,
@@ -150,6 +280,16 @@ export async function GET(req: NextRequest) {
             include: {
                 user: {
                     select: { username: true, employeeId: true, role: true }
+                },
+                replyTo: {
+                    select: {
+                        id: true,
+                        content: true,
+                        userId: true,
+                        user: {
+                            select: { username: true }
+                        }
+                    }
                 }
             },
             orderBy: { createdAt: 'desc' }

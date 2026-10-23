@@ -9,19 +9,12 @@ export async function GET() {
     }
 
     try {
-        const role = session.role;
-
-        let whereClause = {};
-        if (role === 'user') {
-            // Operators can only mention supervisors/admins
-            whereClause = {
-                role: { in: ['admin', 'supervisor'] }
-            };
-        }
-        // If role is admin or supervisor, they can see everyone (whereClause = {})
-
+        // Return all approved non-kiosk users so any user can @mention supervisors, admins, operators, or everyone
         const users = await prisma.user.findMany({
-            where: whereClause,
+            where: {
+                status: 'approved',
+                role: { not: 'kiosk' }
+            },
             select: {
                 id: true,
                 username: true,

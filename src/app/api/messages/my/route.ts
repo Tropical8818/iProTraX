@@ -15,10 +15,9 @@ export async function GET(req: NextRequest) {
     try {
         const userId = session.userId;
 
-        // Find comments relevant to this user:
+        // Find comments relevant to this user (newest first):
         // 1. Replies to their comments
         // 2. Mentions of them
-        // 3. Recent comments on orders they've worked on (optional, limited to 24h)
         const comments = await prisma.comment.findMany({
             where: {
                 OR: [
@@ -40,12 +39,11 @@ export async function GET(req: NextRequest) {
                 user: { select: { username: true, role: true } },
                 order: { select: { woId: true, productId: true, product: { select: { name: true } } } }
             },
-            orderBy: { createdAt: 'asc' },
-            take: 50
+            orderBy: { createdAt: 'desc' },
+            take: 200
         });
 
-        // Filter for unread messages only
-        const unreadMessages = comments.map((msg: any) => {
+        const parsedMessages = comments.map((msg: any) => {
             const readBy = msg.readBy ? JSON.parse(msg.readBy) : [];
             const isUnread = !readBy.includes(userId);
 
@@ -56,14 +54,19 @@ export async function GET(req: NextRequest) {
                 structuredData: msg.structuredData ? JSON.parse(msg.structuredData) : null,
                 isUnread
             };
-        }).filter((m: any) => m.isUnread);
+        });
 
+        const unreadMessages = parsedMessages.filter((m: any) => m.isUnread);
+        const recentReadMessages = parsedMessages.filter((m: any) => !m.isUnread).slice(0, 10);
+
+        // Show all unread messages first (newest first), followed by recent read history
+        const combinedMessages = [...unreadMessages, ...recentReadMessages].slice(0, 30);
         const unreadCount = unreadMessages.length;
 
         return NextResponse.json({
-            total: unreadMessages.length,
+            total: combinedMessages.length,
             unreadCount,
-            messages: unreadMessages
+            messages: combinedMessages
         });
 
     } catch (error) {

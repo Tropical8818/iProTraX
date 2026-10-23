@@ -21,32 +21,17 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: 'orderId and stepName are required' }, { status: 400 });
         }
 
-        // Try to get from cache first
-        const order = await prisma.order.findUnique({
-            where: { id: orderId },
-            select: { commentStats: true }
-        });
-
-        if (order?.commentStats) {
-            try {
-                const stats = JSON.parse(order.commentStats);
-                const stepStats = stats[stepName] || { total: 0, unread: 0 };
-                return NextResponse.json(stepStats);
-            } catch (e) {
-                console.error('Error parsing commentStats:', e);
-            }
-        }
-
-        // Fallback to real-time calculation
+        // Calculate total and per-user unread count dynamically
         const comments = await prisma.comment.findMany({
             where: { orderId, stepName },
-            select: { readBy: true }
+            select: { readBy: true, mentionedUserIds: true }
         });
 
         const total = comments.length;
-        const unread = (comments as any).filter((c: any) => {
+        const unread = comments.filter((c: any) => {
+            const mentionedList = c.mentionedUserIds ? JSON.parse(c.mentionedUserIds) : [];
             const readByList = c.readBy ? JSON.parse(c.readBy) : [];
-            return !readByList.includes(session.userId);
+            return mentionedList.includes(session.userId) && !readByList.includes(session.userId);
         }).length;
 
         return NextResponse.json({ total, unread });
