@@ -114,15 +114,15 @@ export function CommentList({ orderId, stepName }: Props) {
                     <div className="flex items-start gap-2 mb-2">
                         {getCategoryIcon(comment.category)}
                         <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                                <span className="font-semibold text-sm text-gray-900">
+                            <div className="flex items-center flex-wrap gap-1.5 mb-1">
+                                <span className="font-semibold text-sm text-slate-900">
                                     {comment.user?.username || 'Unknown'}
                                 </span>
-                                <span className="text-xs text-gray-500">
+                                <span className="text-xs text-slate-500">
                                     {comment.user?.role === 'admin' ? 'Admin' :
                                         comment.user?.role === 'supervisor' ? 'Supervisor' : 'Worker'}
                                 </span>
-                                <span className="text-xs px-2 py-0.5 bg-gray-100 rounded">
+                                <span className="text-xs px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-medium">
                                     {getCategoryLabel(comment.category)}
                                 </span>
                                 {comment.replyTo?.user?.username && (

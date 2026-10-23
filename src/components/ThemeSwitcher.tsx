@@ -44,8 +44,10 @@ export function ThemeSwitcher({ className = '' }: Props) {
 
         if (theme === 'dark') {
             document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
         } else {
             document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
         }
     }, [theme]);
 
@@ -58,8 +60,10 @@ export function ThemeSwitcher({ className = '' }: Props) {
         // Apply immediately
         if (newTheme === 'dark') {
             document.documentElement.classList.add('dark');
+            document.documentElement.classList.remove('light');
         } else {
             document.documentElement.classList.remove('dark');
+            document.documentElement.classList.add('light');
         }
 
         // Force re-render via storage event

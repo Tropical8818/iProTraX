@@ -18,12 +18,9 @@
   --foreground: #f1f5f9;
 }
 
-/* System preference fallback */
-@media (prefers-color-scheme: dark) {
-  :root:not(.light) {
-    --background: #0f172a;
-    --foreground: #f1f5f9;
-  }
+.light {
+  --background: #ffffff;
+  --foreground: #171717;
 }
 
 body {
