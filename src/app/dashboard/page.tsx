@@ -1455,7 +1455,8 @@ export default function DashboardPage() {
                                                 content: data.note,
                                                 structuredData: data.structuredData,
                                                 triggeredStatus: data.triggeredStatus,
-                                                mentions: data.mentions
+                                                mentions: data.mentions,
+                                                replyToId: data.replyToId
                                             })
                                         });
                                         if (res.ok) {
